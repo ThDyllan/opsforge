@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OpsForge Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">RNCP DevOps MVP1</p>
+        <h1>OpsForge</h1>
+      </div>
+      <a class="health-link" href="/health">Health</a>
+    </header>
+
+    <main class="layout">
+      <section class="stats" aria-label="Platform summary">
+        <article>
+          <span>Total services</span>
+          <strong>{{ total_services }}</strong>
+        </article>
+        <article>
+          <span>Open incidents</span>
+          <strong>{{ open_incidents }}</strong>
+        </article>
+        <article>
+          <span>Alerts today</span>
+          <strong>{{ alerts_today }}</strong>
+        </article>
+      </section>
+
+      <section class="grid two-columns">
+        <div class="panel">
+          <div class="panel-heading">
+            <h2>Services</h2>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Environment</th>
+                  <th>Status</th>
+                  <th>Owner</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for service in services %}
+                <tr>
+                  <td>
+                    <strong>{{ service.name }}</strong>
+                    <small>{{ service.slug }}</small>
+                  </td>
+                  <td>{{ service.environment }}</td>
+                  <td><span class="badge status-{{ service.status }}">{{ service.status }}</span></td>
+                  <td>{{ service.owner or "-" }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-heading">
+            <h2>Recent alerts</h2>
+          </div>
+          <div class="list">
+            {% for alert in recent_alerts %}
+            <article class="list-item">
+              <div>
+                <strong>{{ alert.title }}</strong>
+                <small>{{ alert.source }} · {{ alert.received_at.strftime("%Y-%m-%d %H:%M") }}</small>
+              </div>
+              <span class="badge severity-{{ alert.severity }}">{{ alert.severity }}</span>
+            </article>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+
+      <section class="grid two-columns">
+        <div class="panel">
+          <div class="panel-heading">
+            <h2>Open incidents</h2>
+          </div>
+          <div class="list">
+            {% for incident in incidents %}
+            <article class="list-item">
+              <div>
+                <strong>{{ incident.title }}</strong>
+                <small>{{ incident.status }} · owner {{ incident.owner or "unassigned" }}</small>
+              </div>
+              <span class="badge severity-{{ incident.severity }}">{{ incident.severity }}</span>
+            </article>
+            {% else %}
+            <p class="empty">No open incidents.</p>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-heading">
+            <h2>Available runbooks</h2>
+          </div>
+          <div class="list">
+            {% for runbook in runbooks %}
+            <article class="list-item runbook">
+              <div>
+                <strong>{{ runbook.name }}</strong>
+                <small>{{ runbook.key }}</small>
+              </div>
+              <span class="badge neutral">enabled</span>
+            </article>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
