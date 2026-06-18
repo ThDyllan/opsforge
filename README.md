@@ -2,6 +2,8 @@
 
 OpsForge is an RNCP DevOps school project. MVP1 is a small FastAPI, PostgreSQL, and Docker Compose application for incident and service supervision.
 
+Documentation entry point: [`docs/INDEX.md`](docs/INDEX.md)
+
 This first version intentionally stays simple:
 
 - FastAPI API with SQLAlchemy 2.x models
