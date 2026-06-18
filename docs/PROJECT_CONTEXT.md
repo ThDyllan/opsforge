@@ -40,6 +40,7 @@ Runbooks are safe predefined actions only. Arbitrary shell command execution is 
 - `/dashboard` works after fixing the TemplateResponse issue.
 - Tests currently pass.
 - Phase 1 / MVP1 has been explicitly validated by the user.
+- Phase 2 / CI/CD has been explicitly validated by the user after a successful GitHub Actions run covering tests, Docker image build, and Trivy scanning.
 
 ## Role Distribution
 
