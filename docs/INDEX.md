@@ -10,10 +10,12 @@ It provides the recommended path for understanding the project, its current stat
 
 1. [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) - Project overview, current state, roles, and strict contribution rules.
 2. [`ROADMAP.md`](ROADMAP.md) - Phase plan, scope, and Definition of Done for each phase.
-3. [`MVP1_VERIFICATION.md`](MVP1_VERIFICATION.md) - Phase 1 validation evidence for the local MVP1 application.
-4. [`CI_CD.md`](CI_CD.md) - Phase 2 CI/CD design, workflow behavior, and GitHub Actions result.
-5. [`PHASE2_VERIFICATION.md`](PHASE2_VERIFICATION.md) - Phase 2 validation evidence.
-6. [`DECISIONS.md`](DECISIONS.md) - Architecture and technical decisions recorded for the project.
+3. [`PHASE_SYNC_PROTOCOL.md`](PHASE_SYNC_PROTOCOL.md) - Required synchronization process before, during, and after each project phase.
+4. [`MVP1_VERIFICATION.md`](MVP1_VERIFICATION.md) - Phase 1 validation evidence for the local MVP1 application.
+5. [`CI_CD.md`](CI_CD.md) - Phase 2 CI/CD design, workflow behavior, and GitHub Actions result.
+6. [`PHASE2_VERIFICATION.md`](PHASE2_VERIFICATION.md) - Phase 2 validation evidence.
+7. [`RISKS_AND_TECHNICAL_DEBT.md`](RISKS_AND_TECHNICAL_DEBT.md) - Known limitations, deferred improvements, guardrails, and upcoming decisions.
+8. [`DECISIONS.md`](DECISIONS.md) - Architecture and technical decisions recorded for the project.
 
 ## Oral Preparation Path
 
@@ -21,8 +23,10 @@ For oral preparation, read these documents first:
 
 1. [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md)
 2. [`ROADMAP.md`](ROADMAP.md)
-3. [`DECISIONS.md`](DECISIONS.md)
-4. The verification file for each completed phase
+3. [`PHASE_SYNC_PROTOCOL.md`](PHASE_SYNC_PROTOCOL.md)
+4. [`DECISIONS.md`](DECISIONS.md)
+5. [`RISKS_AND_TECHNICAL_DEBT.md`](RISKS_AND_TECHNICAL_DEBT.md)
+6. The verification file for each completed phase
 
 The current phase verification files are:
 

@@ -203,3 +203,29 @@ The CI/CD result will be visible in GitHub Actions after the workflow is pushed 
 The Docker image is built for validation but not pushed to a registry in Phase 2.
 
 The first Trivy scan is non-blocking so findings are visible without enforcing a security policy before Phase 3 defines stricter security expectations.
+
+## Decision 011 - Use SQLite for Fast MVP Tests While PostgreSQL Remains the Runtime Database
+
+### Context
+
+OpsForge runs with PostgreSQL, but the current pytest suite uses an in-memory SQLite database.
+
+MVP1 needed tests that were fast, isolated, and easy to run locally and in CI without requiring a PostgreSQL service.
+
+### Decision
+
+Use in-memory SQLite for the current MVP test suite while keeping PostgreSQL as the application runtime database.
+
+Treat this as a temporary testing strategy rather than proof of complete PostgreSQL compatibility.
+
+### Reason
+
+SQLite keeps the MVP tests simple and provides quick feedback for core API behavior.
+
+This was appropriate for Phase 1 and Phase 2, where application simplicity and CI verification were more important than database-specific integration coverage.
+
+### Consequences
+
+The tests do not fully reproduce PostgreSQL-specific behavior, including possible differences in data types, constraints, SQL behavior, transactions, and connections.
+
+A future phase may add PostgreSQL integration tests through Docker Compose or CI if the user explicitly decides that the additional fidelity is required.
