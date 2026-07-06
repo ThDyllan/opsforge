@@ -20,7 +20,11 @@ The goal is not only to deliver a working project. The process must also ensure 
 - [ ] Read `ROADMAP.md`.
 - [ ] Read `DECISIONS.md`.
 - [ ] Read `RISKS_AND_TECHNICAL_DEBT.md` if it exists.
+- [ ] Read `GIT_WORKFLOW.md`.
 - [ ] Read the previous phase verification document.
+- [ ] Run `git status` and confirm that pending changes are understood.
+- [ ] Run `git pull` to synchronize the local repository with GitHub.
+- [ ] Do not start from an unclear or dirty state unless the user explicitly decides how to handle pending changes.
 - [ ] Confirm the phase objective and Definition of Done.
 - [ ] Ask for review or challenge if useful.
 - [ ] Decide the exact scope with the user.
@@ -45,8 +49,10 @@ The goal is not only to deliver a working project. The process must also ensure 
 - [ ] Update `DECISIONS.md` if new architecture or technical decisions were made.
 - [ ] Ask for review or challenge if useful.
 - [ ] The user explicitly validates the phase as complete.
-- [ ] Commit and push the validated phase.
-- [ ] Confirm GitHub Actions status if CI is affected.
+- [ ] Run `git status` and review the final phase changes.
+- [ ] Commit and push the validated phase according to `GIT_WORKFLOW.md`.
+- [ ] After the push, confirm that GitHub Actions started, tests passed, the Docker build passed, and the Trivy scan ran.
+- [ ] Confirm that the workflow is green or that any non-blocking warnings are understood and documented.
 
 ## Anti-Scope-Creep Rule
 
