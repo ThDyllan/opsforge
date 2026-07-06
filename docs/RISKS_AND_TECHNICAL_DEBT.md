@@ -34,13 +34,19 @@ OpsForge is currently treated as a local, single-user exam project rather than a
 
 This is a documented scope decision, not an overlooked production requirement.
 
-### Trivy Is Non-Blocking in Phase 2
+### Trivy Remains Non-Blocking in Phase 3
 
-The Phase 2 Trivy image scan reports `HIGH` and `CRITICAL` findings, but it does not block the GitHub Actions workflow.
+The Trivy image scan reports `HIGH` and `CRITICAL` findings, but it does not block the GitHub Actions workflow.
 
-This was intentional so security findings are visible before the project defines a vulnerability acceptance policy.
+Phase 3 reviewed this policy and intentionally keeps it non-blocking for the current local educational scope. Findings remain visible and must be understood and documented.
 
-A stricter blocking policy is deferred to Phase 3.
+A stricter blocking policy can be considered later if the deployment scope or risk tolerance changes.
+
+### Local Backups Are Not a Production Backup Strategy
+
+Phase 3 stores database backups only in the local `backups/` directory. Generated files are ignored by Git but are not encrypted, copied offsite, scheduled, or automatically rotated.
+
+This is sufficient to demonstrate backup and restore mechanics for the current RNCP phase. It does not protect against workstation loss or provide production disaster recovery.
 
 ## Phase 3 Guardrails
 
@@ -60,12 +66,6 @@ Avoid over-engineering. Phase 3 should not introduce:
 These capabilities remain out of scope unless the user explicitly decides otherwise in a later task.
 
 ## Upcoming Decisions to Remember
-
-### Phase 3
-
-- Choose between documented backup/restore commands only or simple scripts plus documentation.
-- Define the backup file location and naming convention.
-- Define the vulnerability blocking policy after reviewing Trivy findings.
 
 ### Phase 4
 

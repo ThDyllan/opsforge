@@ -229,3 +229,45 @@ This was appropriate for Phase 1 and Phase 2, where application simplicity and C
 The tests do not fully reproduce PostgreSQL-specific behavior, including possible differences in data types, constraints, SQL behavior, transactions, and connections.
 
 A future phase may add PostgreSQL integration tests through Docker Compose or CI if the user explicitly decides that the additional fidelity is required.
+
+## Decision 012 - Use Local Custom-Format PostgreSQL Backups for Phase 3
+
+### Context
+
+Phase 3 requires a backup command or script, a tested restore procedure, and an approach that remains simple enough to explain during the RNCP oral exam.
+
+### Decision
+
+Use PowerShell scripts that run PostgreSQL tools through the existing Docker Compose `db` service.
+
+Create custom-format `.dump` archives inside the database container with `pg_dump`, copy them to the local `backups/` directory with `docker compose cp`, and restore them with `pg_restore`.
+
+Restore verification uses a temporary database by default. Restoring into the main database requires an explicit option and confirmation.
+
+### Reason
+
+The PostgreSQL tools already exist in the database image and match the server version. Custom format supports archive inspection and controlled restore, while `docker compose cp` avoids redirecting binary output through PowerShell.
+
+### Consequences
+
+No PostgreSQL client installation is required on the host. Generated backups stay local and are ignored by Git.
+
+This approach does not provide encryption, offsite storage, scheduling, or automatic rotation. Those capabilities remain outside Phase 3.
+
+## Decision 013 - Keep Trivy Non-Blocking in Phase 3
+
+### Context
+
+Phase 2 introduced a non-blocking Trivy image scan so vulnerability findings were visible before a formal enforcement policy existed.
+
+### Decision
+
+Keep the Trivy scan non-blocking during Phase 3 and document the choice as a known security limitation.
+
+### Reason
+
+OpsForge remains a local RNCP educational project. Visibility and understanding of findings are required, but a blocking threshold is not yet justified by the current scope.
+
+### Consequences
+
+GitHub Actions continues to report findings without failing solely because of Trivy results. Findings must be reviewed and documented, and a stricter policy can be considered later if the deployment scope changes.

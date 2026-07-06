@@ -53,6 +53,17 @@ On push and pull request, CI installs Python dependencies, runs `pytest`, builds
 
 See `docs/CI_CD.md` for details.
 
+## Backup and Security
+
+Phase 3 adds local PostgreSQL backup and restore scripts plus documented security choices. Backups use PostgreSQL custom `.dump` format and are stored under the Git-ignored `backups/` directory.
+
+```powershell
+.\scripts\backup.ps1
+.\scripts\restore.ps1 -BackupFile .\backups\opsforge_backup_YYYYMMDD_HHMMSS.dump
+```
+
+The default restore command verifies the archive in a temporary database and does not replace the main database. See `docs/BACKUP_RESTORE.md` and `docs/SECURITY.md` for details.
+
 ## API Routes
 
 General:
