@@ -11,3 +11,4 @@ venv/
 .vscode/
 backups/*
 !backups/README.md
+k8s/secret.local.yaml

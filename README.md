@@ -64,6 +64,12 @@ Phase 3 adds local PostgreSQL backup and restore scripts plus documented securit
 
 The default restore command verifies the archive in a temporary database and does not replace the main database. See `docs/BACKUP_RESTORE.md` and `docs/SECURITY.md` for details.
 
+## Kubernetes
+
+Phase 4 is in progress. Phase 4A provides a local k3d cluster and a persistent PostgreSQL StatefulSet; the OpsForge API remains Phase 4B work.
+
+See `docs/KUBERNETES.md` and `docs/PHASE4_VERIFICATION.md` for the deployment procedure and current evidence.
+
 ## API Routes
 
 General:

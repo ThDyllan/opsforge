@@ -48,6 +48,24 @@ Phase 3 stores database backups only in the local `backups/` directory. Generate
 
 This is sufficient to demonstrate backup and restore mechanics for the current RNCP phase. It does not protect against workstation loss or provide production disaster recovery.
 
+### Phase 4 local-path Storage Is Node-Local
+
+The Phase 4 PostgreSQL PVC uses the k3s `local-path` StorageClass. Data persists when the PostgreSQL Pod is recreated on the existing k3d node, but the storage is not distributed and is not guaranteed to survive cluster deletion or node loss.
+
+This is a deliberate local learning choice. Phase 3 backups remain necessary and local-path storage must not be described as production disaster recovery.
+
+### Phase 4 Local Secrets Must Remain Untracked
+
+The tracked `k8s/secret.example.yaml` contains placeholders only. Real local Kubernetes credentials are stored in the ignored `k8s/secret.local.yaml` file.
+
+Accidentally staging or sharing the local Secret file would expose the demonstration credentials. Git ignore status must be checked before future Phase 4 commits.
+
+### k3d Image Import Is Local and Manual
+
+Phase 4B will import the API image directly into k3d without a registry. Each rebuilt image must be imported again before Kubernetes can use it.
+
+This avoids registry scope in Phase 4 but is not an automated image delivery pipeline.
+
 ## Phase 3 Guardrails
 
 Phase 3 should implement backup/restore and security documentation.
@@ -66,12 +84,6 @@ Avoid over-engineering. Phase 3 should not introduce:
 These capabilities remain out of scope unless the user explicitly decides otherwise in a later task.
 
 ## Upcoming Decisions to Remember
-
-### Phase 4
-
-- Choose between local k3s image import and registry publishing.
-- Choose between NodePort and Ingress.
-- Define the PostgreSQL storage approach in Kubernetes.
 
 ### Phase 5
 

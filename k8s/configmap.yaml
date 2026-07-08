@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opsforge-postgres-config
+  namespace: opsforge
+data:
+  POSTGRES_DB: opsforge

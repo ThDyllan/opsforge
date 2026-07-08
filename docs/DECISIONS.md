@@ -271,3 +271,59 @@ OpsForge remains a local RNCP educational project. Visibility and understanding 
 ### Consequences
 
 GitHub Actions continues to report findings without failing solely because of Trivy results. Findings must be reviewed and documented, and a stricter policy can be considered later if the deployment scope changes.
+
+## Decision 014 - Use k3d for the Local Phase 4 Cluster
+
+### Context
+
+Phase 4 needs a local k3s/Kubernetes environment on Windows, where OpsForge already uses Docker Desktop.
+
+### Decision
+
+Use a single-node k3d cluster named `opsforge`. Expose the Kubernetes API on `127.0.0.1:6445` and reserve the future API mapping from Windows port 8080 to NodePort 30080.
+
+### Reason
+
+k3d runs k3s inside Docker and reuses the existing Docker Desktop environment. This avoids the additional VM, WSL service, networking, and kubeconfig work of a separate native k3s host.
+
+### Consequences
+
+The environment is appropriate for local learning and demonstration, but it is not a multi-node or production Kubernetes platform.
+
+## Decision 015 - Use Local k3d Image Import and NodePort for the API
+
+### Context
+
+The future Phase 4B API image must be available to k3s without introducing external registry publishing, and the application must be reachable from Windows.
+
+### Decision
+
+Build the API image locally and import it with `k3d image import` during Phase 4B. Do not add a registry.
+
+Expose the future API through NodePort 30080, mapped by k3d to `127.0.0.1:8080`. Do not add Ingress in Phase 4.
+
+### Reason
+
+Direct image import and NodePort are the smallest mechanisms that satisfy the local Phase 4 requirements.
+
+### Consequences
+
+The image must be rebuilt and re-imported after application changes. The API image and Service are intentionally not created during Phase 4A.
+
+## Decision 016 - Use local-path Storage for PostgreSQL
+
+### Context
+
+Phase 4 requires PostgreSQL persistent storage while remaining simple and local.
+
+### Decision
+
+Run one PostgreSQL StatefulSet replica with a 1 Gi `ReadWriteOnce` PVC using the k3s `local-path` StorageClass.
+
+### Reason
+
+k3s provides dynamic local-path provisioning by default, so the project can demonstrate PV/PVC binding and data persistence without adding a storage platform.
+
+### Consequences
+
+PostgreSQL data persists across Pod recreation on the existing node. It is not guaranteed to survive complete cluster deletion, node loss, or workstation loss.

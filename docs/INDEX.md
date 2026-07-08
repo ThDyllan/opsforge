@@ -18,8 +18,10 @@ It provides the recommended path for understanding the project, its current stat
 8. [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) - Phase 3 local PostgreSQL backup, archive validation, and restore procedure.
 9. [`SECURITY.md`](SECURITY.md) - Phase 3 security scope, secrets strategy, Trivy policy, and known limitations.
 10. [`PHASE3_VERIFICATION.md`](PHASE3_VERIFICATION.md) - Phase 3 implementation and validation evidence.
-11. [`RISKS_AND_TECHNICAL_DEBT.md`](RISKS_AND_TECHNICAL_DEBT.md) - Known limitations, deferred improvements, guardrails, and upcoming decisions.
-12. [`DECISIONS.md`](DECISIONS.md) - Architecture and technical decisions recorded for the project.
+11. [`KUBERNETES.md`](KUBERNETES.md) - Phase 4 k3d deployment procedure, PostgreSQL resources, and persistence limits.
+12. [`PHASE4_VERIFICATION.md`](PHASE4_VERIFICATION.md) - Phase 4 implementation and validation evidence.
+13. [`RISKS_AND_TECHNICAL_DEBT.md`](RISKS_AND_TECHNICAL_DEBT.md) - Known limitations, deferred improvements, guardrails, and upcoming decisions.
+14. [`DECISIONS.md`](DECISIONS.md) - Architecture and technical decisions recorded for the project.
 
 ## Oral Preparation Path
 
@@ -38,6 +40,7 @@ The current phase verification files are:
 - [`MVP1_VERIFICATION.md`](MVP1_VERIFICATION.md) for Phase 1.
 - [`PHASE2_VERIFICATION.md`](PHASE2_VERIFICATION.md) for Phase 2.
 - [`PHASE3_VERIFICATION.md`](PHASE3_VERIFICATION.md) for Phase 3 validation evidence.
+- [`PHASE4_VERIFICATION.md`](PHASE4_VERIFICATION.md) for Phase 4 work in progress.
 
 A dedicated `ORAL_PREPARATION.md` file will be created later during the exam documentation phase, once the technical scope is closer to final.
 
@@ -46,6 +49,7 @@ A dedicated `ORAL_PREPARATION.md` file will be created later during the exam doc
 - Phase 1 - MVP1 Local App: validated.
 - Phase 2 - CI/CD: validated.
 - Phase 3 - Backup and Security: validated.
+- Phase 4 - k3s/Kubernetes Deployment: in progress; Phase 4A locally verified.
 
 ## Maintenance Rule
 
