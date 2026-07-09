@@ -88,6 +88,8 @@ Status: completed and explicitly validated by the user on 2026-07-09. Phase 4A w
 
 ## Phase 5 - Monitoring
 
+Status: in progress. Phase 5A adds a minimal Prometheus-compatible `/metrics` endpoint to the API. Prometheus, Grafana, dashboarding, alerting, anomaly demonstration, and explicit user validation remain pending.
+
 ### Scope
 
 - `/metrics` endpoint

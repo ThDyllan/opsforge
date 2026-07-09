@@ -50,6 +50,22 @@ def test_health_endpoint() -> None:
     assert response.json() == {"status": "ok", "service": "opsforge"}
 
 
+def test_metrics_endpoint_exposes_prometheus_metrics() -> None:
+    with _client() as client:
+        health_response = client.get("/health")
+        metrics_response = client.get("/metrics")
+
+    assert health_response.status_code == 200
+    assert metrics_response.status_code == 200
+    assert metrics_response.headers["content-type"].startswith("text/plain")
+    assert "opsforge_http_requests_total" in metrics_response.text
+    assert "opsforge_http_request_duration_seconds_bucket" in metrics_response.text
+    assert 'method="GET"' in metrics_response.text
+    assert 'route="/health"' in metrics_response.text
+    assert 'status_code="200"' in metrics_response.text
+    assert 'route="/metrics"' not in metrics_response.text
+
+
 def test_dashboard_renders() -> None:
     with _client() as client:
         response = client.get("/dashboard")

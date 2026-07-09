@@ -20,8 +20,10 @@ It provides the recommended path for understanding the project, its current stat
 10. [`PHASE3_VERIFICATION.md`](PHASE3_VERIFICATION.md) - Phase 3 implementation and validation evidence.
 11. [`KUBERNETES.md`](KUBERNETES.md) - Phase 4 k3d deployment procedure, PostgreSQL resources, and persistence limits.
 12. [`PHASE4_VERIFICATION.md`](PHASE4_VERIFICATION.md) - Phase 4 implementation and validation evidence.
-13. [`RISKS_AND_TECHNICAL_DEBT.md`](RISKS_AND_TECHNICAL_DEBT.md) - Known limitations, deferred improvements, guardrails, and upcoming decisions.
-14. [`DECISIONS.md`](DECISIONS.md) - Architecture and technical decisions recorded for the project.
+13. [`MONITORING.md`](MONITORING.md) - Phase 5 monitoring strategy and application metrics scope.
+14. [`PHASE5_VERIFICATION.md`](PHASE5_VERIFICATION.md) - Phase 5 implementation and validation evidence.
+15. [`RISKS_AND_TECHNICAL_DEBT.md`](RISKS_AND_TECHNICAL_DEBT.md) - Known limitations, deferred improvements, guardrails, and upcoming decisions.
+16. [`DECISIONS.md`](DECISIONS.md) - Architecture and technical decisions recorded for the project.
 
 ## Oral Preparation Path
 
@@ -41,6 +43,7 @@ The current phase verification files are:
 - [`PHASE2_VERIFICATION.md`](PHASE2_VERIFICATION.md) for Phase 2.
 - [`PHASE3_VERIFICATION.md`](PHASE3_VERIFICATION.md) for Phase 3 validation evidence.
 - [`PHASE4_VERIFICATION.md`](PHASE4_VERIFICATION.md) for Phase 4 validation evidence.
+- [`PHASE5_VERIFICATION.md`](PHASE5_VERIFICATION.md) for Phase 5 work in progress.
 
 A dedicated `ORAL_PREPARATION.md` file will be created later during the exam documentation phase, once the technical scope is closer to final.
 
@@ -50,6 +53,7 @@ A dedicated `ORAL_PREPARATION.md` file will be created later during the exam doc
 - Phase 2 - CI/CD: validated.
 - Phase 3 - Backup and Security: validated.
 - Phase 4 - k3s/Kubernetes Deployment: validated.
+- Phase 5 - Monitoring: in progress; Phase 5A application metrics started.
 
 ## Maintenance Rule
 

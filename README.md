@@ -70,11 +70,18 @@ Phase 4 has been validated. Phase 4A provides the local k3d/PostgreSQL foundatio
 
 See `docs/KUBERNETES.md` and `docs/PHASE4_VERIFICATION.md` for the deployment procedure and validation evidence.
 
+## Monitoring
+
+Phase 5 is in progress. Phase 5A exposes a Prometheus-compatible `/metrics` endpoint with basic HTTP request count and latency metrics.
+
+Prometheus and Grafana are not deployed yet. See `docs/MONITORING.md` and `docs/PHASE5_VERIFICATION.md` for the monitoring strategy and current verification status.
+
 ## API Routes
 
 General:
 
 - `GET /health`
+- `GET /metrics`
 - `GET /`
 - `GET /dashboard`
 

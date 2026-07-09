@@ -327,3 +327,35 @@ k3s provides dynamic local-path provisioning by default, so the project can demo
 ### Consequences
 
 PostgreSQL data persists across Pod recreation on the existing node. It is not guaranteed to survive complete cluster deletion, node loss, or workstation loss.
+
+## Decision 017 - Expose Prometheus-Compatible Application Metrics
+
+### Context
+
+Phase 5 requires OpsForge to be supervised with Prometheus and Grafana. Before deploying monitoring tools, the application needs a scrapeable metrics endpoint.
+
+The first monitoring slice must stay small and avoid database queries, UI redesign, and application refactoring.
+
+### Decision
+
+Expose a `/metrics` endpoint from FastAPI using `prometheus-client`.
+
+Collect minimal HTTP metrics:
+
+- request count;
+- request latency histogram;
+- labels for HTTP method, route template, and status code.
+
+Exclude `/metrics` itself from the custom request metrics.
+
+### Reason
+
+This provides Prometheus-compatible application metrics while keeping the implementation easy to explain.
+
+Using route templates instead of raw URLs avoids high-cardinality labels for dynamic API paths.
+
+### Consequences
+
+Prometheus can scrape the API in a later Phase 5 slice.
+
+Phase 5A does not deploy Prometheus, Grafana, dashboards, alert rules, or Alertmanager. It only prepares the application for monitoring.

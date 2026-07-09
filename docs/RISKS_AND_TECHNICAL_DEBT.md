@@ -72,6 +72,18 @@ The Kubernetes API probes use the existing `/health` endpoint. It confirms that 
 
 An init container waits for PostgreSQL before API startup, and the application connects to PostgreSQL during its startup lifecycle. A dedicated database-aware readiness endpoint remains a possible later improvement and is not added during Phase 4 because it would change application logic.
 
+### Phase 5A Metrics Are Not Full Monitoring Yet
+
+Phase 5A exposes Prometheus-compatible application metrics at `/metrics`, but Prometheus and Grafana are not deployed yet.
+
+This means Phase 5A prepares the API for scraping but does not by itself satisfy the full monitoring Definition of Done. Later Phase 5 work must still prove scraping, dashboarding, alerting, and anomaly detection against the deployed service.
+
+### Phase 5A Does Not Include Business Metrics
+
+The first metrics slice tracks HTTP request count and latency only.
+
+Incident and alert count metrics are deferred because they would require database queries or additional application behavior. They can be considered later if they remain simple and do not require refactoring.
+
 ## Phase 3 Guardrails
 
 Phase 3 should implement backup/restore and security documentation.
@@ -93,7 +105,9 @@ These capabilities remain out of scope unless the user explicitly decides otherw
 
 ### Phase 5
 
-- Define the exact application metrics to expose.
+- Deploy Prometheus and Grafana inside k3d.
+- Decide the safest local Grafana access method.
+- Add a simple alert rule and anomaly demonstration.
 
 ## Oral Exam Note
 

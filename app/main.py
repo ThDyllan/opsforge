@@ -3,11 +3,13 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from datetime import date, datetime, time, timezone
 from pathlib import Path
+from time import perf_counter
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -33,6 +35,17 @@ from .seed import seed_database
 
 BASE_DIR = Path(__file__).resolve().parent
 
+HTTP_REQUESTS_TOTAL = Counter(
+    "opsforge_http_requests_total",
+    "Total HTTP requests handled by OpsForge.",
+    ["method", "route", "status_code"],
+)
+HTTP_REQUEST_DURATION_SECONDS = Histogram(
+    "opsforge_http_request_duration_seconds",
+    "HTTP request latency in seconds for OpsForge.",
+    ["method", "route", "status_code"],
+)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -50,9 +63,38 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
+def _route_label(request: Request) -> str:
+    route = request.scope.get("route")
+    route_path = getattr(route, "path", None)
+    return route_path or "unmatched"
+
+
+@app.middleware("http")
+async def collect_http_metrics(request: Request, call_next):
+    if request.url.path == "/metrics":
+        return await call_next(request)
+
+    start_time = perf_counter()
+    response = await call_next(request)
+    elapsed = perf_counter() - start_time
+    labels = {
+        "method": request.method,
+        "route": _route_label(request),
+        "status_code": str(response.status_code),
+    }
+    HTTP_REQUESTS_TOTAL.labels(**labels).inc()
+    HTTP_REQUEST_DURATION_SECONDS.labels(**labels).observe(elapsed)
+    return response
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "opsforge"}
+
+
+@app.get("/metrics", include_in_schema=False)
+def metrics() -> Response:
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.get("/", include_in_schema=False)
