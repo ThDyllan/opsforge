@@ -40,7 +40,7 @@ The current phase verification files are:
 - [`MVP1_VERIFICATION.md`](MVP1_VERIFICATION.md) for Phase 1.
 - [`PHASE2_VERIFICATION.md`](PHASE2_VERIFICATION.md) for Phase 2.
 - [`PHASE3_VERIFICATION.md`](PHASE3_VERIFICATION.md) for Phase 3 validation evidence.
-- [`PHASE4_VERIFICATION.md`](PHASE4_VERIFICATION.md) for Phase 4 work in progress.
+- [`PHASE4_VERIFICATION.md`](PHASE4_VERIFICATION.md) for Phase 4 validation evidence.
 
 A dedicated `ORAL_PREPARATION.md` file will be created later during the exam documentation phase, once the technical scope is closer to final.
 
@@ -49,7 +49,7 @@ A dedicated `ORAL_PREPARATION.md` file will be created later during the exam doc
 - Phase 1 - MVP1 Local App: validated.
 - Phase 2 - CI/CD: validated.
 - Phase 3 - Backup and Security: validated.
-- Phase 4 - k3s/Kubernetes Deployment: in progress; Phase 4A locally verified.
+- Phase 4 - k3s/Kubernetes Deployment: validated.
 
 ## Maintenance Rule
 

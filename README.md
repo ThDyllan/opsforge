@@ -66,9 +66,9 @@ The default restore command verifies the archive in a temporary database and doe
 
 ## Kubernetes
 
-Phase 4 is in progress. Phase 4A provides a local k3d cluster and a persistent PostgreSQL StatefulSet; the OpsForge API remains Phase 4B work.
+Phase 4 has been validated. Phase 4A provides the local k3d/PostgreSQL foundation, and Phase 4B deploys the locally imported API image through NodePort at `http://localhost:8080`.
 
-See `docs/KUBERNETES.md` and `docs/PHASE4_VERIFICATION.md` for the deployment procedure and current evidence.
+See `docs/KUBERNETES.md` and `docs/PHASE4_VERIFICATION.md` for the deployment procedure and validation evidence.
 
 ## API Routes
 

@@ -1,10 +1,10 @@
 # Kubernetes Deployment
 
-## Phase 4A Scope
+## Phase 4 Scope
 
 Phase 4A establishes the local k3s/Kubernetes foundation with k3d and deploys PostgreSQL only.
 
-The OpsForge API is not deployed in Phase 4A. Its image build/import, Deployment, NodePort Service, and `/health` verification remain Phase 4B work.
+Phase 4B builds and imports the local OpsForge API image, deploys the API, exposes it through NodePort, and verifies `/health` from Windows.
 
 ## Why k3d Is Used
 
@@ -36,7 +36,7 @@ k3d cluster create --config k8s/k3d-cluster.yaml
 kubectl get nodes
 ```
 
-The cluster is named `opsforge`. Its configuration also reserves the future Phase 4B mapping from Windows `127.0.0.1:8080` to NodePort `30080`. Phase 4A does not create an API Service on that port.
+The cluster is named `opsforge`. Its configuration maps Windows `127.0.0.1:8080` to NodePort `30080` for the Phase 4B API Service.
 
 ## Namespace
 
@@ -48,7 +48,7 @@ kubectl apply -f k8s/namespace.yaml
 
 ## Secret and ConfigMap Strategy
 
-`k8s/configmap.yaml` stores the non-sensitive database name.
+`k8s/configmap.yaml` stores the non-sensitive database name, host, and port.
 
 `k8s/secret.example.yaml` is tracked and contains placeholders only. Create the local Secret manifest before applying PostgreSQL:
 
@@ -65,7 +65,7 @@ kubectl apply -f k8s/secret.local.yaml
 kubectl apply -f k8s/configmap.yaml
 ```
 
-Kubernetes Secrets keep credentials separate from the workload manifest. They do not replace a production secret manager and are not claimed to provide encrypted secret management in this local phase.
+Kubernetes Secrets keep credentials and the API `DATABASE_URL` separate from the workload manifest. They do not replace a production secret manager and are not claimed to provide encrypted secret management in this local phase.
 
 ## PostgreSQL Resources
 
@@ -136,11 +136,68 @@ The `local-path` volume is local to the k3d node. Phase 4A proves persistence ac
 
 It does not claim that data survives `k3d cluster delete opsforge`, node loss, workstation loss, or a production disaster. Phase 3 backups remain a separate concern.
 
-## Phase 4B Remaining Work
+## Build and Import the API Image
 
-- Build the local OpsForge API image.
-- Import it with `k3d image import`.
-- Create the API Deployment.
-- Add safe PostgreSQL startup handling and API health probes.
-- Create the API NodePort Service on 30080.
-- Verify `/health` through `http://localhost:8080`.
+Build the application image locally:
+
+```powershell
+docker build -t opsforge-api:phase4 .
+```
+
+Import it directly into the k3d cluster:
+
+```powershell
+k3d image import opsforge-api:phase4 --cluster opsforge
+```
+
+The API Deployment uses the exact image `opsforge-api:phase4` with `imagePullPolicy: Never`. Direct import keeps Phase 4 local and avoids adding registry publishing, credentials, or registry infrastructure.
+
+The image must be rebuilt and re-imported after application changes.
+
+## Deploy the API
+
+Apply the updated local configuration and the API resources:
+
+```powershell
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/secret.local.yaml
+kubectl apply -f k8s/api-deployment.yaml
+kubectl apply -f k8s/api-service.yaml
+kubectl -n opsforge rollout status deployment/opsforge-api --timeout=180s
+```
+
+The API Deployment uses one replica and listens on container port 8000.
+
+Before FastAPI starts, a small init container based on `postgres:16-alpine` waits for the internal PostgreSQL Service with `pg_isready`. This replaces Docker Compose `depends_on` without modifying application logic.
+
+The API container has readiness and liveness probes on `/health`. The current endpoint verifies that the API process responds; it is not a continuous database-aware health check.
+
+## API NodePort
+
+The `opsforge-api` Service exposes container port 8000 through NodePort 30080. The k3d cluster maps that port to Windows `127.0.0.1:8080`.
+
+NodePort is used because it is the smallest local mechanism that satisfies external access. Ingress, TLS, and an Ingress controller configuration remain out of scope.
+
+PostgreSQL remains available only through its internal ClusterIP Service and is not exposed to Windows.
+
+## Verify the API
+
+```powershell
+kubectl -n opsforge get deployments,pods,svc,pvc
+curl.exe -fsS http://localhost:8080/health
+curl.exe -sS -o NUL -w "%{http_code}" http://localhost:8080/dashboard
+```
+
+Expected results:
+
+- Deployment `opsforge-api` reports `1/1` available;
+- the API Pod reports `Running` and `1/1` ready;
+- Service `opsforge-api` reports `8000:30080/TCP`;
+- `/health` returns `{"status":"ok","service":"opsforge"}`;
+- `/dashboard` returns HTTP 200.
+
+## Phase 4 Validation Status
+
+Phase 4A and Phase 4B are implemented, locally verified, and explicitly validated by the user on 2026-07-09.
+
+The validated local Kubernetes scope is intentionally limited to k3d, PostgreSQL with local-path PVC storage, a locally imported API image, and NodePort access from Windows.

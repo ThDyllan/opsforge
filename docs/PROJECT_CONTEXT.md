@@ -42,7 +42,7 @@ Runbooks are safe predefined actions only. Arbitrary shell command execution is 
 - Phase 1 / MVP1 has been explicitly validated by the user.
 - Phase 2 / CI/CD has been explicitly validated by the user after a successful GitHub Actions run covering tests, Docker image build, and Trivy scanning.
 - Phase 3 / Backup and Security was locally verified and explicitly validated by the user on 2026-07-06.
-- Phase 4 is in progress. Phase 4A added and locally verified the k3d cluster foundation and persistent PostgreSQL workload on 2026-07-07; the API remains Phase 4B work.
+- Phase 4 / k3d-Kubernetes Deployment has been explicitly validated by the user on 2026-07-09 after final checks passed. Phase 4A added the k3d/PostgreSQL foundation, and Phase 4B added the locally imported API image, Deployment, NodePort Service, and successful `/health` access.
 - Known limitations, technical debts, and upcoming decisions are tracked in `docs/RISKS_AND_TECHNICAL_DEBT.md`.
 - Phase transitions must follow `docs/PHASE_SYNC_PROTOCOL.md`.
 

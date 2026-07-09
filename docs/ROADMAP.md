@@ -64,7 +64,7 @@ Status: completed and explicitly validated by the user on 2026-07-06.
 
 ## Phase 4 - k3s/Kubernetes Deployment
 
-Status: in progress. Phase 4A k3d and PostgreSQL foundation was locally verified on 2026-07-07. Phase 4B API deployment and explicit user validation remain pending.
+Status: completed and explicitly validated by the user on 2026-07-09. Phase 4A was locally verified on 2026-07-07, Phase 4B API deployment was locally verified on 2026-07-08, and final validation checks passed on 2026-07-09.
 
 ### Scope
 

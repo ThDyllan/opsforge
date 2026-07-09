@@ -280,7 +280,7 @@ Phase 4 needs a local k3s/Kubernetes environment on Windows, where OpsForge alre
 
 ### Decision
 
-Use a single-node k3d cluster named `opsforge`. Expose the Kubernetes API on `127.0.0.1:6445` and reserve the future API mapping from Windows port 8080 to NodePort 30080.
+Use a single-node k3d cluster named `opsforge`. Expose the Kubernetes API on `127.0.0.1:6445` and map Windows port 8080 to API NodePort 30080.
 
 ### Reason
 
@@ -294,11 +294,11 @@ The environment is appropriate for local learning and demonstration, but it is n
 
 ### Context
 
-The future Phase 4B API image must be available to k3s without introducing external registry publishing, and the application must be reachable from Windows.
+The Phase 4B API image must be available to k3s without introducing external registry publishing, and the application must be reachable from Windows.
 
 ### Decision
 
-Build the API image locally and import it with `k3d image import` during Phase 4B. Do not add a registry.
+Build the API image locally and import it with `k3d image import`. Do not add a registry.
 
 Expose the future API through NodePort 30080, mapped by k3d to `127.0.0.1:8080`. Do not add Ingress in Phase 4.
 
@@ -308,7 +308,7 @@ Direct image import and NodePort are the smallest mechanisms that satisfy the lo
 
 ### Consequences
 
-The image must be rebuilt and re-imported after application changes. The API image and Service are intentionally not created during Phase 4A.
+The image must be rebuilt and re-imported after application changes. Kubernetes cannot pull this local image from an external source because `imagePullPolicy` is `Never`.
 
 ## Decision 016 - Use local-path Storage for PostgreSQL
 

@@ -5,3 +5,5 @@ metadata:
   namespace: opsforge
 data:
   POSTGRES_DB: opsforge
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: "5432"

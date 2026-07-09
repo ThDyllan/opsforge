@@ -62,9 +62,15 @@ Accidentally staging or sharing the local Secret file would expose the demonstra
 
 ### k3d Image Import Is Local and Manual
 
-Phase 4B will import the API image directly into k3d without a registry. Each rebuilt image must be imported again before Kubernetes can use it.
+Phase 4 imports the API image directly into k3d without a registry. Each rebuilt image must be imported again before Kubernetes can use it.
 
 This avoids registry scope in Phase 4 but is not an automated image delivery pipeline.
+
+### The API Health Endpoint Is Not Database-Aware
+
+The Kubernetes API probes use the existing `/health` endpoint. It confirms that the FastAPI process responds, but it does not continuously verify PostgreSQL connectivity.
+
+An init container waits for PostgreSQL before API startup, and the application connects to PostgreSQL during its startup lifecycle. A dedicated database-aware readiness endpoint remains a possible later improvement and is not added during Phase 4 because it would change application logic.
 
 ## Phase 3 Guardrails
 
