@@ -435,3 +435,41 @@ ClusterIP plus port-forwarding avoids changing k3d port mappings, adding Ingress
 Grafana is available for local demonstration and displays OpsForge API availability, request volume, request status, latency, and route-level request counts.
 
 The setup intentionally does not add Grafana alerting, Alertmanager, Loki, Ingress, TLS, persistent Grafana storage, authentication hardening, or production monitoring operations.
+
+## Decision 020 - Use a Prometheus Rule for the Phase 5 Alert Demonstration
+
+### Context
+
+Phase 5 must demonstrate that OpsForge supervision detects an anomaly on the deployed service.
+
+Prometheus and Grafana are already deployed inside k3d. The project needs the smallest defensible alerting mechanism without adding a notification stack.
+
+### Decision
+
+Add a Prometheus alert rule named `OpsForgeApiDown`.
+
+The rule is:
+
+```promql
+up{job="opsforge-api"} == 0
+```
+
+The alert uses a `30s` duration, labels `severity: critical` and `service: opsforge-api`, and annotations explaining that Prometheus cannot scrape the OpsForge API metrics endpoint.
+
+Do not deploy Alertmanager in Phase 5D. Do not add Grafana alerting.
+
+### Reason
+
+Prometheus alert rules directly prove that the monitoring system detects the API outage.
+
+A `30s` duration is appropriate for the local demo because Prometheus scrapes and evaluates every `15s`. It avoids reacting to a single transient scrape while keeping the demonstration short.
+
+Alertmanager would add notification routing and receivers, which are not required to prove anomaly detection for this local RNCP phase.
+
+### Consequences
+
+OpsForge can demonstrate an outage scenario by scaling the API Deployment to zero and observing the `OpsForgeApiDown` alert firing.
+
+The alert has no external notification channel. Operators must check Prometheus during the local demonstration.
+
+Future work may add Alertmanager or notification routing only if explicitly selected.

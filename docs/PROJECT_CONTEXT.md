@@ -43,7 +43,7 @@ Runbooks are safe predefined actions only. Arbitrary shell command execution is 
 - Phase 2 / CI/CD has been explicitly validated by the user after a successful GitHub Actions run covering tests, Docker image build, and Trivy scanning.
 - Phase 3 / Backup and Security was locally verified and explicitly validated by the user on 2026-07-06.
 - Phase 4 / k3d-Kubernetes Deployment has been explicitly validated by the user on 2026-07-09 after final checks passed. Phase 4A added the k3d/PostgreSQL foundation, and Phase 4B added the locally imported API image, Deployment, NodePort Service, and successful `/health` access.
-- Phase 5 / Monitoring has started. Phase 5A added a minimal Prometheus-compatible `/metrics` endpoint for the FastAPI application. Phase 5B deployed Prometheus inside k3d and verified scraping of the Kubernetes-deployed API. Phase 5C deployed Grafana and verified the `OpsForge Monitoring` dashboard. Alerting, anomaly demonstration, and explicit Phase 5 validation remain pending.
+- Phase 5 / Monitoring has started. Phase 5A added a minimal Prometheus-compatible `/metrics` endpoint for the FastAPI application. Phase 5B deployed Prometheus inside k3d and verified scraping of the Kubernetes-deployed API. Phase 5C deployed Grafana and verified the `OpsForge Monitoring` dashboard. Phase 5D added a Prometheus alert rule and verified outage detection by simulation. Explicit Phase 5 validation remains pending.
 - Known limitations, technical debts, and upcoming decisions are tracked in `docs/RISKS_AND_TECHNICAL_DEBT.md`.
 - Phase transitions must follow `docs/PHASE_SYNC_PROTOCOL.md`.
 

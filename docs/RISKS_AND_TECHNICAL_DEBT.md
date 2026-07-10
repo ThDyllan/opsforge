@@ -106,6 +106,20 @@ Grafana does not use persistent storage in this phase. The dashboard and datasou
 
 Grafana alerting, Alertmanager, notification routing, TLS, Ingress, authentication hardening, and production dashboard governance remain out of scope.
 
+### Phase 5D Alerting Has No Notification Routing
+
+Phase 5D adds a Prometheus alert rule named `OpsForgeApiDown` and proves that it fires when the API Deployment is scaled to zero.
+
+This demonstrates local anomaly detection, but it does not send notifications because Alertmanager is intentionally out of scope.
+
+The outage simulation is safe only if the API is restored immediately after the alert is observed:
+
+```powershell
+kubectl -n opsforge scale deployment/opsforge-api --replicas=1
+```
+
+The alert should be explained as a supervision demonstration, not as a complete production incident response system.
+
 ## Phase 3 Guardrails
 
 Phase 3 should implement backup/restore and security documentation.
@@ -127,7 +141,7 @@ These capabilities remain out of scope unless the user explicitly decides otherw
 
 ### Phase 5
 
-- Add a simple alert rule and anomaly demonstration.
+- Review and explicitly validate Phase 5 once final checks pass.
 
 ## Oral Exam Note
 

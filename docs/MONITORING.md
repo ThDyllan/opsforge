@@ -180,17 +180,114 @@ This avoids:
 
 ## Remaining Phase 5 Work
 
-Phase 5D still needs to add a simple alert rule and anomaly demonstration.
+Phase 5D adds a simple Prometheus alert rule and anomaly demonstration.
 
 Alertmanager, Grafana alerting, and notification routing remain out of scope unless explicitly selected later.
 
-## Out of Scope for Phase 5A, 5B, and 5C
+## Phase 5D Prometheus Alert Rule
 
-Phase 5A, 5B, and 5C do not deploy:
+Phase 5D uses Prometheus alert rules only. Alertmanager is intentionally not deployed in this phase.
+
+Alertmanager would add notification routing, receivers, silences, and delivery configuration. For the current RNCP local demonstration, the required proof is that Prometheus detects an anomaly on the deployed service.
+
+The alert rule is:
+
+| Field | Value |
+| --- | --- |
+| Alert name | `OpsForgeApiDown` |
+| Expression | `up{job="opsforge-api"} == 0` |
+| Duration | `30s` |
+| Label | `severity: critical` |
+| Label | `service: opsforge-api` |
+| Summary | `OpsForge API is down` |
+| Description | `Prometheus cannot scrape the OpsForge API metrics endpoint.` |
+
+The duration is `30s` because the local Prometheus scrape and evaluation intervals are both `15s`. This is long enough to avoid a one-scrape blip, while still keeping the oral exam demonstration short and understandable.
+
+## Alert Verification
+
+Check that Prometheus knows the rule:
+
+```text
+http://localhost:9090/api/v1/rules
+```
+
+Check active alerts:
+
+```text
+http://localhost:9090/api/v1/alerts
+```
+
+Useful PromQL query:
+
+```promql
+up{job="opsforge-api"}
+```
+
+Expected healthy result:
+
+```text
+1
+```
+
+## Outage Simulation
+
+Simulate an API outage by scaling only the API Deployment to zero:
+
+```powershell
+kubectl -n opsforge scale deployment/opsforge-api --replicas=0
+```
+
+After the alert duration plus scrape/evaluation time, Prometheus should show:
+
+- `up{job="opsforge-api"}` returning `0`;
+- `OpsForgeApiDown` in `pending` or `firing` state;
+- `/api/v1/alerts` showing the alert when firing.
+
+## Restore the API
+
+Restore the API immediately after the alert is observed:
+
+```powershell
+kubectl -n opsforge scale deployment/opsforge-api --replicas=1
+kubectl -n opsforge rollout status deployment/opsforge-api
+```
+
+Then verify:
+
+```powershell
+curl.exe -fsS http://localhost:8080/health
+curl.exe -fsS http://localhost:8080/metrics
+```
+
+Expected recovery:
+
+- API Pod returns to `1/1 Running`;
+- `/health` returns `{"status":"ok","service":"opsforge"}`;
+- `/metrics` returns OpsForge metrics;
+- `up{job="opsforge-api"}` returns `1`;
+- `OpsForgeApiDown` returns to inactive or disappears from active alerts.
+
+## Operational Interpretation
+
+`OpsForgeApiDown` means Prometheus cannot scrape the OpsForge API metrics endpoint.
+
+For this project, the operator should:
+
+1. check the API Pod status;
+2. check the API Deployment rollout;
+3. verify `/health`;
+4. restore the API replica if it was intentionally scaled down;
+5. investigate Pod logs or deployment events if it was not intentional.
+
+## Out of Scope for Phase 5A, 5B, 5C, and 5D
+
+Phase 5A, 5B, 5C, and 5D do not deploy:
 
 - Alertmanager;
-- alert rules.
+- Grafana alerting;
+- notification routing.
 
 Business/database metrics such as incident or alert counts are also deferred. They should be added only if they remain simple and do not require application refactoring.
 
-Alert/anomaly demonstration remains for a later Phase 5 slice.
+Further alert routing remains a possible future improvement only if explicitly selected.

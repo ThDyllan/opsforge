@@ -42,11 +42,17 @@ spec:
             - name: config
               mountPath: /etc/prometheus
               readOnly: true
+            - name: rules
+              mountPath: /etc/prometheus/rules
+              readOnly: true
             - name: prometheus-data
               mountPath: /prometheus
       volumes:
         - name: config
           configMap:
             name: prometheus-config
+        - name: rules
+          configMap:
+            name: prometheus-rules
         - name: prometheus-data
           emptyDir: {}

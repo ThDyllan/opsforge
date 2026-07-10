@@ -53,7 +53,7 @@ A dedicated `ORAL_PREPARATION.md` file will be created later during the exam doc
 - Phase 2 - CI/CD: validated.
 - Phase 3 - Backup and Security: validated.
 - Phase 4 - k3s/Kubernetes Deployment: validated.
-- Phase 5 - Monitoring: in progress; Phase 5A application metrics, Phase 5B Prometheus scraping, and Phase 5C Grafana dashboarding are locally verified.
+- Phase 5 - Monitoring: in progress; Phase 5A application metrics, Phase 5B Prometheus scraping, Phase 5C Grafana dashboarding, and Phase 5D alert/anomaly detection are locally verified.
 
 ## Maintenance Rule
 

@@ -2,13 +2,15 @@
 
 ## Status
 
-Phase 5C is implemented and locally verified. Phase 5 is not complete and is not user-validated.
+Phase 5D is implemented and locally verified. Phase 5 is technically complete locally, but it is not user-validated.
 
 Phase 5A adds a minimal Prometheus-compatible `/metrics` endpoint to the FastAPI application so Prometheus can scrape OpsForge in a later phase slice.
 
 Phase 5B deploys Prometheus inside k3d and verifies that it scrapes the Kubernetes-deployed OpsForge API through the internal Service.
 
 Phase 5C deploys Grafana inside k3d and verifies that the `OpsForge Monitoring` dashboard displays data from the existing Prometheus datasource.
+
+Phase 5D adds a Prometheus alert rule and verifies anomaly detection by simulating an OpsForge API outage, then restoring the API.
 
 ## Phase 5A Scope
 
@@ -50,6 +52,20 @@ Phase 5C covers Grafana dashboarding only:
 - access Grafana from Windows with local `kubectl port-forward`;
 - verify that the dashboard and panel queries return OpsForge metrics.
 
+## Phase 5D Scope
+
+Phase 5D covers Prometheus alerting and anomaly detection only:
+
+- add the Prometheus alert rule `OpsForgeApiDown`;
+- load the rule through a Prometheus rules ConfigMap;
+- restart the Prometheus Deployment safely so the rule is loaded;
+- verify the rule exists in Prometheus;
+- verify the alert is inactive while the API is healthy;
+- simulate an API outage by scaling the API Deployment to zero;
+- verify the alert fires;
+- restore the API to one replica;
+- verify the API, Prometheus, and Grafana return to a healthy state.
+
 ## Out of Scope
 
 Phase 5A does not include:
@@ -68,6 +84,8 @@ Phase 5A does not include:
 Phase 5B still does not include Grafana, Alertmanager, dashboard provisioning, alert rules, anomaly simulation, Ingress, TLS, or PostgreSQL exposure.
 
 Phase 5C still does not include Alertmanager, Grafana alerting, alert rules, anomaly simulation, Ingress, TLS, or PostgreSQL exposure.
+
+Phase 5D still does not include Alertmanager, Grafana alerting, notification routing, Ingress, TLS, or PostgreSQL exposure.
 
 ## Verification Checklist
 
@@ -109,8 +127,27 @@ Phase 5C still does not include Alertmanager, Grafana alerting, alert rules, ano
 - [x] HTTP latency p95 panel query returns data.
 - [x] HTTP request count by route panel query returns data.
 - [x] No PostgreSQL exposure was added.
-- [x] No Alertmanager or alerting resources were added.
-- [ ] The user reviews Phase 5A, Phase 5B, and Phase 5C.
+- [x] No Alertmanager or Grafana alerting resources were added.
+- [x] Prometheus alert rule ConfigMap is created.
+- [x] Prometheus config loads rule files.
+- [x] Prometheus Deployment mounts the rules ConfigMap.
+- [x] Prometheus rollout restart succeeds after the rule update.
+- [x] Prometheus recognizes the `OpsForgeApiDown` rule.
+- [x] `OpsForgeApiDown` is inactive while the API is healthy.
+- [x] API outage simulation scales `opsforge-api` to zero.
+- [x] `up{job="opsforge-api"}` returns `0` during the outage.
+- [x] `OpsForgeApiDown` reaches `firing` state during the outage.
+- [x] API is restored to one replica.
+- [x] API rollout succeeds after restore.
+- [x] `/health` works after restore.
+- [x] `/metrics` works after restore.
+- [x] `up{job="opsforge-api"}` returns `1` after restore.
+- [x] `OpsForgeApiDown` returns to inactive after restore.
+- [x] Prometheus remains operational after the alert test.
+- [x] Grafana remains operational after the alert test.
+- [x] No PostgreSQL exposure was added during Phase 5D.
+- [x] No Alertmanager or Grafana alert rules were added during Phase 5D.
+- [ ] The user reviews Phase 5A, Phase 5B, Phase 5C, and Phase 5D.
 
 ## Phase 5A Evidence
 
@@ -165,14 +202,57 @@ Phase 5C still does not include Alertmanager, Grafana alerting, alert rules, ano
 - PostgreSQL Service remained `ClusterIP` on port `5432/TCP`.
 - Screenshot evidence can be added later during Phase 6 exam documentation if needed.
 
+## Phase 5D Evidence
+
+- Alert rule name: `OpsForgeApiDown`.
+- Alert expression: `up{job="opsforge-api"} == 0`.
+- Alert duration: `30s`.
+- Alert labels:
+  - `severity: critical`;
+  - `service: opsforge-api`.
+- Alert annotations:
+  - summary: `OpsForge API is down`;
+  - description: `Prometheus cannot scrape the OpsForge API metrics endpoint.`
+- Prometheus reload method: Kubernetes `rollout restart` of `deployment/prometheus`.
+- Prometheus rollout after rule update: successful.
+- Prometheus recognized the rule through `/api/v1/rules`.
+- Healthy state before test:
+  - `up{job="opsforge-api"}` returned `1`;
+  - `OpsForgeApiDown` state was `inactive`;
+  - active alert API did not show the alert.
+- Outage simulation command:
+  `kubectl -n opsforge scale deployment/opsforge-api --replicas=0`.
+- Outage result:
+  - `up{job="opsforge-api"}` returned `0`;
+  - `OpsForgeApiDown` state became `firing`;
+  - Prometheus `/api/v1/alerts` showed `OpsForgeApiDown` as `firing`.
+- Restore command:
+  `kubectl -n opsforge scale deployment/opsforge-api --replicas=1`.
+- Restore rollout:
+  `deployment "opsforge-api" successfully rolled out`.
+- Healthy state after restore:
+  - API Pod ready `1/1`, status `Running`;
+  - `/health` returned `{"status":"ok","service":"opsforge"}`;
+  - `/metrics` returned OpsForge metrics;
+  - `up{job="opsforge-api"}` returned `1`;
+  - `OpsForgeApiDown` returned to `inactive`;
+  - active alert API no longer showed the alert.
+- Grafana after test:
+  - database status `ok`;
+  - datasource `Prometheus` still points to `http://prometheus.monitoring.svc.cluster.local:9090`;
+  - dashboard `OpsForge Monitoring` remains available;
+  - Grafana alert rule count remains `0`.
+- PostgreSQL Service remained `ClusterIP` on port `5432/TCP`.
+
 ## Remaining Phase 5 Work
 
-Later Phase 5 slices must still:
+Phase 5 technical implementation is locally complete. Remaining work:
 
-1. add a simple alert rule and anomaly demonstration;
-2. document final evidence;
-3. receive explicit user validation.
+1. user review;
+2. explicit user validation;
+3. final commit and push after validation;
+4. GitHub Actions verification after push.
 
 ## Validation Result
 
-Phase 5A, Phase 5B, and Phase 5C are locally verified. Phase 5 must not be marked complete until alert/anomaly evidence, final documentation, and explicit user validation are complete.
+Phase 5A, Phase 5B, Phase 5C, and Phase 5D are locally verified. Phase 5 must not be marked complete until explicit user validation is received.

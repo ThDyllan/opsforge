@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: monitoring
+data:
+  opsforge-alerts.yaml: |
+    groups:
+      - name: opsforge-alerts
+        rules:
+          - alert: OpsForgeApiDown
+            expr: up{job="opsforge-api"} == 0
+            for: 30s
+            labels:
+              severity: critical
+              service: opsforge-api
+            annotations:
+              summary: OpsForge API is down
+              description: Prometheus cannot scrape the OpsForge API metrics endpoint.
