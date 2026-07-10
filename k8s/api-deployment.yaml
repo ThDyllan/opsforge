@@ -43,7 +43,7 @@ spec:
                   key: POSTGRES_USER
       containers:
         - name: api
-          image: opsforge-api:phase4
+          image: opsforge-api:phase5
           imagePullPolicy: Never
           ports:
             - name: http

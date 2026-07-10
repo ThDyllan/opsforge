@@ -359,3 +359,37 @@ Using route templates instead of raw URLs avoids high-cardinality labels for dyn
 Prometheus can scrape the API in a later Phase 5 slice.
 
 Phase 5A does not deploy Prometheus, Grafana, dashboards, alert rules, or Alertmanager. It only prepares the application for monitoring.
+
+## Decision 018 - Deploy Prometheus Inside k3d With Static Scrape Configuration
+
+### Context
+
+Phase 5 must supervise the OpsForge service deployed in Kubernetes. The monitoring stack should prove that the Kubernetes-deployed API is observable, while remaining small enough to explain during the RNCP oral exam.
+
+### Decision
+
+Deploy Prometheus as a Kubernetes `Deployment` in a dedicated `monitoring` namespace.
+
+Expose Prometheus with a `ClusterIP` Service and access it locally with `kubectl port-forward` when needed.
+
+Configure Prometheus with a static scrape target:
+
+```text
+opsforge-api.opsforge.svc.cluster.local:8000
+```
+
+Use `/metrics` as the metrics path.
+
+### Reason
+
+Running Prometheus inside k3d demonstrates supervision of a Kubernetes-deployed service without introducing external monitoring infrastructure.
+
+Static scrape configuration avoids RBAC and Kubernetes service discovery complexity during this phase.
+
+Using `ClusterIP` plus port-forwarding avoids recreating the k3d cluster or adding a NodePort only for Prometheus.
+
+### Consequences
+
+Prometheus can scrape the OpsForge API through Kubernetes internal DNS.
+
+The Prometheus setup is local and intentionally minimal. It does not include Grafana, Alertmanager, persistent Prometheus storage, Kubernetes service discovery, Ingress, TLS, or production-grade monitoring operations.

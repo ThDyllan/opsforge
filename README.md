@@ -74,7 +74,9 @@ See `docs/KUBERNETES.md` and `docs/PHASE4_VERIFICATION.md` for the deployment pr
 
 Phase 5 is in progress. Phase 5A exposes a Prometheus-compatible `/metrics` endpoint with basic HTTP request count and latency metrics.
 
-Prometheus and Grafana are not deployed yet. See `docs/MONITORING.md` and `docs/PHASE5_VERIFICATION.md` for the monitoring strategy and current verification status.
+Phase 5B deploys Prometheus inside k3d and verifies that it scrapes the Kubernetes-deployed API. Grafana, dashboards, and alerting are not deployed yet.
+
+See `docs/MONITORING.md` and `docs/PHASE5_VERIFICATION.md` for the monitoring strategy and current verification status.
 
 ## API Routes
 

@@ -84,6 +84,16 @@ The first metrics slice tracks HTTP request count and latency only.
 
 Incident and alert count metrics are deferred because they would require database queries or additional application behavior. They can be considered later if they remain simple and do not require refactoring.
 
+### Phase 5B Prometheus Is Minimal and Local
+
+Phase 5B deploys Prometheus inside k3d with a static scrape configuration and a `ClusterIP` Service.
+
+Prometheus data uses ephemeral Pod storage. This is enough to demonstrate scraping and PromQL during the RNCP phase, but it is not a durable monitoring data store.
+
+Prometheus is accessed from Windows with `kubectl port-forward` instead of NodePort or Ingress. This avoids cluster recreation and extra exposure, but it is a local demonstration pattern rather than production access.
+
+Kubernetes service discovery, RBAC-based target discovery, Alertmanager, Grafana dashboards, and alert/anomaly demonstration remain deferred to later Phase 5 slices.
+
 ## Phase 3 Guardrails
 
 Phase 3 should implement backup/restore and security documentation.
@@ -105,7 +115,7 @@ These capabilities remain out of scope unless the user explicitly decides otherw
 
 ### Phase 5
 
-- Deploy Prometheus and Grafana inside k3d.
+- Deploy Grafana inside k3d.
 - Decide the safest local Grafana access method.
 - Add a simple alert rule and anomaly demonstration.
 

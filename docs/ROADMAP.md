@@ -88,7 +88,7 @@ Status: completed and explicitly validated by the user on 2026-07-09. Phase 4A w
 
 ## Phase 5 - Monitoring
 
-Status: in progress. Phase 5A adds a minimal Prometheus-compatible `/metrics` endpoint to the API. Prometheus, Grafana, dashboarding, alerting, anomaly demonstration, and explicit user validation remain pending.
+Status: in progress. Phase 5A adds a minimal Prometheus-compatible `/metrics` endpoint to the API. Phase 5B deploys Prometheus inside k3d and verifies that it scrapes the Kubernetes-deployed API. Grafana, dashboarding, alerting, anomaly demonstration, and explicit user validation remain pending.
 
 ### Scope
 
