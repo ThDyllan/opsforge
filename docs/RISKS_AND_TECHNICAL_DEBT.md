@@ -94,6 +94,18 @@ Prometheus is accessed from Windows with `kubectl port-forward` instead of NodeP
 
 Kubernetes service discovery, RBAC-based target discovery, Alertmanager, Grafana dashboards, and alert/anomaly demonstration remain deferred to later Phase 5 slices.
 
+### Phase 5C Grafana Is Minimal and Local
+
+Phase 5C deploys Grafana inside k3d with a provisioned Prometheus datasource and a provisioned `OpsForge Monitoring` dashboard.
+
+Grafana is exposed only through a `ClusterIP` Service and local `kubectl port-forward`. This is appropriate for the local RNCP demo, but it is not a production access model.
+
+The local demo uses Grafana's default `admin/admin` credentials. This must be explained as local-only and not production-safe.
+
+Grafana does not use persistent storage in this phase. The dashboard and datasource are reproducible from ConfigMaps, but any manual UI changes inside Grafana would not be treated as durable project state.
+
+Grafana alerting, Alertmanager, notification routing, TLS, Ingress, authentication hardening, and production dashboard governance remain out of scope.
+
 ## Phase 3 Guardrails
 
 Phase 3 should implement backup/restore and security documentation.
@@ -115,8 +127,6 @@ These capabilities remain out of scope unless the user explicitly decides otherw
 
 ### Phase 5
 
-- Deploy Grafana inside k3d.
-- Decide the safest local Grafana access method.
 - Add a simple alert rule and anomaly demonstration.
 
 ## Oral Exam Note

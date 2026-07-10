@@ -393,3 +393,45 @@ Using `ClusterIP` plus port-forwarding avoids recreating the k3d cluster or addi
 Prometheus can scrape the OpsForge API through Kubernetes internal DNS.
 
 The Prometheus setup is local and intentionally minimal. It does not include Grafana, Alertmanager, persistent Prometheus storage, Kubernetes service discovery, Ingress, TLS, or production-grade monitoring operations.
+
+## Decision 019 - Deploy Grafana Inside k3d With Provisioned Dashboard
+
+### Context
+
+Phase 5 must make OpsForge supervision visible and demonstrable for the RNCP jury. Prometheus scraping already proves metrics collection, but Grafana is needed to show a readable monitoring dashboard.
+
+### Decision
+
+Deploy Grafana as a Kubernetes `Deployment` in the existing `monitoring` namespace.
+
+Provision:
+
+- the Prometheus datasource with a ConfigMap;
+- a dashboard provider with a ConfigMap;
+- the `OpsForge Monitoring` dashboard with a ConfigMap.
+
+Expose Grafana with a `ClusterIP` Service and access it locally with:
+
+```powershell
+kubectl -n monitoring port-forward svc/grafana 3000:3000
+```
+
+Use the internal Prometheus datasource URL:
+
+```text
+http://prometheus.monitoring.svc.cluster.local:9090
+```
+
+### Reason
+
+This keeps the monitoring stack inside Kubernetes and shows that the Kubernetes-deployed OpsForge API is supervised through Prometheus and Grafana.
+
+ConfigMap provisioning keeps the dashboard reproducible without Helm or manual UI-only setup.
+
+ClusterIP plus port-forwarding avoids changing k3d port mappings, adding Ingress, or recreating the cluster.
+
+### Consequences
+
+Grafana is available for local demonstration and displays OpsForge API availability, request volume, request status, latency, and route-level request counts.
+
+The setup intentionally does not add Grafana alerting, Alertmanager, Loki, Ingress, TLS, persistent Grafana storage, authentication hardening, or production monitoring operations.

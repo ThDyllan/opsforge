@@ -115,15 +115,82 @@ Expected result:
 - `up{job="opsforge-api"}` returns `1`;
 - OpsForge HTTP metrics return at least one time series after requests have reached the API.
 
-## Out of Scope for Phase 5A and 5B
+## Phase 5C Grafana Dashboard
 
-Phase 5A and 5B do not deploy:
+Phase 5C deploys Grafana inside k3d in the `monitoring` namespace.
 
-- Grafana;
+Grafana uses the internal Prometheus Service as its datasource:
+
+```text
+http://prometheus.monitoring.svc.cluster.local:9090
+```
+
+The datasource and dashboard are provisioned with Kubernetes ConfigMaps so the setup is reproducible from manifests.
+
+Grafana is exposed with a `ClusterIP` Service. It is accessed from Windows with port-forwarding:
+
+```powershell
+kubectl -n monitoring port-forward svc/grafana 3000:3000
+```
+
+Then open:
+
+```text
+http://localhost:3000
+```
+
+For this local demonstration, Grafana uses the default local credentials:
+
+```text
+admin / admin
+```
+
+This is acceptable only for the local RNCP demo environment. It is not production-safe and must not be presented as a real security strategy.
+
+## OpsForge Monitoring Dashboard
+
+The provisioned dashboard is named:
+
+```text
+OpsForge Monitoring
+```
+
+It contains these panels:
+
+| Panel | PromQL query |
+| --- | --- |
+| API availability | `up{job="opsforge-api"}` |
+| HTTP request volume | `sum(rate(opsforge_http_requests_total[1m]))` |
+| HTTP request count by status | `sum by (status_code) (opsforge_http_requests_total)` |
+| HTTP latency p95 | `histogram_quantile(0.95, sum(rate(opsforge_http_request_duration_seconds_bucket[5m])) by (le))` |
+| HTTP request count by route | `sum by (route) (opsforge_http_requests_total)` |
+
+The route panel is safe because OpsForge uses route-template labels such as `/health` and `/api/services/{service_id}`, not raw dynamic URLs.
+
+## Why ClusterIP and Port-Forward Are Used
+
+Prometheus and Grafana remain internal Kubernetes services. Local access uses `kubectl port-forward`.
+
+This avoids:
+
+- changing the k3d cluster port mappings;
+- recreating the cluster;
+- adding Ingress or TLS before they are needed;
+- exposing monitoring tools more widely than required for the local demo.
+
+## Remaining Phase 5 Work
+
+Phase 5D still needs to add a simple alert rule and anomaly demonstration.
+
+Alertmanager, Grafana alerting, and notification routing remain out of scope unless explicitly selected later.
+
+## Out of Scope for Phase 5A, 5B, and 5C
+
+Phase 5A, 5B, and 5C do not deploy:
+
 - Alertmanager;
-- dashboards;
 - alert rules.
 
 Business/database metrics such as incident or alert counts are also deferred. They should be added only if they remain simple and do not require application refactoring.
 
-Grafana dashboards and alert/anomaly demonstration remain for later Phase 5 slices.
+Alert/anomaly demonstration remains for a later Phase 5 slice.
