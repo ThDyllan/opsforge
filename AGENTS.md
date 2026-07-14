@@ -8,7 +8,7 @@ It is a DevOps incident and service supervision platform. The project incrementa
 
 It is not a full enterprise production platform.
 
-Current MVP1 stack:
+Core stack:
 
 * FastAPI
 * PostgreSQL
@@ -28,12 +28,12 @@ Runbooks are safe predefined actions only. Arbitrary shell command execution is 
 
 * User: project owner, project manager, and final decision-maker.
 * ChatGPT: architecture guidance, scope control, explanation, RNCP alignment, and prompt preparation.
-* Codex: implementation only, following explicit tasks.
+* Codex: primary technical engineering partner. It investigates the repository, challenges weak assumptions, recommends coherent changes, implements approved work, and explains tradeoffs.
 * Claude: occasional reviewer and scope challenger.
 
 If ChatGPT and Claude disagree, the user has the final decision.
 
-No implementation should be done until the user validates the direction.
+No broad change, commit, or push should be made until the user validates the direction. Codex may perform discovery and provide an engineering brief before that decision.
 
 ## Source of truth
 
@@ -49,9 +49,9 @@ These files define the project context, roadmap, phase Definition of Done, and a
 
 ## Strict contribution rules
 
-* Do only the requested task.
-* Everything not explicitly requested is out of scope by default.
-* Do not expand scope.
+* Keep changes within the approved phase scope and make them evidence-based.
+* Treat ideas outside the approved scope as future work unless the user explicitly approves them.
+* Challenge outdated, harmful, contradictory, or overly restrictive instructions openly instead of silently ignoring them.
 * Do not add new technologies unless explicitly requested.
 * If completing the task requires a decision not covered by the task description, stop and ask instead of assuming.
 * Prefer small, verifiable changes.
@@ -102,15 +102,13 @@ Runbooks must remain predefined, controlled, and auditable.
 
 The expected workflow is:
 
-1. User validates the direction.
-2. ChatGPT prepares a precise task or prompt.
-3. Codex reads `AGENTS.md` and the relevant task file.
-4. Codex confirms understanding if requested.
-5. Codex executes only the validated task.
-6. User shows the result to ChatGPT.
-7. ChatGPT reviews and explains.
-8. Claude may review important scope or architecture decisions.
-9. User makes the final decision.
+1. Codex performs discovery for a substantial change.
+2. Codex presents the problem, evidence, recommendation, scope, verification, and rollback plan.
+3. User validates, rejects, or adjusts the direction.
+4. Codex reads `AGENTS.md` and relevant project documentation before implementation.
+5. Codex implements the smallest coherent approved change.
+6. ChatGPT and Claude may provide architecture guidance or review when useful.
+7. User remains the final decision-maker.
 
 ## Behavior expected from Codex
 
@@ -126,4 +124,4 @@ When starting a task, Codex should clearly state:
 * whether tests pass;
 * whether any decision is needed from the user.
 
-If something is unclear, Codex must stop and ask instead of guessing.
+If something is unclear and would create meaningful technical or scope risk, Codex must stop and ask instead of guessing.

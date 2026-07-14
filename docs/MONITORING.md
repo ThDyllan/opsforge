@@ -35,11 +35,11 @@ Current custom metric names:
 
 Route labels use FastAPI route templates when available, such as `/api/services/{service_id}`, instead of raw dynamic URLs. This avoids high-cardinality labels.
 
-## Planned Phase 5 Architecture
+## Implemented Phase 5 Architecture
 
 Phase 5 uses Prometheus and Grafana inside the local k3d cluster so the monitoring stack supervises the Kubernetes-deployed OpsForge service.
 
-The intended approach is:
+The implemented approach is:
 
 - keep the OpsForge application in the `opsforge` namespace;
 - deploy Prometheus and Grafana in a dedicated `monitoring` namespace;
@@ -177,12 +177,6 @@ This avoids:
 - recreating the cluster;
 - adding Ingress or TLS before they are needed;
 - exposing monitoring tools more widely than required for the local demo.
-
-## Remaining Phase 5 Work
-
-Phase 5D adds a simple Prometheus alert rule and anomaly demonstration.
-
-Alertmanager, Grafana alerting, and notification routing remain out of scope unless explicitly selected later.
 
 ## Phase 5D Prometheus Alert Rule
 

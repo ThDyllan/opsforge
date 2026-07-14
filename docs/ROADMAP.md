@@ -105,10 +105,16 @@ Status: completed and explicitly validated by the user on 2026-07-14. Phase 5A a
 - Monitoring setup is documented.
 - The user explicitly validates Phase 5 as complete.
 
-## Phase 6 - Exam Documentation
+## Phase 6 - Operational Product and Exam Evidence
+
+Status: in progress. The first correctness, dashboard, reliability, and CI verification slice is locally complete; final user validation requires GitHub Actions evidence and the remaining exam evidence.
 
 ### Scope
 
+- Domain integrity safeguards and negative tests.
+- A focused Jinja incident workspace that makes the operational flow visible.
+- PostgreSQL-aware readiness and non-root container execution.
+- SQLite unit tests plus PostgreSQL integration coverage in CI.
 - Architecture diagram
 - Deployment procedure
 - Backup/restore procedure
@@ -120,6 +126,10 @@ Status: completed and explicitly validated by the user on 2026-07-14. Phase 5A a
 ### Definition of Done
 
 - Documentation explains the project clearly.
+- Invalid service, alert, incident, and runbook relationships are rejected or safely audited.
+- The dashboard demonstrates the `Service -> Alert -> Incident -> Runbook -> AuditLog` flow.
+- `/health` and `/ready` have separate, documented liveness and readiness roles.
+- SQLite unit tests and the PostgreSQL integration test pass locally and in GitHub Actions.
 - Architecture is documented.
 - Deployment is documented.
 - Backup/restore is documented.

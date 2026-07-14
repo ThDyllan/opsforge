@@ -10,12 +10,12 @@ from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
-from sqlalchemy import func, select
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy import func, select, text
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import Session, selectinload
 
 from .database import Base, SessionLocal, engine, get_db
-from .models import Alert, AuditLog, Incident, Runbook, Service, utc_now
+from .models import Alert, AuditLog, Incident, Runbook, RunbookExecution, Service, utc_now
 from .runbooks import execute_predefined_runbook
 from .schemas import (
     AlertCreate,
@@ -92,6 +92,15 @@ def health() -> dict[str, str]:
     return {"status": "ok", "service": "opsforge"}
 
 
+@app.get("/ready")
+def ready(db: Session = Depends(get_db)) -> dict[str, str]:
+    try:
+        db.execute(text("SELECT 1"))
+    except SQLAlchemyError as exc:
+        raise HTTPException(status_code=503, detail="Database is not ready.") from exc
+    return {"status": "ready", "service": "opsforge"}
+
+
 @app.get("/metrics", include_in_schema=False)
 def metrics() -> Response:
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
@@ -117,10 +126,23 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         select(Alert).order_by(Alert.received_at.desc()).limit(5)
     ).all()
     incidents = db.scalars(
-        select(Incident).where(Incident.status != "resolved").order_by(Incident.created_at.desc())
+        select(Incident)
+        .options(selectinload(Incident.service), selectinload(Incident.source_alert))
+        .where(Incident.status != "resolved")
+        .order_by(Incident.created_at.desc())
     ).all()
     runbooks = db.scalars(
         select(Runbook).where(Runbook.enabled.is_(True)).order_by(Runbook.name)
+    ).all()
+    recent_executions = db.scalars(
+        select(RunbookExecution)
+        .options(
+            selectinload(RunbookExecution.runbook),
+            selectinload(RunbookExecution.service),
+            selectinload(RunbookExecution.incident),
+        )
+        .order_by(RunbookExecution.finished_at.desc())
+        .limit(6)
     ).all()
 
     return templates.TemplateResponse(
@@ -135,6 +157,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
             "recent_alerts": recent_alerts,
             "incidents": incidents,
             "runbooks": runbooks,
+            "recent_executions": recent_executions,
         },
     )
 
@@ -234,6 +257,15 @@ def create_incident(payload: IncidentCreate, db: Session = Depends(get_db)):
         source_alert = db.get(Alert, data["source_alert_id"])
         if source_alert is None:
             raise HTTPException(status_code=404, detail="Source alert not found.")
+        if (
+            data["service_id"] is not None
+            and source_alert.service_id is not None
+            and data["service_id"] != source_alert.service_id
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail="Incident service must match the source alert service.",
+            )
         if data["service_id"] is None and source_alert.service_id is not None:
             data["service_id"] = source_alert.service_id
 

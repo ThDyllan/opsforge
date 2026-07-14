@@ -473,3 +473,89 @@ OpsForge can demonstrate an outage scenario by scaling the API Deployment to zer
 The alert has no external notification channel. Operators must check Prometheus during the local demonstration.
 
 Future work may add Alertmanager or notification routing only if explicitly selected.
+
+## Decision 021 - Keep Fast SQLite Tests and Add a PostgreSQL Integration Test
+
+### Context
+
+The original pytest suite used only in-memory SQLite, while OpsForge runs on PostgreSQL. SQLite remains useful for fast isolated feedback, but it cannot prove all PostgreSQL behavior.
+
+### Decision
+
+Keep `tests/test_app.py` as the fast SQLite unit suite. Add `tests/postgres_integration.py` as a separately invoked core-flow test against PostgreSQL.
+
+GitHub Actions starts a PostgreSQL service container and runs this integration test in a separate pytest process after the SQLite suite.
+
+### Reason
+
+Separate processes prevent the SQLite test environment from overriding the PostgreSQL database configuration. The approach improves confidence in the main business flow without making every unit test dependent on a database service.
+
+### Consequences
+
+CI takes slightly longer and contains two explicit test steps. The local PostgreSQL integration test is non-destructive: it prepares tables if needed and creates unique data without dropping existing tables.
+
+This is focused integration coverage, not a claim of exhaustive PostgreSQL compatibility testing.
+
+## Decision 022 - Separate Process Liveness From PostgreSQL Readiness
+
+### Context
+
+The original Kubernetes liveness and readiness probes both used `/health`, which only confirmed that the FastAPI process responded. An API process with no database connectivity could therefore remain ready to receive traffic.
+
+### Decision
+
+Keep `/health` as the process liveness endpoint. Add `/ready`, which executes `SELECT 1` through SQLAlchemy and returns `503` when PostgreSQL is unavailable.
+
+Kubernetes uses `/ready` for readiness and continues to use `/health` for liveness.
+
+### Reason
+
+The two checks answer different operational questions. Restarting a live process does not fix every database outage, while removing an unready API from traffic is appropriate.
+
+### Consequences
+
+The project can demonstrate a controlled PostgreSQL outage where `/health` remains `200` and `/ready` becomes `503`. The checks remain intentionally simple and do not introduce a broader dependency health framework.
+
+## Decision 023 - Harden Local API Runtime Defaults
+
+### Context
+
+The API image ran as root, Docker builds sent unnecessary repository material as context, and Docker Compose published PostgreSQL on every host interface by default.
+
+### Decision
+
+Run the API image as a dedicated non-root `opsforge` user, add a Docker healthcheck for `/health`, add a `.dockerignore`, and bind the Docker Compose PostgreSQL port to `127.0.0.1` by default.
+
+### Reason
+
+These changes reduce unnecessary privileges, avoid including local artifacts and documentation in the image build context, and prevent accidental LAN exposure of the local demonstration database.
+
+### Consequences
+
+The official Compose test command continues to work under the non-root user. Local tools can still reach PostgreSQL through `127.0.0.1:5432`, while remote devices cannot use the default binding.
+
+This is practical local hardening, not a claim of production container security or complete network isolation.
+
+## Decision 024 - Pin the Tested Application Dependencies and Base Image
+
+### Context
+
+Version ranges in `requirements.txt` and the mutable `python:3.12-slim` tag allowed local and CI builds to resolve different package and operating-system versions over time.
+
+### Decision
+
+Pin the full Python dependency set resolved by the tested Phase 6 image. Pin the Python slim base image to the tested digest:
+
+```text
+python:3.12-slim@sha256:c3d81d25b3154142b0b42eb1e61300024426268edeb5b5a26dd7ddf64d9daf28
+```
+
+### Reason
+
+The same Dockerfile and requirements file should produce the same dependency set during local builds and CI. This makes test, Trivy, and exam evidence reproducible instead of date-dependent.
+
+### Consequences
+
+Dependency and base-image updates now require a deliberate review, rebuild, test run, and vulnerability scan.
+
+Pinning stabilizes the tested image; it does not automatically remove vulnerabilities. The current refreshed image scan still reports `19 HIGH` and `3 CRITICAL` Debian findings without known fixes.

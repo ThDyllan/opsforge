@@ -141,16 +141,16 @@ It does not claim that data survives `k3d cluster delete opsforge`, node loss, w
 Build the application image locally:
 
 ```powershell
-docker build -t opsforge-api:phase4 .
+docker build -t opsforge-api:phase6 .
 ```
 
 Import it directly into the k3d cluster:
 
 ```powershell
-k3d image import opsforge-api:phase4 --cluster opsforge
+k3d image import opsforge-api:phase6 --cluster opsforge
 ```
 
-The API Deployment uses the exact image `opsforge-api:phase4` with `imagePullPolicy: Never`. Direct import keeps Phase 4 local and avoids adding registry publishing, credentials, or registry infrastructure.
+The current API Deployment uses `opsforge-api:phase6` with `imagePullPolicy: Never`. Direct import keeps the local Kubernetes workflow simple and avoids adding registry publishing, credentials, or registry infrastructure.
 
 The image must be rebuilt and re-imported after application changes.
 
@@ -170,7 +170,12 @@ The API Deployment uses one replica and listens on container port 8000.
 
 Before FastAPI starts, a small init container based on `postgres:16-alpine` waits for the internal PostgreSQL Service with `pg_isready`. This replaces Docker Compose `depends_on` without modifying application logic.
 
-The API container has readiness and liveness probes on `/health`. The current endpoint verifies that the API process responds; it is not a continuous database-aware health check.
+The API container uses two probes:
+
+- liveness uses `/health` to confirm the FastAPI process responds;
+- readiness uses `/ready` to confirm that the application can query PostgreSQL.
+
+This keeps a live process from receiving Kubernetes traffic when its required database is unavailable.
 
 ## API NodePort
 
@@ -185,6 +190,7 @@ PostgreSQL remains available only through its internal ClusterIP Service and is 
 ```powershell
 kubectl -n opsforge get deployments,pods,svc,pvc
 curl.exe -fsS http://localhost:8080/health
+curl.exe -fsS http://localhost:8080/ready
 curl.exe -sS -o NUL -w "%{http_code}" http://localhost:8080/dashboard
 ```
 
@@ -194,6 +200,7 @@ Expected results:
 - the API Pod reports `Running` and `1/1` ready;
 - Service `opsforge-api` reports `8000:30080/TCP`;
 - `/health` returns `{"status":"ok","service":"opsforge"}`;
+- `/ready` returns `{"status":"ready","service":"opsforge"}`;
 - `/dashboard` returns HTTP 200.
 
 ## Phase 4 Validation Status

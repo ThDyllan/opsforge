@@ -24,15 +24,16 @@ It performs these steps:
 1. Checkout the repository.
 2. Set up Python 3.12.
 3. Install dependencies from `requirements.txt`.
-4. Run `pytest`.
-5. Build the Docker image from the project `Dockerfile`.
-6. Run a Trivy image scan against the built Docker image.
+4. Run the fast SQLite unit tests.
+5. Run a PostgreSQL integration test against a GitHub Actions service container.
+6. Build the Docker image from the project `Dockerfile`.
+7. Run a Trivy image scan against the built Docker image.
 
 ## Why Tests Run Before Docker Build
 
-Tests run before the Docker build so basic application behavior is verified early.
+Tests run before the Docker build so application behavior is verified early.
 
-If tests fail, the pipeline stops before spending time building and scanning a Docker image. This keeps the CI feedback loop simple and easy to explain.
+SQLite tests provide fast feedback, while the separate PostgreSQL integration test proves the core `Service -> Alert -> Incident -> Runbook -> AuditLog` flow against the runtime database engine. If either test step fails, the pipeline stops before spending time building and scanning a Docker image.
 
 ## Docker Image Build
 
@@ -64,7 +65,7 @@ For this first Phase 2 implementation, the Trivy scan is non-blocking.
 
 The scan is configured to report findings, but the workflow continues even if Trivy detects vulnerabilities.
 
-This is intentional for MVP1 because the project does not yet define a formal vulnerability acceptance policy. Phase 3 will define stricter security expectations, including how security findings should be handled.
+This remains intentional after the Phase 3 security review. Findings are visible and documented, but the local educational project has not defined a justified blocking threshold. A future policy change must define its acceptance criteria explicitly.
 
 ## Phase 2 Validation
 
@@ -90,6 +91,6 @@ Workflow run details:
 
 The test step passed, the Docker image build succeeded, and the Trivy image scan ran and appeared in the GitHub Actions logs.
 
-The Trivy annotation / exit code 1 behavior is non-blocking by design for Phase 2 because the workflow uses `continue-on-error: true`. The scan findings remain visible, while stricter vulnerability policy is deferred to Phase 3.
+The Trivy annotation / exit code 1 behavior is non-blocking by design because the workflow uses `continue-on-error: true`. The scan findings remain visible; Phase 3 documented the choice to keep this policy non-blocking for the current local scope.
 
 The user explicitly validated Phase 2 after this successful GitHub Actions run.

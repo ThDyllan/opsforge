@@ -11,7 +11,7 @@ The goal is not only to deliver a working project. The process must also ensure 
 - User: project owner and final decision-maker. The user validates scope, direction, and phase completion.
 - ChatGPT: provides architecture guidance, scope control, explanation, RNCP alignment, and prompt preparation.
 - Claude: provides review, scope challenge, and risk analysis.
-- Codex: implementation assistant that executes explicit, validated tasks only.
+- Codex: primary technical engineering partner. It performs discovery, gives an engineering recommendation, implements approved work, and explains the resulting tradeoffs.
 - Repository documentation: source of truth for project state, decisions, evidence, and scope.
 
 ## Before Starting a Phase
@@ -28,13 +28,13 @@ The goal is not only to deliver a working project. The process must also ensure 
 - [ ] Confirm the phase objective and Definition of Done.
 - [ ] Ask for review or challenge if useful.
 - [ ] Decide the exact scope with the user.
-- [ ] Prepare a strict Codex prompt.
-- [ ] Do not implement until the user validates the direction.
+- [ ] Prepare an engineering brief with evidence, recommendation, verification plan, and rollback path.
+- [ ] Do not make a broad implementation change until the user validates the direction.
 
 ## During a Phase
 
 - [ ] Keep changes small and verifiable.
-- [ ] Do not expand scope.
+- [ ] Do not expand scope without explicitly recording and validating the reason.
 - [ ] Stop and ask if a decision is not covered.
 - [ ] Update documentation when behavior, decisions, or validation evidence changes.
 - [ ] Preserve the distinction between educational MVP scope and production-ready scope.

@@ -8,15 +8,15 @@ These items are documented tradeoffs in the current project scope. They should b
 
 ## Current Known Technical Debts
 
-### Tests Use SQLite While Runtime Uses PostgreSQL
+### Test Coverage Uses SQLite Fast Feedback and Focused PostgreSQL Integration
 
-The current pytest suite uses an in-memory SQLite database, while the application runtime uses PostgreSQL.
+The fast unit suite uses an in-memory SQLite database, while the application runtime uses PostgreSQL. A separate PostgreSQL integration test now verifies the core flow in Docker Compose and GitHub Actions.
 
-This was acceptable for MVP1 because it kept tests fast, independent from Docker services, and easy to run and explain.
+This keeps most feedback fast, isolated, and easy to run while adding an explicit runtime-database check.
 
-The limitation is that SQLite tests do not fully reproduce PostgreSQL-specific behavior, including differences in SQL syntax, data types, constraints, transactions, and connection behavior.
+The remaining limitation is that one core-flow test does not fully reproduce every PostgreSQL-specific behavior, such as advanced transactions, concurrent connections, or every future query shape.
 
-A possible future improvement is to add PostgreSQL integration tests using Docker Compose or a PostgreSQL service in CI. This is not required unless explicitly selected for a later task.
+A future improvement would be targeted PostgreSQL coverage whenever a later feature introduces database-specific behavior. Broad duplication of every SQLite test is not necessary now.
 
 ### metadata.create_all() Is Used Instead of Migrations
 
@@ -42,6 +42,20 @@ Phase 3 reviewed this policy and intentionally keeps it non-blocking for the cur
 
 A stricter blocking policy can be considered later if the deployment scope or risk tolerance changes.
 
+The local Phase 6 scan of the pinned image reported `19 HIGH` and `3 CRITICAL` Debian findings. Trivy reported no known fix for those findings in the refreshed base image. This is visible security debt, not a green-security claim.
+
+### Pinned Dependencies Require Deliberate Maintenance
+
+The Docker base digest and Python dependency set are pinned so local and CI builds are reproducible.
+
+This prevents unreviewed version drift, but it also means updates must be made intentionally. A dependency or base-image refresh should include Docker build, SQLite tests, PostgreSQL integration testing, and a new Trivy scan before it is accepted.
+
+### TestClient Deprecation Warning
+
+The current test suite passes with one `StarletteDeprecationWarning` from `fastapi.testclient`. The warning comes from the current FastAPI/Starlette test-client path, not from a failed assertion.
+
+Replacing the test harness with an async HTTP client would add complexity without improving the current domain evidence. The warning is tracked and should be revisited when the framework provides a stable replacement path or when the test architecture otherwise needs to change.
+
 ### Local Backups Are Not a Production Backup Strategy
 
 Phase 3 stores database backups only in the local `backups/` directory. Generated files are ignored by Git but are not encrypted, copied offsite, scheduled, or automatically rotated.
@@ -66,17 +80,17 @@ Phase 4 imports the API image directly into k3d without a registry. Each rebuilt
 
 This avoids registry scope in Phase 4 but is not an automated image delivery pipeline.
 
-### The API Health Endpoint Is Not Database-Aware
+### Readiness Checks Only Basic Database Connectivity
 
-The Kubernetes API probes use the existing `/health` endpoint. It confirms that the FastAPI process responds, but it does not continuously verify PostgreSQL connectivity.
+`/health` intentionally checks only process liveness. `/ready` now runs `SELECT 1` against PostgreSQL and Kubernetes uses it as the readiness probe.
 
-An init container waits for PostgreSQL before API startup, and the application connects to PostgreSQL during its startup lifecycle. A dedicated database-aware readiness endpoint remains a possible later improvement and is not added during Phase 4 because it would change application logic.
+This proves basic database reachability but does not check every business dependency or query. That deeper dependency model remains out of scope.
 
-### Phase 5A Metrics Are Not Full Monitoring Yet
+### Metrics Are Technical Rather Than Business-Level
 
-Phase 5A exposes Prometheus-compatible application metrics at `/metrics`, but Prometheus and Grafana are not deployed yet.
+Prometheus and Grafana are deployed and Phase 5 is validated. The current custom metrics remain HTTP request count and latency only.
 
-This means Phase 5A prepares the API for scraping but does not by itself satisfy the full monitoring Definition of Done. Later Phase 5 work must still prove scraping, dashboarding, alerting, and anomaly detection against the deployed service.
+Incident and alert count metrics are not collected because they would require additional database queries or application behavior.
 
 ### Phase 5A Does Not Include Business Metrics
 
@@ -92,7 +106,7 @@ Prometheus data uses ephemeral Pod storage. This is enough to demonstrate scrapi
 
 Prometheus is accessed from Windows with `kubectl port-forward` instead of NodePort or Ingress. This avoids cluster recreation and extra exposure, but it is a local demonstration pattern rather than production access.
 
-Kubernetes service discovery, RBAC-based target discovery, Alertmanager, Grafana dashboards, and alert/anomaly demonstration remain deferred to later Phase 5 slices.
+Kubernetes service discovery, RBAC-based target discovery, Alertmanager, and persistent Prometheus storage remain out of scope.
 
 ### Phase 5C Grafana Is Minimal and Local
 
@@ -104,7 +118,7 @@ The local demo uses Grafana's default `admin/admin` credentials. This must be ex
 
 Grafana does not use persistent storage in this phase. The dashboard and datasource are reproducible from ConfigMaps, but any manual UI changes inside Grafana would not be treated as durable project state.
 
-Grafana alerting, Alertmanager, notification routing, TLS, Ingress, authentication hardening, and production dashboard governance remain out of scope.
+Grafana alerting, Alertmanager, notification routing, TLS, Ingress, authentication hardening, and production dashboard governance remain out of scope. Prometheus alert-rule detection is implemented separately through `OpsForgeApiDown`.
 
 ### Phase 5D Alerting Has No Notification Routing
 
@@ -120,9 +134,9 @@ kubectl -n opsforge scale deployment/opsforge-api --replicas=1
 
 The alert should be explained as a supervision demonstration, not as a complete production incident response system.
 
-## Phase 3 Guardrails
+## Current Guardrails
 
-Phase 3 should implement backup/restore and security documentation.
+Backup/restore and security documentation are complete. Future changes must preserve their simple, explainable local scope unless the user explicitly expands it.
 
 Backup and restore scripts, if created, must remain simple, readable, and explainable in approximately 30 seconds during the oral exam.
 
@@ -139,9 +153,10 @@ These capabilities remain out of scope unless the user explicitly decides otherw
 
 ## Upcoming Decisions to Remember
 
-### Phase 5
-
-- Review and explicitly validate Phase 5 once final checks pass.
+- Decide whether the final dossier needs recreated screenshots from the current home-PC environment.
+- Define a Trivy blocking threshold only when a specific risk policy is justified.
+- Decide whether a registry-based deployment path is worth adding after the exam scope is frozen.
+- Consider business metrics only if they can remain simple and demonstrably useful.
 
 ## Oral Exam Note
 

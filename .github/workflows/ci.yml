@@ -12,6 +12,21 @@ jobs:
     name: Test, build, and scan
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: opsforge
+          POSTGRES_PASSWORD: opsforge
+          POSTGRES_DB: opsforge
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U opsforge -d opsforge"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
       IMAGE_NAME: opsforge-api
       IMAGE_TAG: ${{ github.sha }}
@@ -32,8 +47,13 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
-      - name: Run tests
-        run: pytest
+      - name: Run SQLite unit tests
+        run: pytest tests/test_app.py
+
+      - name: Run PostgreSQL integration test
+        env:
+          DATABASE_URL: postgresql+psycopg://opsforge:opsforge@127.0.0.1:5432/opsforge
+        run: pytest tests/postgres_integration.py
 
       - name: Build Docker image
         run: docker build -t "${IMAGE_NAME}:${IMAGE_TAG}" .

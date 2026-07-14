@@ -12,13 +12,13 @@ Run:
 
 ```powershell
 git status
-git pull
+git pull --ff-only
 ```
 
 Checklist:
 
 - [ ] Use `git status` to check whether the local repository contains uncommitted changes.
-- [ ] Use `git pull` to synchronize the local repository with GitHub.
+- [ ] Use `git pull --ff-only` to synchronize the local repository with GitHub without creating an unexpected merge commit.
 - [ ] Confirm that the starting state is clear before beginning phase work.
 
 A new phase should not start from an unclear or dirty state unless the user explicitly decides what to do with the pending changes.
@@ -36,12 +36,12 @@ Run the standard commands after the phase Definition of Done has been verified a
 
 ```powershell
 git status
-git add .
+git add <reviewed files>
 git commit -m "Validate Phase X <short phase name>"
 git push
 ```
 
-Use `git status` to review the final changes before staging them. The commit must represent the validated phase clearly. After `git push`, check the GitHub Actions result.
+Use `git status` and `git diff --check` to review the final changes before staging explicit paths. Do not use `git add .`, because an ignored/local artifact or unrelated work should never enter a phase commit accidentally. The commit must represent the validated phase clearly. After `git push`, check the GitHub Actions result.
 
 ## GitHub Actions Verification
 
@@ -66,16 +66,6 @@ OpsForge currently uses a simple solo-project workflow with direct commits to `m
 
 A branch and pull-request workflow can be added later if the user explicitly decides to adopt it, but it is not required for the current RNCP project scope.
 
-## Forbidden Changes
+## Scope Rule
 
-This workflow documentation does not authorize implementation changes. Do not:
-
-- modify application logic;
-- modify GitHub Actions workflow behavior;
-- modify the `Dockerfile`;
-- modify `docker-compose.yml`;
-- modify models, routes, schemas, runbooks, seed logic, or dashboard logic;
-- add features;
-- start Phase 3;
-- refactor the project;
-- introduce new technologies.
+This document governs Git hygiene only. It does not authorize application or infrastructure changes by itself. Those changes still require an approved phase scope and the user remains the final decision-maker.

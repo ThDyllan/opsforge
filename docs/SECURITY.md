@@ -10,6 +10,8 @@ Current controls include:
 - audit logs for business actions;
 - environment-based database configuration;
 - ignored local secrets and backup artifacts;
+- non-root API container execution;
+- local Compose PostgreSQL bound to `127.0.0.1` by default;
 - automated Trivy visibility in GitHub Actions.
 
 ## Environment Variables and Secrets
@@ -24,6 +26,8 @@ For local configuration:
 4. never commit `.env`.
 
 The existing Compose fallback values and `.env.example` values are for local demonstration only. They are not suitable production credentials.
+
+The Compose PostgreSQL port is available locally as `127.0.0.1:5432` by default. This prevents accidental exposure on every host network interface, but it does not make the demonstration credentials production-safe.
 
 Secrets must not be written into scripts, source code, documentation examples, commits, or generated logs.
 
@@ -44,6 +48,7 @@ This is a deliberate educational-scope decision: findings remain visible and mus
 - No enterprise secret manager such as Vault.
 - No automated secret rotation.
 - No production hardening or public deployment claim.
+- No defined vulnerability blocking threshold.
 - No automatic backup schedule, rotation, or offsite copy.
 - Trivy findings are visible but non-blocking.
 

@@ -8,11 +8,11 @@ It is a DevOps incident and service supervision platform. The project incrementa
 
 OpsForge is not a full enterprise production platform. It must remain simple, explainable, and defendable for an exam.
 
-## Current MVP1
+## Technical Foundation
 
-The current MVP1 is a FastAPI + PostgreSQL + Docker Compose application.
+OpsForge began as a FastAPI + PostgreSQL + Docker Compose MVP and now includes validated CI, backup/restore, local k3d deployment, and monitoring.
 
-Current MVP1 stack:
+Core stack:
 
 - FastAPI
 - PostgreSQL
@@ -44,28 +44,30 @@ Runbooks are safe predefined actions only. Arbitrary shell command execution is 
 - Phase 3 / Backup and Security was locally verified and explicitly validated by the user on 2026-07-06.
 - Phase 4 / k3d-Kubernetes Deployment has been explicitly validated by the user on 2026-07-09 after final checks passed. Phase 4A added the k3d/PostgreSQL foundation, and Phase 4B added the locally imported API image, Deployment, NodePort Service, and successful `/health` access.
 - Phase 5 / Monitoring has been explicitly validated by the user on 2026-07-14 at commit `23194f0`. Phase 5A added a minimal Prometheus-compatible `/metrics` endpoint for the FastAPI application. Phase 5B deployed Prometheus inside k3d and verified scraping of the Kubernetes-deployed API. Phase 5C deployed Grafana and verified the `OpsForge Monitoring` dashboard. Phase 5D added the `OpsForgeApiDown` Prometheus alert rule and verified outage detection by scaling the API Deployment to zero, then restoring it.
+- Phase 6 / Operational Product and Exam Evidence is in progress. Its first slice adds relationship-integrity safeguards, an operational Jinja incident workspace, PostgreSQL-aware readiness, a non-root API image, and PostgreSQL integration coverage in CI. It is not user-validated yet.
 - Known limitations, technical debts, and upcoming decisions are tracked in `docs/RISKS_AND_TECHNICAL_DEBT.md`.
 - Phase transitions must follow `docs/PHASE_SYNC_PROTOCOL.md`.
+- Engineering collaboration follows `docs/ENGINEERING_CHARTER.md`.
 
 ## Role Distribution
 
 - User: project owner, project manager, and final decision-maker.
 - ChatGPT: architecture guidance, scope control, explanation, RNCP alignment, and prompt preparation.
-- Codex: implementation only, following explicit tasks.
+- Codex: primary technical engineering partner. It inspects, challenges, recommends, implements approved work, and explains technical tradeoffs.
 - Claude: occasional reviewer and scope challenger.
 
 ## Conflict Rule
 
 If ChatGPT and Claude disagree, the user has the final decision.
 
-No implementation should be done until the user validates the direction.
+No broad change, commit, or push should be made until the user validates the direction. Codex may perform discovery and present an engineering brief before that decision.
 
 ## Strict Contribution Rules
 
 - Always read `PROJECT_CONTEXT.md` before implementing a task.
-- Do only the requested task.
-- Everything not explicitly requested is out of scope by default.
-- Do not expand scope.
+- Keep changes coherent, evidence-based, and within the approved phase scope.
+- Treat ideas outside the approved scope as future work unless the user explicitly approves them.
+- Challenge outdated, contradictory, or weak instructions openly rather than silently ignoring them.
 - Do not add new technologies unless explicitly requested.
 - If completing the task requires a decision not covered by the task description, stop and ask instead of assuming.
 - Prefer small, verifiable changes.

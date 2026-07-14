@@ -43,7 +43,7 @@ spec:
                   key: POSTGRES_USER
       containers:
         - name: api
-          image: opsforge-api:phase5
+          image: opsforge-api:phase6
           imagePullPolicy: Never
           ports:
             - name: http
@@ -58,7 +58,7 @@ spec:
               value: /app
           readinessProbe:
             httpGet:
-              path: /health
+              path: /ready
               port: http
             initialDelaySeconds: 3
             periodSeconds: 5

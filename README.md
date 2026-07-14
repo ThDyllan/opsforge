@@ -1,19 +1,20 @@
 # OpsForge
 
-OpsForge is an RNCP DevOps school project. MVP1 is a small FastAPI, PostgreSQL, and Docker Compose application for incident and service supervision.
+OpsForge is an RNCP DevOps school project for incident and service supervision. It starts as a FastAPI, PostgreSQL, and Docker Compose application, then demonstrates CI, backup/restore, local Kubernetes, and monitoring in deliberate phases.
 
 Documentation entry point: [`docs/INDEX.md`](docs/INDEX.md)
 
-This first version intentionally stays simple:
+The implemented foundation stays intentionally small:
 
 - FastAPI API with SQLAlchemy 2.x models
 - PostgreSQL in Docker Compose
 - SQLAlchemy `metadata.create_all()` on startup
 - Jinja2 dashboard
 - Safe predefined demo runbooks only
-- pytest coverage for core API behavior
+- SQLite unit tests plus a PostgreSQL integration test
+- Docker Compose, local k3d deployment, Prometheus, and Grafana
 
-MVP1 does not include React, Kubernetes, Prometheus, Grafana, Terraform, Ansible, Redis, Celery, Keycloak, auth, or Alembic.
+OpsForge does not include React, authentication, Redis, Celery, Terraform, Ansible, Helm, Alertmanager, or Alembic.
 
 ## Run With Docker
 
@@ -33,7 +34,15 @@ Health:
 http://localhost:8000/health
 ```
 
+Readiness:
+
+```text
+http://localhost:8000/ready
+```
+
 The database is seeded automatically on first startup with demo services, alerts, incidents, and runbooks.
+
+PostgreSQL is bound to `127.0.0.1` by default, so it is available to local tools but not exposed on every network interface.
 
 ## Run Tests
 
@@ -45,11 +54,17 @@ docker compose exec api pytest
 
 Tests use an in-memory SQLite database. In the local Docker Compose workflow, the `tests/` directory is mounted into the API container for test discovery.
 
+Run the separate PostgreSQL core-flow integration test with:
+
+```bash
+docker compose exec api pytest tests/postgres_integration.py
+```
+
 ## CI/CD
 
 Phase 2 uses GitHub Actions for the first CI/CD workflow.
 
-On push and pull request, CI installs Python dependencies, runs `pytest`, builds the Docker image, and runs a non-blocking Trivy image scan.
+On push and pull request, CI runs SQLite unit tests, a PostgreSQL integration test, a Docker image build, and a non-blocking Trivy image scan.
 
 See `docs/CI_CD.md` for details.
 
@@ -72,9 +87,7 @@ See `docs/KUBERNETES.md` and `docs/PHASE4_VERIFICATION.md` for the deployment pr
 
 ## Monitoring
 
-Phase 5 is in progress. Phase 5A exposes a Prometheus-compatible `/metrics` endpoint with basic HTTP request count and latency metrics.
-
-Phase 5B deploys Prometheus inside k3d and verifies that it scrapes the Kubernetes-deployed API. Phase 5C deploys Grafana with the `OpsForge Monitoring` dashboard. Phase 5D adds a Prometheus alert rule and verifies API outage detection by simulation.
+Phase 5 is validated. Prometheus scrapes the Kubernetes-deployed API, Grafana provides the `OpsForge Monitoring` dashboard, and `OpsForgeApiDown` detects a controlled API outage.
 
 See `docs/MONITORING.md` and `docs/PHASE5_VERIFICATION.md` for the monitoring strategy and current verification status.
 
@@ -83,6 +96,7 @@ See `docs/MONITORING.md` and `docs/PHASE5_VERIFICATION.md` for the monitoring st
 General:
 
 - `GET /health`
+- `GET /ready`
 - `GET /metrics`
 - `GET /`
 - `GET /dashboard`

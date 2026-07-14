@@ -9,10 +9,13 @@
   <body>
     <header class="topbar">
       <div>
-        <p class="eyebrow">RNCP DevOps MVP1</p>
+        <p class="eyebrow">RNCP DevOps supervision workspace</p>
         <h1>OpsForge</h1>
       </div>
-      <a class="health-link" href="/health">Health</a>
+      <nav class="topbar-actions" aria-label="Dashboard navigation">
+        <a class="topbar-link" href="#incident-workspace">Incidents</a>
+        <a class="health-link" href="/health">Health</a>
+      </nav>
     </header>
 
     <main class="layout">
@@ -72,12 +75,91 @@
             <article class="list-item">
               <div>
                 <strong>{{ alert.title }}</strong>
-                <small>{{ alert.source }} · {{ alert.received_at.strftime("%Y-%m-%d %H:%M") }}</small>
+                <small>{{ alert.source }} - {{ alert.received_at.strftime("%Y-%m-%d %H:%M") }}</small>
               </div>
               <span class="badge severity-{{ alert.severity }}">{{ alert.severity }}</span>
             </article>
             {% endfor %}
           </div>
+        </div>
+      </section>
+
+      <section class="panel workspace-panel" id="incident-workspace" aria-labelledby="incident-workspace-title">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Service -> Alert -> Incident -> Runbook -> AuditLog</p>
+            <h2 id="incident-workspace-title">Incident workspace</h2>
+          </div>
+          <span class="workspace-count">{{ incidents | length }} open</span>
+        </div>
+        <div class="incident-workspace-list">
+          {% for incident in incidents %}
+          <article
+            class="incident-workspace"
+            data-incident-id="{{ incident.id }}"
+            data-service-id="{{ incident.service_id or '' }}"
+          >
+            <div class="incident-summary">
+              <div class="incident-title-row">
+                <h3>{{ incident.title }}</h3>
+                <span class="badge severity-{{ incident.severity }}">{{ incident.severity }}</span>
+                <span class="badge incident-status-{{ incident.status }}" data-incident-status>{{ incident.status }}</span>
+              </div>
+              <p>{{ incident.description or "No incident description provided." }}</p>
+              <dl class="incident-context">
+                <div>
+                  <dt>Service</dt>
+                  <dd>{{ incident.service.name if incident.service else "Unassigned" }}</dd>
+                </div>
+                <div>
+                  <dt>Source alert</dt>
+                  <dd>
+                    {% if incident.source_alert %}
+                    {{ incident.source_alert.title }}
+                    <span class="badge severity-{{ incident.source_alert.severity }}">{{ incident.source_alert.severity }}</span>
+                    {% else %}
+                    No source alert
+                    {% endif %}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Owner</dt>
+                  <dd>{{ incident.owner or "Unassigned" }}</dd>
+                </div>
+              </dl>
+            </div>
+            <div class="incident-actions" aria-label="Actions for {{ incident.title }}">
+              <div class="action-group">
+                <span class="action-label">Status</span>
+                <div class="status-controls">
+                  <button
+                    class="action-button secondary"
+                    type="button"
+                    data-incident-status-action="investigating"
+                    {% if incident.status == "investigating" %}disabled{% endif %}
+                  >
+                    Investigate
+                  </button>
+                  <button class="action-button danger" type="button" data-incident-status-action="resolved">Resolve</button>
+                </div>
+              </div>
+              <div class="action-group">
+                <label class="action-label" for="runbook-{{ incident.id }}">Runbook</label>
+                <div class="runbook-controls">
+                  <select id="runbook-{{ incident.id }}" data-runbook-select>
+                    {% for runbook in runbooks %}
+                    <option value="{{ runbook.key }}">{{ runbook.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <button class="action-button primary" type="button" data-runbook-execute>Run</button>
+                </div>
+              </div>
+              <p class="action-result" data-action-result aria-live="polite"></p>
+            </div>
+          </article>
+          {% else %}
+          <p class="empty workspace-empty">No open incidents.</p>
+          {% endfor %}
         </div>
       </section>
 
@@ -91,7 +173,7 @@
             <article class="list-item">
               <div>
                 <strong>{{ incident.title }}</strong>
-                <small>{{ incident.status }} · owner {{ incident.owner or "unassigned" }}</small>
+                <small>{{ incident.status }} - owner {{ incident.owner or "unassigned" }}</small>
               </div>
               <span class="badge severity-{{ incident.severity }}">{{ incident.severity }}</span>
             </article>
@@ -118,6 +200,93 @@
           </div>
         </div>
       </section>
+
+      <section class="panel execution-panel" aria-labelledby="execution-activity-title">
+        <div class="panel-heading">
+          <h2 id="execution-activity-title">Recent runbook activity</h2>
+        </div>
+        <div class="list execution-list">
+          {% for execution in recent_executions %}
+          <article class="list-item execution-item">
+            <div>
+              <strong>{{ execution.runbook.name }}</strong>
+              <small>
+                {% if execution.incident %}Incident #{{ execution.incident.id }}{% else %}No incident{% endif %}
+                {% if execution.service %} - {{ execution.service.name }}{% endif %}
+                - {{ execution.requested_by }}
+              </small>
+              <small>{{ execution.output }}</small>
+            </div>
+            <span class="badge execution-{{ execution.status }}">{{ execution.status }}</span>
+          </article>
+          {% else %}
+          <p class="empty">No runbook activity yet.</p>
+          {% endfor %}
+        </div>
+      </section>
     </main>
+    <script>
+      async function requestJson(url, options) {
+        const response = await fetch(url, options);
+        const body = await response.json();
+        if (!response.ok) {
+          throw new Error(body.detail || "The requested action could not be completed.");
+        }
+        return body;
+      }
+
+      document.querySelectorAll(".incident-workspace").forEach((workspace) => {
+        const incidentId = workspace.dataset.incidentId;
+        const serviceId = workspace.dataset.serviceId;
+        const result = workspace.querySelector("[data-action-result]");
+
+        workspace.querySelectorAll("[data-incident-status-action]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            button.disabled = true;
+            result.textContent = "Updating incident...";
+            try {
+              await requestJson(`/api/incidents/${incidentId}/status`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: button.dataset.incidentStatusAction }),
+              });
+              window.location.reload();
+            } catch (error) {
+              result.textContent = error.message;
+              button.disabled = false;
+            }
+          });
+        });
+
+        const runbookButton = workspace.querySelector("[data-runbook-execute]");
+        runbookButton.addEventListener("click", async () => {
+          const runbookKey = workspace.querySelector("[data-runbook-select]").value;
+          const payload = {
+            incident_id: Number(incidentId),
+            requested_by: "dashboard-operator",
+          };
+          if (serviceId) {
+            payload.service_id = Number(serviceId);
+          }
+
+          runbookButton.disabled = true;
+          result.textContent = "Running predefined runbook...";
+          try {
+            const execution = await requestJson(`/api/runbooks/${runbookKey}/execute`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+            result.textContent = `${execution.status}: ${execution.output}`;
+            result.dataset.status = execution.status;
+          } catch (error) {
+            result.textContent = error.message;
+            result.dataset.status = "failed";
+          } finally {
+            runbookButton.disabled = false;
+          }
+        });
+      });
+    </script>
   </body>
 </html>

@@ -54,6 +54,7 @@ def execute_predefined_runbook(
 
     service = db.get(Service, request.service_id) if request.service_id is not None else None
     incident = db.get(Incident, request.incident_id) if request.incident_id is not None else None
+    execution_service = service
 
     if request.service_id is not None and service is None:
         status = "failed"
@@ -63,6 +64,19 @@ def execute_predefined_runbook(
         status = "failed"
         output = f"Incident {request.incident_id} was not found."
         details["requested_incident_id"] = request.incident_id
+    elif (
+        service is not None
+        and incident is not None
+        and incident.service_id is not None
+        and service.id != incident.service_id
+    ):
+        status = "failed"
+        output = (
+            f"Service {service.id} does not match the service for incident {incident.id}."
+        )
+        details["requested_service_id"] = service.id
+        details["incident_service_id"] = incident.service_id
+        execution_service = None
     elif runbook.key == "health_check_service":
         status, output, details = _health_check_service(db, service, details)
     elif runbook.key == "generate_incident_report":
@@ -81,7 +95,7 @@ def execute_predefined_runbook(
     finished_at = utc_now()
     execution = RunbookExecution(
         runbook_id=runbook.id,
-        service_id=service.id if service else None,
+        service_id=execution_service.id if execution_service else None,
         incident_id=incident.id if incident else None,
         status=status,
         requested_by=request.requested_by,
