@@ -2,7 +2,15 @@
 
 ## Status
 
-Phase 5D is implemented and locally verified. Phase 5 is technically complete locally, but it is not user-validated.
+Phase 5D is implemented, locally verified, pushed, and user-validated.
+
+Phase 5 / Monitoring was explicitly validated by the user on 2026-07-14 after Phase 5D review, push, green GitHub Actions, and home PC preflight synchronization.
+
+Final validated commit:
+
+```text
+23194f0 Implement Phase 5D Prometheus alert rule and outage simulation
+```
 
 Phase 5A adds a minimal Prometheus-compatible `/metrics` endpoint to the FastAPI application so Prometheus can scrape OpsForge in a later phase slice.
 
@@ -147,7 +155,10 @@ Phase 5D still does not include Alertmanager, Grafana alerting, notification rou
 - [x] Grafana remains operational after the alert test.
 - [x] No PostgreSQL exposure was added during Phase 5D.
 - [x] No Alertmanager or Grafana alert rules were added during Phase 5D.
-- [ ] The user reviews Phase 5A, Phase 5B, Phase 5C, and Phase 5D.
+- [x] The user reviews Phase 5A, Phase 5B, Phase 5C, and Phase 5D.
+- [x] GitHub Actions is green after push.
+- [x] Home PC preflight synchronization confirms local `main` and `origin/main` at commit `23194f0`.
+- [x] The user explicitly validates Phase 5 as complete on 2026-07-14.
 
 ## Phase 5A Evidence
 
@@ -244,15 +255,28 @@ Phase 5D still does not include Alertmanager, Grafana alerting, notification rou
   - Grafana alert rule count remains `0`.
 - PostgreSQL Service remained `ClusterIP` on port `5432/TCP`.
 
-## Remaining Phase 5 Work
+## Final Phase 5 Scope
 
-Phase 5 technical implementation is locally complete. Remaining work:
+Final validated Phase 5 scope:
 
-1. user review;
-2. explicit user validation;
-3. final commit and push after validation;
-4. GitHub Actions verification after push.
+- `/metrics` endpoint;
+- Prometheus inside k3d;
+- Grafana dashboard inside k3d;
+- Prometheus alert rule `OpsForgeApiDown`;
+- outage simulation with `kubectl scale replicas=0`;
+- restore to `replicas=1`;
+- Prometheus and Grafana healthy after restore.
+
+## Environment Note
+
+Phase 5 runtime evidence was verified on the previous working environment where Docker, k3d, kubectl, Prometheus, and Grafana were available.
+
+The home PC preflight confirmed that Git is synchronized at commit `23194f0`, but Docker Desktop and/or k3d runtime evidence may need to be recreated later if final Phase 6 screenshots or live demonstrations require it.
+
+Missing k3d on the home PC is not a blocker for documenting Phase 5 validation.
 
 ## Validation Result
 
-Phase 5A, Phase 5B, Phase 5C, and Phase 5D are locally verified. Phase 5 must not be marked complete until explicit user validation is received.
+Phase 5A, Phase 5B, Phase 5C, and Phase 5D are verified and user-validated.
+
+Phase 5 / Monitoring is technically complete and validated as of 2026-07-14.
