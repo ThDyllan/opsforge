@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 6 is in progress. The first operational-product and evidence slice was locally verified on 2026-07-15, but Phase 6 is not user-validated yet.
+Phase 6 is in progress. The first operational-product and evidence slice was locally verified on 2026-07-15 and passed GitHub Actions for commit `83469cb Implement Phase 6 balanced review candidate`, but Phase 6 is not user-validated yet.
 
 ## Implemented In This Slice
 
@@ -27,9 +27,25 @@ Phase 6 is in progress. The first operational-product and evidence slice was loc
 - Prometheus returned `up{job="opsforge-api"} = 1`; `OpsForgeApiDown` was inactive; Grafana health was `ok` after the Phase 6 API rollout.
 - The refreshed pinned image passed the SQLite and PostgreSQL integration tests. Its Trivy scan reported `19 HIGH` and `3 CRITICAL` Debian findings with no known fixes; the CI policy remains non-blocking and this limitation is documented.
 
+## GitHub Actions Evidence
+
+- The `CI` workflow completed successfully on the `phase6-balanced-review` branch for commit `83469cb`.
+- The workflow passed `13` SQLite unit tests and `1` PostgreSQL integration test.
+- The Docker image build succeeded.
+- Trivy ran successfully as a non-blocking scan and reported `19 HIGH` and `3 CRITICAL` findings. These findings remain documented security debt; a green workflow is not a claim that the image is vulnerability-free.
+
+## Manual Dashboard Smoke Test
+
+The user completed the dashboard smoke test on 2026-07-15:
+
+- the incident status changed to `investigating` through the dashboard;
+- `generate_incident_report` completed with a visible `success` result;
+- the execution appeared in `Recent runbook activity` after refresh;
+- the `Resolve` action was confirmed to work and remove an incident from the open workspace.
+
+The test also confirmed a usability limitation: creating alerts and incidents still requires FastAPI `/docs` and manual identifier selection. A separate operator-centered UX lot will address this after the current review candidate is merged.
+
 ## Remaining Validation
 
-- Push the changes and confirm the updated GitHub Actions workflow succeeds on GitHub.
-- Review the new dashboard controls through the local browser once the browser connector is available; the backend contracts and embedded JavaScript syntax are verified, but an automated browser click was not available in this environment.
 - Capture final dashboard, Kubernetes, Prometheus, and Grafana screenshots.
 - Review the complete Phase 6 scope with the user and obtain explicit Phase 6 validation.

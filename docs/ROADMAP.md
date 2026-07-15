@@ -107,7 +107,7 @@ Status: completed and explicitly validated by the user on 2026-07-14. Phase 5A a
 
 ## Phase 6 - Operational Product and Exam Evidence
 
-Status: in progress. The first correctness, dashboard, reliability, and CI verification slice is locally complete; final user validation requires GitHub Actions evidence and the remaining exam evidence.
+Status: in progress. The first correctness, dashboard, reliability, and CI verification slice is locally complete, GitHub Actions passed for commit `83469cb`, and the dashboard actions passed a manual user smoke test; final user validation requires the remaining exam evidence.
 
 ### Scope
 
