@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+import json
+
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -63,6 +65,11 @@ class Incident(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
     owner: Mapped[str | None] = mapped_column(String(120), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utc_now,
+        onupdate=utc_now,
+    )
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     service: Mapped[Service | None] = relationship(back_populates="incidents")
@@ -77,10 +84,29 @@ class Runbook(Base):
     key: Mapped[str] = mapped_column(String(120), unique=True, index=True, nullable=False)
     name: Mapped[str] = mapped_column(String(160), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    mode: Mapped[str] = mapped_column(String(20), nullable=False, default="manual")
+    instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    steps_json: Mapped[str | None] = mapped_column("steps", Text, nullable=True)
+    required_context: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="none"
+    )
+    risk_level: Mapped[str] = mapped_column(String(20), nullable=False, default="low")
+    automation_key: Mapped[str | None] = mapped_column(String(120), nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     executions: Mapped[list[RunbookExecution]] = relationship(back_populates="runbook")
+
+    @property
+    def steps(self) -> list[str]:
+        if not self.steps_json:
+            return []
+        parsed = json.loads(self.steps_json)
+        return [str(item) for item in parsed] if isinstance(parsed, list) else []
+
+    @steps.setter
+    def steps(self, value: list[str] | None) -> None:
+        self.steps_json = json.dumps(value or [], ensure_ascii=False)
 
 
 class RunbookExecution(Base):

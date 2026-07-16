@@ -11,25 +11,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from sqlalchemy import func, select, text
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, selectinload
 
+from .api import router as api_router
 from .database import Base, SessionLocal, engine, get_db
-from .models import Alert, AuditLog, Incident, Runbook, RunbookExecution, Service, utc_now
-from .runbooks import execute_predefined_runbook
-from .schemas import (
-    AlertCreate,
-    AlertRead,
-    AuditLogRead,
-    IncidentCreate,
-    IncidentRead,
-    IncidentStatusUpdate,
-    RunbookExecutionRead,
-    RunbookExecutionRequest,
-    RunbookRead,
-    ServiceCreate,
-    ServiceRead,
-)
+from .migrations import ensure_schema_compatibility
+from .models import Alert, Incident, Runbook, RunbookExecution, Service
 from .seed import seed_database
 
 
@@ -50,6 +38,7 @@ HTTP_REQUEST_DURATION_SECONDS = Histogram(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    ensure_schema_compatibility(engine)
     db = SessionLocal()
     try:
         seed_database(db)
@@ -58,8 +47,9 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="OpsForge", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="OpsForge", version="0.2.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+app.include_router(api_router)
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
@@ -170,168 +160,3 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
             "recent_executions": recent_executions,
         },
     )
-
-
-@app.get("/api/services", response_model=list[ServiceRead])
-def list_services(db: Session = Depends(get_db)):
-    return db.scalars(select(Service).order_by(Service.name)).all()
-
-
-@app.post("/api/services", response_model=ServiceRead, status_code=status.HTTP_201_CREATED)
-def create_service(payload: ServiceCreate, db: Session = Depends(get_db)):
-    service = Service(**payload.model_dump())
-    db.add(service)
-    try:
-        db.commit()
-    except IntegrityError as exc:
-        db.rollback()
-        raise HTTPException(status_code=409, detail="Service slug already exists.") from exc
-    db.refresh(service)
-    return service
-
-
-@app.get("/api/services/{service_id}", response_model=ServiceRead)
-def get_service(service_id: int, db: Session = Depends(get_db)):
-    service = db.get(Service, service_id)
-    if service is None:
-        raise HTTPException(status_code=404, detail="Service not found.")
-    return service
-
-
-@app.get("/api/alerts", response_model=list[AlertRead])
-def list_alerts(db: Session = Depends(get_db)):
-    return db.scalars(select(Alert).order_by(Alert.received_at.desc())).all()
-
-
-@app.post("/api/alerts", response_model=AlertRead, status_code=status.HTTP_201_CREATED)
-def create_alert(payload: AlertCreate, db: Session = Depends(get_db)):
-    data = payload.model_dump()
-    if data["service_id"] is not None and db.get(Service, data["service_id"]) is None:
-        raise HTTPException(status_code=404, detail="Service not found.")
-
-    alert = Alert(**data)
-    if alert.status == "resolved":
-        alert.resolved_at = utc_now()
-    db.add(alert)
-    db.commit()
-    db.refresh(alert)
-    return alert
-
-
-@app.get("/api/alerts/{alert_id}", response_model=AlertRead)
-def get_alert(alert_id: int, db: Session = Depends(get_db)):
-    alert = db.get(Alert, alert_id)
-    if alert is None:
-        raise HTTPException(status_code=404, detail="Alert not found.")
-    return alert
-
-
-@app.patch("/api/alerts/{alert_id}/acknowledge", response_model=AlertRead)
-def acknowledge_alert(alert_id: int, db: Session = Depends(get_db)):
-    alert = db.get(Alert, alert_id)
-    if alert is None:
-        raise HTTPException(status_code=404, detail="Alert not found.")
-    alert.status = "acknowledged"
-    alert.resolved_at = None
-    db.commit()
-    db.refresh(alert)
-    return alert
-
-
-@app.patch("/api/alerts/{alert_id}/resolve", response_model=AlertRead)
-def resolve_alert(alert_id: int, db: Session = Depends(get_db)):
-    alert = db.get(Alert, alert_id)
-    if alert is None:
-        raise HTTPException(status_code=404, detail="Alert not found.")
-    alert.status = "resolved"
-    alert.resolved_at = utc_now()
-    db.commit()
-    db.refresh(alert)
-    return alert
-
-
-@app.get("/api/incidents", response_model=list[IncidentRead])
-def list_incidents(db: Session = Depends(get_db)):
-    return db.scalars(select(Incident).order_by(Incident.created_at.desc())).all()
-
-
-@app.post("/api/incidents", response_model=IncidentRead, status_code=status.HTTP_201_CREATED)
-def create_incident(payload: IncidentCreate, db: Session = Depends(get_db)):
-    data = payload.model_dump()
-
-    if data["service_id"] is not None and db.get(Service, data["service_id"]) is None:
-        raise HTTPException(status_code=404, detail="Service not found.")
-
-    source_alert = None
-    if data["source_alert_id"] is not None:
-        source_alert = db.get(Alert, data["source_alert_id"])
-        if source_alert is None:
-            raise HTTPException(status_code=404, detail="Source alert not found.")
-        if (
-            data["service_id"] is not None
-            and source_alert.service_id is not None
-            and data["service_id"] != source_alert.service_id
-        ):
-            raise HTTPException(
-                status_code=409,
-                detail="Incident service must match the source alert service.",
-            )
-        if data["service_id"] is None and source_alert.service_id is not None:
-            data["service_id"] = source_alert.service_id
-
-    incident = Incident(**data)
-    if incident.status == "resolved":
-        incident.resolved_at = utc_now()
-    db.add(incident)
-    db.commit()
-    db.refresh(incident)
-    return incident
-
-
-@app.get("/api/incidents/{incident_id}", response_model=IncidentRead)
-def get_incident(incident_id: int, db: Session = Depends(get_db)):
-    incident = db.get(Incident, incident_id)
-    if incident is None:
-        raise HTTPException(status_code=404, detail="Incident not found.")
-    return incident
-
-
-@app.patch("/api/incidents/{incident_id}/status", response_model=IncidentRead)
-def update_incident_status(
-    incident_id: int,
-    payload: IncidentStatusUpdate,
-    db: Session = Depends(get_db),
-):
-    incident = db.get(Incident, incident_id)
-    if incident is None:
-        raise HTTPException(status_code=404, detail="Incident not found.")
-    incident.status = payload.status
-    incident.resolved_at = utc_now() if payload.status == "resolved" else None
-    db.commit()
-    db.refresh(incident)
-    return incident
-
-
-@app.get("/api/runbooks", response_model=list[RunbookRead])
-def list_runbooks(db: Session = Depends(get_db)):
-    return db.scalars(select(Runbook).order_by(Runbook.name)).all()
-
-
-@app.post("/api/runbooks/{runbook_key}/execute", response_model=RunbookExecutionRead)
-def execute_runbook(
-    runbook_key: str,
-    payload: RunbookExecutionRequest | None = None,
-    db: Session = Depends(get_db),
-):
-    runbook = db.scalar(select(Runbook).where(Runbook.key == runbook_key))
-    if runbook is None:
-        raise HTTPException(status_code=404, detail="Runbook not found.")
-    if not runbook.enabled:
-        raise HTTPException(status_code=409, detail="Runbook is disabled.")
-    request = payload or RunbookExecutionRequest()
-    return execute_predefined_runbook(db, runbook, request)
-
-
-@app.get("/api/audit-logs", response_model=list[AuditLogRead])
-def list_audit_logs(db: Session = Depends(get_db)):
-    return db.scalars(select(AuditLog).order_by(AuditLog.created_at.desc()).limit(50)).all()
