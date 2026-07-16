@@ -140,8 +140,140 @@ h2 {
 }
 
 .workspace-panel,
-.execution-panel {
+.execution-panel,
+.operator-console {
   margin-top: 16px;
+}
+
+.operator-heading {
+  min-height: 72px;
+}
+
+.operator-heading .eyebrow {
+  margin-bottom: 4px;
+  font-size: 0.68rem;
+}
+
+.operator-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-bottom: 1px solid var(--line);
+}
+
+.operator-tab {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-bottom: 3px solid transparent;
+  color: var(--muted);
+  background: #f9fbfd;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.operator-tab:last-child {
+  border-right: 0;
+}
+
+.operator-tab span {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #ffffff;
+  font-size: 0.76rem;
+}
+
+.operator-tab[aria-selected="true"] {
+  border-bottom-color: var(--blue);
+  color: var(--blue);
+  background: #ffffff;
+}
+
+.operator-tab[aria-selected="true"] span {
+  border-color: var(--blue);
+  color: #ffffff;
+  background: var(--blue);
+}
+
+.operator-form-panel {
+  padding: 20px 18px;
+}
+
+.operator-form-panel[hidden] {
+  display: none;
+}
+
+.operator-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.form-field {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+}
+
+.form-field-wide,
+.operator-submit-row {
+  grid-column: 1 / -1;
+}
+
+.form-field label {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 9px 10px;
+  color: var(--ink);
+  background: #ffffff;
+  font: inherit;
+}
+
+.form-field textarea {
+  resize: vertical;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  border-color: var(--blue);
+  outline: 2px solid rgba(36, 104, 201, 0.16);
+}
+
+.operator-submit-row {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding-top: 4px;
+}
+
+.operator-submit-row .action-result {
+  margin-right: auto;
 }
 
 .workspace-panel .panel-heading {
@@ -355,6 +487,34 @@ tr:last-child td {
   border-bottom: 0;
 }
 
+.alert-list-item {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  align-items: center;
+}
+
+.alert-summary {
+  min-width: 0;
+}
+
+.alert-item-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.alert-action-result {
+  grid-column: 1 / -1;
+}
+
+.action-button.compact {
+  min-height: 32px;
+  padding: 0 9px;
+  font-size: 0.75rem;
+}
+
 .runbook {
   align-items: flex-start;
 }
@@ -407,6 +567,21 @@ tr:last-child td {
   background: #fff6dc;
 }
 
+.alert-status-new {
+  color: var(--blue);
+  background: #eaf2ff;
+}
+
+.alert-status-acknowledged {
+  color: var(--yellow);
+  background: #fff6dc;
+}
+
+.alert-status-resolved {
+  color: var(--green);
+  background: #e8f6ed;
+}
+
 .execution-success {
   color: var(--green);
   background: #e8f6ed;
@@ -435,8 +610,42 @@ tr:last-child td {
   }
 
   .stats,
-  .two-columns {
+  .two-columns,
+  .operator-form {
     grid-template-columns: 1fr;
+  }
+
+  .form-field-wide,
+  .operator-submit-row {
+    grid-column: auto;
+  }
+
+  .operator-tab {
+    min-height: 48px;
+    gap: 5px;
+    font-size: 0.76rem;
+  }
+
+  .operator-tab span {
+    width: 21px;
+    height: 21px;
+  }
+
+  .operator-submit-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .alert-list-item {
+    grid-template-columns: 1fr;
+  }
+
+  .alert-item-actions {
+    justify-content: flex-start;
+  }
+
+  .alert-action-result {
+    grid-column: auto;
   }
 
   .incident-workspace {

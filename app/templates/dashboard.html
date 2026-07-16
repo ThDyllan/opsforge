@@ -13,6 +13,7 @@
         <h1>OpsForge</h1>
       </div>
       <nav class="topbar-actions" aria-label="Dashboard navigation">
+        <a class="topbar-link" href="#operator-console">Create</a>
         <a class="topbar-link" href="#incident-workspace">Incidents</a>
         <a class="health-link" href="/health">Health</a>
       </nav>
@@ -32,6 +33,174 @@
           <span>Alerts today</span>
           <strong>{{ alerts_today }}</strong>
         </article>
+      </section>
+
+      <section class="panel operator-console" id="operator-console" aria-labelledby="operator-console-title">
+        <div class="panel-heading operator-heading">
+          <div>
+            <p class="eyebrow">Service -> Alert -> Incident</p>
+            <h2 id="operator-console-title">Operator console</h2>
+          </div>
+          <span class="workspace-count">{{ actionable_alerts | length }} actionable alerts</span>
+        </div>
+        <div class="operator-tabs" role="tablist" aria-label="Operator workflow">
+          <button
+            class="operator-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="operator-service-panel"
+            data-operator-tab="service"
+          >
+            <span>1</span> Service
+          </button>
+          <button
+            class="operator-tab"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="operator-alert-panel"
+            data-operator-tab="alert"
+          >
+            <span>2</span> Alert
+          </button>
+          <button
+            class="operator-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="operator-incident-panel"
+            data-operator-tab="incident"
+          >
+            <span>3</span> Incident
+          </button>
+        </div>
+
+        <div class="operator-form-panel" id="operator-service-panel" role="tabpanel" data-operator-panel="service" hidden>
+          <form class="operator-form" data-operator-form="service">
+            <div class="form-field">
+              <label for="service-name">Name</label>
+              <input id="service-name" name="name" type="text" maxlength="120" required>
+            </div>
+            <div class="form-field">
+              <label for="service-slug">Slug</label>
+              <input id="service-slug" name="slug" type="text" maxlength="120" required>
+            </div>
+            <div class="form-field">
+              <label for="service-environment">Environment</label>
+              <select id="service-environment" name="environment" required>
+                <option value="production">Production</option>
+                <option value="staging">Staging</option>
+                <option value="development">Development</option>
+                <option value="test">Test</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="service-status">Status</label>
+              <select id="service-status" name="status" required>
+                <option value="unknown">Unknown</option>
+                <option value="healthy">Healthy</option>
+                <option value="degraded">Degraded</option>
+                <option value="down">Down</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="service-owner">Owner</label>
+              <input id="service-owner" name="owner" type="text" maxlength="120">
+            </div>
+            <div class="form-field form-field-wide">
+              <label for="service-description">Description</label>
+              <textarea id="service-description" name="description" rows="3"></textarea>
+            </div>
+            <div class="operator-submit-row">
+              <p class="action-result" data-form-result aria-live="polite"></p>
+              <button class="action-button primary" type="submit">Register service</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="operator-form-panel" id="operator-alert-panel" role="tabpanel" data-operator-panel="alert">
+          <form class="operator-form" data-operator-form="alert">
+            <div class="form-field">
+              <label for="alert-service">Service</label>
+              <select id="alert-service" name="service_id" required>
+                <option value="">Select a service</option>
+                {% for service in services %}
+                <option value="{{ service.id }}">{{ service.name }} - {{ service.environment }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="alert-source">Source</label>
+              <input id="alert-source" name="source" type="text" maxlength="80" value="manual-observation" required>
+            </div>
+            <div class="form-field form-field-wide">
+              <label for="alert-title">Title</label>
+              <input id="alert-title" name="title" type="text" maxlength="200" required>
+            </div>
+            <div class="form-field">
+              <label for="alert-severity">Severity</label>
+              <select id="alert-severity" name="severity" required>
+                <option value="info">Info</option>
+                <option value="warning">Warning</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+            <div class="form-field form-field-wide">
+              <label for="alert-message">Message</label>
+              <textarea id="alert-message" name="message" rows="3" required></textarea>
+            </div>
+            <div class="operator-submit-row">
+              <p class="action-result" data-form-result aria-live="polite"></p>
+              <button class="action-button primary" type="submit">Create alert</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="operator-form-panel" id="operator-incident-panel" role="tabpanel" data-operator-panel="incident" hidden>
+          <form class="operator-form" data-operator-form="incident">
+            <div class="form-field form-field-wide">
+              <label for="incident-source-alert">Source alert</label>
+              <select id="incident-source-alert" name="source_alert_id" required {% if not actionable_alerts %}disabled{% endif %}>
+                <option value="">Select an actionable alert</option>
+                {% for alert in actionable_alerts %}
+                <option
+                  value="{{ alert.id }}"
+                  data-alert-title="{{ alert.title }}"
+                  data-alert-severity="{{ alert.severity }}"
+                >
+                  #{{ alert.id }} - {{ alert.title }} - {{ alert.service.name if alert.service else "Unassigned" }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-field form-field-wide">
+              <label for="incident-title">Title</label>
+              <input id="incident-title" name="title" type="text" maxlength="200" required>
+            </div>
+            <div class="form-field">
+              <label for="incident-severity">Severity</label>
+              <select id="incident-severity" name="severity" required>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high" selected>High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="incident-owner">Owner</label>
+              <input id="incident-owner" name="owner" type="text" maxlength="120" value="dashboard-operator">
+            </div>
+            <div class="form-field form-field-wide">
+              <label for="incident-description">Description</label>
+              <textarea id="incident-description" name="description" rows="3"></textarea>
+            </div>
+            <div class="operator-submit-row">
+              <p class="action-result" data-form-result aria-live="polite"></p>
+              <button class="action-button primary" type="submit" {% if not actionable_alerts %}disabled{% endif %}>Open incident</button>
+            </div>
+          </form>
+        </div>
       </section>
 
       <section class="grid two-columns">
@@ -70,15 +239,48 @@
           <div class="panel-heading">
             <h2>Recent alerts</h2>
           </div>
-          <div class="list">
+          <div class="list alert-list">
             {% for alert in recent_alerts %}
-            <article class="list-item">
-              <div>
+            <article class="list-item alert-list-item" data-alert-id="{{ alert.id }}">
+              <div class="alert-summary">
                 <strong>{{ alert.title }}</strong>
-                <small>{{ alert.source }} - {{ alert.received_at.strftime("%Y-%m-%d %H:%M") }}</small>
+                <small>
+                  {{ alert.service.name if alert.service else "Unassigned" }} - {{ alert.source }} - {{ alert.received_at.strftime("%Y-%m-%d %H:%M") }}
+                </small>
               </div>
-              <span class="badge severity-{{ alert.severity }}">{{ alert.severity }}</span>
+              <div class="alert-item-actions">
+                <span class="badge severity-{{ alert.severity }}">{{ alert.severity }}</span>
+                <span class="badge alert-status-{{ alert.status }}">{{ alert.status }}</span>
+                {% if alert.status != "resolved" %}
+                <button
+                  class="action-button compact secondary"
+                  type="button"
+                  data-alert-open-incident
+                >
+                  Open incident
+                </button>
+                {% if alert.status == "new" %}
+                <button
+                  class="action-button compact secondary"
+                  type="button"
+                  data-alert-status-action="acknowledge"
+                >
+                  Acknowledge
+                </button>
+                {% endif %}
+                <button
+                  class="action-button compact danger"
+                  type="button"
+                  data-alert-status-action="resolve"
+                >
+                  Resolve
+                </button>
+                {% endif %}
+              </div>
+              <p class="action-result alert-action-result" data-alert-result aria-live="polite"></p>
             </article>
+            {% else %}
+            <p class="empty">No alerts received.</p>
             {% endfor %}
           </div>
         </div>
@@ -230,10 +432,158 @@
         const response = await fetch(url, options);
         const body = await response.json();
         if (!response.ok) {
-          throw new Error(body.detail || "The requested action could not be completed.");
+          const detail = Array.isArray(body.detail)
+            ? body.detail.map((item) => item.msg).join(", ")
+            : body.detail;
+          throw new Error(detail || "The requested action could not be completed.");
         }
         return body;
       }
+
+      const operatorTabs = document.querySelectorAll("[data-operator-tab]");
+      const operatorPanels = document.querySelectorAll("[data-operator-panel]");
+
+      function activateOperatorTab(tabName) {
+        operatorTabs.forEach((tab) => {
+          tab.setAttribute("aria-selected", String(tab.dataset.operatorTab === tabName));
+        });
+        operatorPanels.forEach((panel) => {
+          panel.hidden = panel.dataset.operatorPanel !== tabName;
+        });
+      }
+
+      operatorTabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          activateOperatorTab(tab.dataset.operatorTab);
+        });
+      });
+
+      const requestedOperatorTab = sessionStorage.getItem("opsforge-operator-tab");
+      sessionStorage.removeItem("opsforge-operator-tab");
+      activateOperatorTab(requestedOperatorTab || "alert");
+
+      const serviceNameInput = document.querySelector("#service-name");
+      const serviceSlugInput = document.querySelector("#service-slug");
+      let serviceSlugEdited = false;
+
+      serviceSlugInput.addEventListener("input", () => {
+        serviceSlugEdited = serviceSlugInput.value.length > 0;
+      });
+      serviceNameInput.addEventListener("input", () => {
+        if (!serviceSlugEdited) {
+          serviceSlugInput.value = serviceNameInput.value
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)/g, "");
+        }
+      });
+
+      const incidentAlertSelect = document.querySelector("#incident-source-alert");
+      const incidentTitleInput = document.querySelector("#incident-title");
+      const incidentSeveritySelect = document.querySelector("#incident-severity");
+
+      incidentAlertSelect.addEventListener("change", () => {
+        const selectedAlert = incidentAlertSelect.selectedOptions[0];
+        if (!selectedAlert || !selectedAlert.value) {
+          return;
+        }
+        incidentTitleInput.value = selectedAlert.dataset.alertTitle;
+        const severityMap = { info: "low", warning: "medium", critical: "critical" };
+        incidentSeveritySelect.value = severityMap[selectedAlert.dataset.alertSeverity] || "high";
+      });
+
+      const formEndpoints = {
+        service: "/api/services",
+        alert: "/api/alerts",
+        incident: "/api/incidents",
+      };
+      const formSuccessLabels = {
+        service: "Service",
+        alert: "Alert",
+        incident: "Incident",
+      };
+
+      document.querySelectorAll("[data-operator-form]").forEach((form) => {
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const formType = form.dataset.operatorForm;
+          const result = form.querySelector("[data-form-result]");
+          const submitButton = form.querySelector("button[type='submit']");
+          const payload = Object.fromEntries(new FormData(form).entries());
+
+          Object.keys(payload).forEach((key) => {
+            if (payload[key] === "") {
+              delete payload[key];
+            }
+          });
+          if (payload.service_id) {
+            payload.service_id = Number(payload.service_id);
+          }
+          if (payload.source_alert_id) {
+            payload.source_alert_id = Number(payload.source_alert_id);
+          }
+
+          submitButton.disabled = true;
+          result.textContent = `Creating ${formType}...`;
+          result.dataset.status = "";
+          try {
+            const record = await requestJson(formEndpoints[formType], {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+            result.textContent = `${formSuccessLabels[formType]} #${record.id} created.`;
+            result.dataset.status = "success";
+
+            if (formType === "service") {
+              sessionStorage.setItem("opsforge-operator-tab", "alert");
+              window.setTimeout(() => { window.location.href = "/dashboard#operator-console"; }, 900);
+            } else if (formType === "alert") {
+              sessionStorage.setItem("opsforge-operator-tab", "incident");
+              window.setTimeout(() => { window.location.href = "/dashboard#operator-console"; }, 900);
+            } else {
+              window.setTimeout(() => { window.location.href = "/dashboard#incident-workspace"; }, 900);
+            }
+          } catch (error) {
+            result.textContent = error.message;
+            result.dataset.status = "failed";
+            submitButton.disabled = false;
+          }
+        });
+      });
+
+      document.querySelectorAll(".alert-list-item").forEach((alertItem) => {
+        const alertId = alertItem.dataset.alertId;
+        const result = alertItem.querySelector("[data-alert-result]");
+
+        alertItem.querySelectorAll("[data-alert-status-action]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            button.disabled = true;
+            result.textContent = "Updating alert...";
+            try {
+              await requestJson(`/api/alerts/${alertId}/${button.dataset.alertStatusAction}`, {
+                method: "PATCH",
+              });
+              window.location.reload();
+            } catch (error) {
+              result.textContent = error.message;
+              result.dataset.status = "failed";
+              button.disabled = false;
+            }
+          });
+        });
+
+        const openIncidentButton = alertItem.querySelector("[data-alert-open-incident]");
+        if (openIncidentButton) {
+          openIncidentButton.addEventListener("click", () => {
+            incidentAlertSelect.value = alertId;
+            incidentAlertSelect.dispatchEvent(new Event("change"));
+            activateOperatorTab("incident");
+            document.querySelector("#operator-console").scrollIntoView({ behavior: "smooth" });
+          });
+        }
+      });
 
       document.querySelectorAll(".incident-workspace").forEach((workspace) => {
         const incidentId = workspace.dataset.incidentId;

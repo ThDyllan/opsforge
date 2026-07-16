@@ -123,7 +123,16 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     )
     services = db.scalars(select(Service).order_by(Service.name)).all()
     recent_alerts = db.scalars(
-        select(Alert).order_by(Alert.received_at.desc()).limit(5)
+        select(Alert)
+        .options(selectinload(Alert.service))
+        .order_by(Alert.received_at.desc())
+        .limit(5)
+    ).all()
+    actionable_alerts = db.scalars(
+        select(Alert)
+        .options(selectinload(Alert.service))
+        .where(Alert.status != "resolved")
+        .order_by(Alert.received_at.desc())
     ).all()
     incidents = db.scalars(
         select(Incident)
@@ -155,6 +164,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
             "alerts_today": alerts_today,
             "services": services,
             "recent_alerts": recent_alerts,
+            "actionable_alerts": actionable_alerts,
             "incidents": incidents,
             "runbooks": runbooks,
             "recent_executions": recent_executions,

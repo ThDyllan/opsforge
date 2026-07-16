@@ -80,8 +80,13 @@ def test_dashboard_renders() -> None:
 
     assert response.status_code == 200
     assert "OpsForge" in response.text
+    assert "Operator console" in response.text
     assert "Incident workspace" in response.text
     assert "Recent runbook activity" in response.text
+    assert "data-operator-tab" in response.text
+    assert "data-operator-form=\"service\"" in response.text
+    assert "data-operator-form=\"alert\"" in response.text
+    assert "data-operator-form=\"incident\"" in response.text
     assert "data-incident-status-action" in response.text
     assert "data-runbook-execute" in response.text
 
@@ -113,6 +118,56 @@ def test_create_alert() -> None:
     body = response.json()
     assert body["service_id"] == service["id"]
     assert body["status"] == "new"
+
+
+def test_dashboard_lists_actionable_alert_context() -> None:
+    with _client() as client:
+        service = _create_service(client, slug="operator-service")
+        alert_response = client.post(
+            "/api/alerts",
+            json={
+                "service_id": service["id"],
+                "source": "operator-test",
+                "title": "Operator alert",
+                "message": "An alert that should be available to the operator.",
+                "severity": "critical",
+            },
+        )
+        alert = alert_response.json()
+        dashboard_response = client.get("/dashboard")
+
+    assert dashboard_response.status_code == 200
+    assert f'data-alert-id="{alert["id"]}"' in dashboard_response.text
+    assert f'value="{alert["id"]}"' in dashboard_response.text
+    assert "Operator alert" in dashboard_response.text
+    assert "Search Service" in dashboard_response.text
+
+
+def test_alert_status_actions_used_by_operator_console() -> None:
+    with _client() as client:
+        service = _create_service(client, slug="alert-action-service")
+        alert_response = client.post(
+            "/api/alerts",
+            json={
+                "service_id": service["id"],
+                "source": "operator-test",
+                "title": "Actionable alert",
+                "message": "An alert used to verify operator actions.",
+                "severity": "warning",
+            },
+        )
+        alert = alert_response.json()
+
+        acknowledge_response = client.patch(
+            f"/api/alerts/{alert['id']}/acknowledge"
+        )
+        resolve_response = client.patch(f"/api/alerts/{alert['id']}/resolve")
+
+    assert acknowledge_response.status_code == 200
+    assert acknowledge_response.json()["status"] == "acknowledged"
+    assert resolve_response.status_code == 200
+    assert resolve_response.json()["status"] == "resolved"
+    assert resolve_response.json()["resolved_at"] is not None
 
 
 def test_create_incident_linked_to_alert() -> None:
