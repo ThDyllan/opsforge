@@ -18,13 +18,13 @@ The remaining limitation is that one core-flow test does not fully reproduce eve
 
 A future improvement would be targeted PostgreSQL coverage whenever a later feature introduces database-specific behavior. Broad duplication of every SQLite test is not necessary now.
 
-### metadata.create_all() Is Used Instead of Migrations
+### metadata.create_all() And An Additive Bridge Are Used Instead Of Migrations
 
-MVP1 creates database tables with SQLAlchemy `metadata.create_all()` during application startup.
+MVP1 creates database tables with SQLAlchemy `metadata.create_all()` during application startup. Phase 6 adds a small idempotent compatibility bridge that inspects existing tables and adds only its missing columns.
 
 Alembic and migration history were intentionally out of scope for MVP1 to keep the application simple and exam-friendly.
 
-The limitation is that schema changes do not have a versioned migration path. Migration tooling should be considered only if later project changes make it necessary.
+The bridge preserves the current local data, but it is not a versioned migration history and has no downgrade path. Alembic should be considered if schema evolution continues after the exam scope.
 
 ### No Authentication
 
@@ -33,6 +33,8 @@ Authentication is intentionally out of scope for the current educational MVP.
 OpsForge is currently treated as a local, single-user exam project rather than a public or multi-user production service.
 
 This is a documented scope decision, not an overlooked production requirement.
+
+The `owner` and `actor` fields are demonstration text values. They do not prove identity, authorization, or non-repudiation.
 
 ### Trivy Remains Non-Blocking in Phase 3
 
@@ -55,6 +57,38 @@ This prevents unreviewed version drift, but it also means updates must be made i
 The current test suite passes with one `StarletteDeprecationWarning` from `fastapi.testclient`. The warning comes from the current FastAPI/Starlette test-client path, not from a failed assertion.
 
 Replacing the test harness with an async HTTP client would add complexity without improving the current domain evidence. The warning is tracked and should be revisited when the framework provides a stable replacement path or when the test architecture otherwise needs to change.
+
+### One Active Incident Is Enforced At Application Level
+
+The API rejects a second active incident for the same source alert and returns HTTP `409`. This is coherent for the current mono-operator, single-process demonstration.
+
+It is not backed by a PostgreSQL partial unique constraint. Concurrent requests across multiple workers could race in a production system. A future production design would combine a database constraint or transaction-level locking with the current domain validation.
+
+Existing local records created before Phase 6 may already contain duplicate active incidents. Startup does not delete or rewrite them because local data preservation is more important than silently repairing historical demonstration data.
+
+### Business Service State And Alerts Are Simulated
+
+The service status displayed for Backup Service, Payment Service, and other catalog entries is stored application data. It is not calculated from Prometheus.
+
+Business alerts are seeded or created through the operator/API workflow. Prometheus currently monitors the OpsForge API itself and does not create OpsForge business alerts automatically.
+
+The Monitoring and Help pages label this distinction. It must also be stated during the oral exam.
+
+### Runbook Results Include Operator Attestation
+
+Manual runbook success means that the operator confirmed the required checklist and selected an outcome. OpsForge does not independently verify every external fact behind that confirmation.
+
+Automated runbooks are safer because they can use only approved application handlers, but several handlers explicitly simulate a backup check or service restart. The output and audit evidence prove what OpsForge recorded, not that an external production system changed.
+
+### Operator Queues Are Designed For Demonstration Volume
+
+The current queues support search and filters but do not implement pagination, saved views, bulk actions, or real-time updates. They are appropriate for the small local data set and would need pagination and concurrency design for production-scale volumes.
+
+### Visual And Responsive Validation Requires User Review
+
+Automated route and generated-HTML checks cover representative pages, links, assets, headings, duplicate IDs, and template rendering.
+
+The in-app browser automation connector could not start on 2026-07-17 because required sandbox-policy metadata was unavailable. No workaround was used. Visual layout, responsive behavior, and click ergonomics must therefore be completed through `docs/PHASE6_MANUAL_TEST.md` before Phase 6 validation.
 
 ### Local Backups Are Not a Production Backup Strategy
 
@@ -153,10 +187,13 @@ These capabilities remain out of scope unless the user explicitly decides otherw
 
 ## Upcoming Decisions to Remember
 
-- Decide whether the final dossier needs recreated screenshots from the current home-PC environment.
+- Collect final screenshots from the rebuilt Phase 6 candidate and decide which belong in the dossier and slides.
 - Define a Trivy blocking threshold only when a specific risk policy is justified.
 - Decide whether a registry-based deployment path is worth adding after the exam scope is frozen.
 - Consider business metrics only if they can remain simple and demonstrably useful.
+- Decide whether continued schema evolution justifies Alembic after the current exam scope.
+- Decide whether production-oriented concurrency would justify a PostgreSQL constraint for one active incident per alert.
+- Treat Prometheus-to-OpsForge alert ingestion as optional future work, not as an implemented feature.
 
 ## Oral Exam Note
 

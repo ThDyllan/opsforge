@@ -27,7 +27,7 @@ For a substantial evolution, Codex must:
 - Do not claim a behavior was tested when it was only inspected.
 - Do not describe local k3d choices as production architecture without their limits.
 - Do not hide Trivy findings because the CI workflow is green.
-- Keep predefined runbooks safe. Arbitrary shell execution remains forbidden.
+- Keep managed runbooks safe: manual checklists or allowlisted application behavior only. Arbitrary shell, script, and code execution remains forbidden.
 - Treat scope decisions and known limitations as material for honest oral explanations, not hidden failures.
 
 ## Learning Contract

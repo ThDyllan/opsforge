@@ -6,8 +6,8 @@ OpsForge is a local, single-user RNCP educational project. Phase 3 documents pra
 
 Current controls include:
 
-- predefined runbooks with no arbitrary command execution;
-- audit logs for business actions;
+- manual runbooks and allowlisted automated behaviors with no arbitrary command execution;
+- audit logs for meaningful business mutations and every runbook attempt;
 - environment-based database configuration;
 - ignored local secrets and backup artifacts;
 - non-root API container execution;
@@ -51,5 +51,6 @@ This is a deliberate educational-scope decision: findings remain visible and mus
 - No defined vulnerability blocking threshold.
 - No automatic backup schedule, rotation, or offsite copy.
 - Trivy findings are visible but non-blocking.
+- Runbook output can prove only the approved handler or operator confirmation recorded by OpsForge; simulated actions are labeled as simulations.
 
 These choices keep the project small, explainable, and aligned with its current RNCP phase. They must be presented as known limitations, not production security guarantees.

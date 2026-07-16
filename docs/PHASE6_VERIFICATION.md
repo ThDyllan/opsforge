@@ -2,50 +2,137 @@
 
 ## Status
 
-Phase 6 is in progress. The first operational-product and evidence slice was locally verified on 2026-07-15 and passed GitHub Actions for commit `83469cb Implement Phase 6 balanced review candidate`, but Phase 6 is not user-validated yet.
+Phase 6 is in progress and is not user-validated yet.
 
-## Implemented In This Slice
+The balanced technical slice was previously verified in GitHub Actions at commit `83469cb`. The larger operator-product candidate is being prepared on branch `phase6-operator-ux`; its current implementation checkpoints are:
 
-- Incident creation rejects a service that conflicts with its source alert.
-- Runbook execution records an unrelated service and incident request as a failed, audited execution without persisting the unrelated service link.
-- The Jinja dashboard exposes an incident workspace with incident status actions, predefined runbook execution, and recent runbook activity.
-- `/health` remains a process liveness endpoint and `/ready` verifies PostgreSQL connectivity.
-- The API image runs as a non-root user and has a Docker healthcheck.
-- Docker Compose binds PostgreSQL to `127.0.0.1` by default.
-- The Docker build context excludes repository metadata, tests, documentation, backups, local configuration, and Kubernetes material.
-- GitHub Actions now separates SQLite unit tests from a PostgreSQL integration test.
-- The Python base image and resolved dependencies are pinned to the locally tested Phase 6 build.
+- `c2693e3 Checkpoint operator UX spike`
+- `99ee624 Build audited incident domain and managed runbooks`
+- `a562985 Build multipage operator console`
 
-## Local Evidence
+Final validation still requires current-branch CI evidence, a user-led visual/responsive workflow review, final screenshots, and explicit user approval.
 
-- SQLite unit tests: `13 passed, 1 warning` with `docker compose exec api pytest`.
-- PostgreSQL integration test: `1 passed, 1 warning` with `docker compose exec api pytest tests/postgres_integration.py`.
-- The shared warning is the tracked `StarletteDeprecationWarning` from the current `fastapi.testclient` path; it does not mask a failed test.
-- Docker image build succeeded with the non-root `opsforge` user and configured healthcheck.
-- Compose `/health` returned `200` during a controlled PostgreSQL outage while `/ready` returned `503`, then returned to ready after PostgreSQL restarted.
-- The k3d API Deployment using `opsforge-api:phase6` rolled out `1/1` and returned successful `/health` and `/ready` responses.
-- Prometheus returned `up{job="opsforge-api"} = 1`; `OpsForgeApiDown` was inactive; Grafana health was `ok` after the Phase 6 API rollout.
-- The refreshed pinned image passed the SQLite and PostgreSQL integration tests. Its Trivy scan reported `19 HIGH` and `3 CRITICAL` Debian findings with no known fixes; the CI policy remains non-blocking and this limitation is documented.
+## Candidate Scope
 
-## GitHub Actions Evidence
+### Domain Integrity
 
-- The `CI` workflow completed successfully on the `phase6-balanced-review` branch for commit `83469cb`.
-- The workflow passed `13` SQLite unit tests and `1` PostgreSQL integration test.
-- The Docker image build succeeded.
-- Trivy ran successfully as a non-blocking scan and reported `19 HIGH` and `3 CRITICAL` findings. These findings remain documented security debt; a green workflow is not a claim that the image is vulnerability-free.
+- Alerts move forward through `new -> acknowledged -> resolved`.
+- Incidents move forward through `open -> investigating -> resolved`.
+- Resolved objects are not reopened in this version.
+- An incident linked to an alert must use the same service.
+- One source alert can have only one active incident.
+- Resolving an incident does not resolve the source alert automatically.
+- Manual incidents require a service, title, description, and severity.
+- Meaningful service, alert, incident, runbook, and execution mutations are audited.
 
-## Manual Dashboard Smoke Test
+### Runbooks
 
-The user completed the dashboard smoke test on 2026-07-15:
+- Runbooks are maintained through API and Jinja forms.
+- Manual runbooks contain instructions, ordered steps, a checklist, notes, and an operator-confirmed outcome.
+- Automated runbooks select only an approved Python behavior through `automation_key`.
+- Context requirements (`none`, `service`, or `incident`), enabled state, and risk level are visible.
+- Incompatible or failed attempts still create a `RunbookExecution` and audit evidence.
+- No arbitrary command, script, `eval`, or shell execution is accepted.
 
-- the incident status changed to `investigating` through the dashboard;
-- `generate_incident_report` completed with a visible `success` result;
-- the execution appeared in `Recent runbook activity` after refresh;
-- the `Resolve` action was confirmed to work and remove an incident from the open workspace.
+### Operator Console
 
-The test also confirmed a usability limitation: creating alerts and incidents still requires FastAPI `/docs` and manual identifier selection. A separate operator-centered UX lot will address this after the current review candidate is merged.
+- `/overview` provides operational orientation rather than every product action.
+- `/alerts` provides search, filters, message expansion, status actions, and incident context.
+- `/incidents` provides a compact queue and dedicated Incident Command Center.
+- `/services` separates catalog maintenance from urgent work.
+- `/runbooks` provides catalog, creation, editing, context, and history.
+- `/activity` exposes the global audit journal.
+- `/monitoring` distinguishes real platform telemetry from simulated business data.
+- `/help` provides first steps, a guided scenario, glossary, architecture, and honest limits.
+- `/dashboard` remains a compatibility redirect to `/overview`.
+
+### Data And Test Isolation
+
+- Seed data is idempotent, generic, and centered on a Backup Service demonstration scenario.
+- No private Atera or employer data is present in the repository.
+- The PostgreSQL integration test creates and drops a unique temporary database.
+- PostgreSQL tests no longer add records to the demonstration database.
+- Existing databases receive only a small additive startup compatibility bridge; no local volume is destroyed.
+
+## Local Automated Evidence - 2026-07-17
+
+| Check | Result |
+| --- | --- |
+| SQLite suite | `29 passed, 1 warning` |
+| Isolated PostgreSQL integration | `1 passed, 1 warning` |
+| Python compilation | Passed with `python -m compileall -q app` |
+| JavaScript syntax | Passed with Node `v24.18.0` and `node --check app/static/app.js` |
+| Docker image build | Passed for isolated Compose and tag `opsforge-api:phase6-operator-ux` |
+| Local Trivy image scan | Completed: `19 HIGH`, `3 CRITICAL`, `0` findings with a known fixed version |
+| Isolated `/health` | HTTP `200` |
+| Compose service health | API and PostgreSQL healthy |
+| HTML routes | 17 representative pages returned HTTP `200` |
+| Internal links | 53 generated local links returned successfully |
+| Static assets | CSS, application JavaScript, and Lucide asset returned successfully |
+| HTML structure | One `main` and one `h1` per page; no duplicate IDs or unresolved Jinja markers found |
+| Private-reference scan | No private client, employer, ticket, or reference-report data found; Atera is named only to identify the excluded private UX reference |
+| Arbitrary execution scan | No `subprocess`, `os.system`, `Popen`, shell execution, `eval`, or `exec` pattern found in `app/` |
+| Local Kubernetes secret | `k8s/secret.local.yaml` remains ignored and untracked |
+
+The shared warning is the tracked `StarletteDeprecationWarning` from the current FastAPI test-client dependency path. It does not hide a failed test.
+
+## Isolated PostgreSQL Workflow Evidence
+
+A fresh Docker Compose project on port `8010` was used so the normal local database was not modified.
+
+The seeded Backup Service scenario verified:
+
+- manual diagnostic runbook returned HTTP `200` and `success`;
+- the incident moved from investigation to resolved;
+- the source alert remained independently `acknowledged`;
+- the incident timeline contained runbook and resolution events.
+
+A second temporary operator flow verified:
+
+- alert creation returned `201`;
+- acknowledgement returned `200`;
+- incident creation returned `201`;
+- a duplicate active incident returned `409`;
+- investigation returned `200`;
+- report runbook execution returned `200` and `success`;
+- incident resolution returned `200`;
+- separate alert resolution returned `200`.
+
+## Previous Platform Evidence
+
+The earlier balanced Phase 6 slice already proved:
+
+- separate `/health` liveness and PostgreSQL-aware `/ready` behavior;
+- non-root API image execution and Docker healthcheck;
+- PostgreSQL bound to `127.0.0.1` in Docker Compose;
+- k3d rollout with successful liveness/readiness;
+- Prometheus target up, inactive `OpsForgeApiDown`, and healthy Grafana after restore;
+- GitHub Actions success for commit `83469cb` with SQLite, PostgreSQL, Docker build, and non-blocking Trivy.
+
+That evidence remains valid for the underlying platform, but the current operator-product branch must receive its own CI result before merge review.
+
+## Browser Validation Limitation
+
+The in-app browser automation connection was attempted on 2026-07-17. The connector rejected the session because its required sandbox-policy metadata was unavailable. No alternate automation workaround was used.
+
+Therefore, automated checks do not claim visual layout, responsive behavior, or click interaction validation. The required manual procedure is documented in [`PHASE6_MANUAL_TEST.md`](PHASE6_MANUAL_TEST.md).
+
+## Security Evidence And Limits
+
+- Runbook automation is allowlisted and cannot execute operator-supplied code.
+- Private UX references and the reference PDF were never copied into the repository.
+- Real platform monitoring and simulated business status are labeled separately.
+- Authentication remains intentionally absent for the local mono-operator scope.
+- Trivy remains non-blocking. The local candidate scan reports `19 HIGH` and `3 CRITICAL` Debian findings with no known fixed version; the current CI log must show and retain this evidence.
 
 ## Remaining Validation
 
-- Capture final dashboard, Kubernetes, Prometheus, and Grafana screenshots.
-- Review the complete Phase 6 scope with the user and obtain explicit Phase 6 validation.
+- Complete the manual desktop/tablet/mobile operator workflow.
+- Capture the product, CI, Kubernetes, Prometheus, Grafana, backup/restore, and security evidence listed in `PHASE6_MANUAL_TEST.md`.
+- Confirm the final branch passes GitHub Actions.
+- Review the final diff against `main`.
+- Obtain explicit Phase 6 user validation.
+
+## Current Conclusion
+
+The Phase 6 candidate is technically coherent and passes its automated local checks. It is ready for human UX review, not yet ready to be described as Phase 6 complete.

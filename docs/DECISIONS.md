@@ -228,7 +228,7 @@ This was appropriate for Phase 1 and Phase 2, where application simplicity and C
 
 The tests do not fully reproduce PostgreSQL-specific behavior, including possible differences in data types, constraints, SQL behavior, transactions, and connections.
 
-A future phase may add PostgreSQL integration tests through Docker Compose or CI if the user explicitly decides that the additional fidelity is required.
+Decision 021 later complemented this strategy with a focused PostgreSQL integration test in Docker Compose and CI. SQLite remains the fast suite; it is no longer the only database evidence.
 
 ## Decision 012 - Use Local Custom-Format PostgreSQL Backups for Phase 3
 
@@ -488,11 +488,11 @@ GitHub Actions starts a PostgreSQL service container and runs this integration t
 
 ### Reason
 
-Separate processes prevent the SQLite test environment from overriding the PostgreSQL database configuration. The approach improves confidence in the main business flow without making every unit test dependent on a database service.
+Separate processes prevent the SQLite test environment from overriding the PostgreSQL database configuration. The PostgreSQL test creates a uniquely named temporary database, executes the core flow, closes its engine connections, and drops the temporary database. The approach improves confidence without making every unit test depend on a database service or polluting demonstration data.
 
 ### Consequences
 
-CI takes slightly longer and contains two explicit test steps. The local PostgreSQL integration test is non-destructive: it prepares tables if needed and creates unique data without dropping existing tables.
+CI takes slightly longer and contains two explicit test steps. The PostgreSQL server account used by the test must be allowed to create and drop a database. The configured demonstration database is never dropped or populated by the integration test.
 
 This is focused integration coverage, not a claim of exhaustive PostgreSQL compatibility testing.
 
@@ -559,3 +559,101 @@ The same Dockerfile and requirements file should produce the same dependency set
 Dependency and base-image updates now require a deliberate review, rebuild, test run, and vulnerability scan.
 
 Pinning stabilizes the tested image; it does not automatically remove vulnerabilities. The current refreshed image scan still reports `19 HIGH` and `3 CRITICAL` Debian findings without known fixes.
+
+## Decision 025 - Use a Multipage Jinja Operator Console
+
+### Context
+
+The original dashboard proved that API actions could be called from Jinja, but it mixed orientation, creation, incident work, and runbook history on one page. An operator could not quickly distinguish urgent queues, reference catalogs, or evidence.
+
+### Decision
+
+Use a shared Jinja layout with separate Overview, Alerts, Incidents, Services, Runbooks, Activity, Monitoring, and Help pages.
+
+Keep FastAPI, Jinja2, local CSS, and a small framework-free JavaScript file. Retain `/dashboard` only as a redirect to `/overview`. Do not add React.
+
+### Reason
+
+The product needs clear operational information architecture more than a frontend framework. Server-rendered pages reuse the existing stack, remain easy to test and explain, and still support contextual API actions.
+
+### Consequences
+
+The operator can complete the primary flow without Swagger and each page has one responsibility. Shared navigation and macros reduce visual inconsistency.
+
+The interface is not a client-side SPA. Complex real-time collaboration, offline behavior, and rich client state remain out of scope.
+
+## Decision 026 - Support Manual Runbooks and Allowlisted Automation
+
+### Context
+
+Five hard-coded demo actions were too limited to represent runbook management, while an arbitrary command or script editor would create a security and explanation problem far beyond the local product scope.
+
+### Decision
+
+Support two runbook modes:
+
+- manual procedures with instructions, ordered steps, operator checklist, notes, and confirmed outcome;
+- automated procedures that reference only an `automation_key` registered in the application allowlist.
+
+Record every execution attempt, including controlled failures, in `RunbookExecution` and `AuditLog`.
+
+### Reason
+
+This models real operational procedures without pretending OpsForge is a remote execution platform. It keeps context, risk, result, and evidence visible while preventing operator-supplied code execution.
+
+### Consequences
+
+Operators can create and maintain manual runbooks and can reuse approved automations. Adding a new automated behavior still requires a reviewed code change and test coverage.
+
+There is no shell, script editor, plugin runtime, or arbitrary Python execution.
+
+## Decision 027 - Enforce Forward-Only Incident Domain Rules in the Application
+
+### Context
+
+The product needs predictable state changes and must prevent a source alert from opening multiple simultaneous incidents. Existing local databases may contain historical records created before this rule existed.
+
+### Decision
+
+Enforce these rules through the FastAPI domain layer:
+
+- alerts: `new -> acknowledged -> resolved`;
+- incidents: `open -> investigating -> resolved`;
+- one active incident per source alert;
+- source-alert and incident service consistency;
+- resolved incidents are read-only;
+- incident and alert resolution remain independent.
+
+Audit accepted mutations and return explicit `409` responses for invalid relationships or transitions.
+
+### Reason
+
+Central application rules are small, readable, easy to demonstrate, and work with both SQLite and PostgreSQL in the current mono-operator scope.
+
+### Consequences
+
+New API operations remain coherent and tests cover negative cases. The one-active-incident guarantee is not a database partial unique constraint, so concurrent multi-worker writes would require stronger database enforcement in a production system.
+
+Historical duplicate records are not deleted automatically because startup must not destroy user data.
+
+## Decision 028 - Use an Additive Startup Compatibility Bridge for Phase 6
+
+### Context
+
+Phase 6 adds incident update timestamps and runbook-management columns to databases that were originally created through `metadata.create_all()`. Alembic remains outside the established project scope, and existing local data must not be destroyed.
+
+### Decision
+
+Keep `metadata.create_all()` for new databases and run a small idempotent compatibility function at startup. It inspects the current schema and adds only the missing Phase 6 columns with safe defaults.
+
+Do not drop tables, rewrite existing rows destructively, or claim that this is a complete migration system.
+
+### Reason
+
+The bridge lets the current local database start with the new code while preserving data and keeping the transition understandable for this phase.
+
+### Consequences
+
+Fresh and existing MVP databases can run the Phase 6 candidate. The bridge must be maintained manually and has no version history or downgrade path.
+
+If schema evolution continues after the exam scope, adopting Alembic becomes the recommended improvement.

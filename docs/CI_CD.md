@@ -33,7 +33,7 @@ It performs these steps:
 
 Tests run before the Docker build so application behavior is verified early.
 
-SQLite tests provide fast feedback, while the separate PostgreSQL integration test proves the core `Service -> Alert -> Incident -> Runbook -> AuditLog` flow against the runtime database engine. If either test step fails, the pipeline stops before spending time building and scanning a Docker image.
+SQLite tests provide fast feedback, while the separate PostgreSQL integration test creates a temporary database and proves the core `Service -> Alert -> Incident -> RunbookExecution -> AuditLog` flow against the runtime database engine. The temporary database is dropped after the test, so CI does not depend on or populate demonstration data. If either test step fails, the pipeline stops before spending time building and scanning a Docker image.
 
 ## Docker Image Build
 
