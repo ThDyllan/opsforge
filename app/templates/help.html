@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import page_header %}
+
+{% block content %}
+{{ page_header("Aide", "Comprendre le produit, suivre le scénario et expliquer ses limites.") }}
+
+<div class="help-layout">
+  <nav class="help-nav" aria-label="Sommaire de l'aide"><a href="#premiers-pas">Premiers pas</a><a href="#scenario">Scénario guidé</a><a href="#glossaire">Glossaire</a><a href="#architecture">Architecture</a><a href="#monitoring">Monitoring</a><a href="#limites">Limites</a><a href="#about">À propos</a></nav>
+  <div class="help-content">
+    <section id="premiers-pas">
+      <span class="help-kicker">01 · Premiers pas</span><h2>Le rôle d'OpsForge</h2><p>OpsForge est une console locale mono-opérateur. Elle centralise les signaux de démonstration, transforme les problèmes confirmés en incidents, guide leur traitement par des runbooks et conserve la preuve de chaque action.</p>
+      <div class="flow-diagram" aria-label="Service vers Alerte vers Incident vers Runbook vers AuditLog"><span><i data-lucide="box" aria-hidden="true"></i><strong>Service</strong><small>Ce qui est surveillé</small></span><i data-lucide="arrow-right" aria-hidden="true"></i><span><i data-lucide="bell" aria-hidden="true"></i><strong>Alerte</strong><small>Le signal détecté</small></span><i data-lucide="arrow-right" aria-hidden="true"></i><span><i data-lucide="siren" aria-hidden="true"></i><strong>Incident</strong><small>La prise en charge</small></span><i data-lucide="arrow-right" aria-hidden="true"></i><span><i data-lucide="list-checks" aria-hidden="true"></i><strong>Runbook</strong><small>La procédure</small></span><i data-lucide="arrow-right" aria-hidden="true"></i><span><i data-lucide="history" aria-hidden="true"></i><strong>AuditLog</strong><small>La preuve</small></span></div>
+    </section>
+
+    <section id="scenario">
+      <span class="help-kicker">02 · Scénario guidé</span><h2>Diagnostiquer un échec de sauvegarde</h2>
+      <ol class="guided-steps"><li><span>1</span><div><strong>Repérez le signal</strong><p>Dans <a href="/alerts">Alertes</a>, recherchez « Échec de la sauvegarde quotidienne » et lisez son message complet.</p></div></li><li><span>2</span><div><strong>Ouvrez la prise en charge</strong><p>Accédez à l'incident associé ou créez-en un si l'alerte n'en possède pas encore.</p></div></li><li><span>3</span><div><strong>Investiguez</strong><p>Dans le Command Center, démarrez l'investigation et vérifiez le service, la sévérité et le responsable.</p></div></li><li><span>4</span><div><strong>Suivez le runbook</strong><p>Exécutez « Diagnostiquer un échec de sauvegarde », cochez les étapes et documentez le résultat.</p></div></li><li><span>5</span><div><strong>Résolvez et prouvez</strong><p>Résolvez l'incident puis retrouvez l'ensemble du parcours dans sa chronologie et dans <a href="/activity">Activité</a>.</p></div></li></ol>
+    </section>
+
+    <section id="glossaire">
+      <span class="help-kicker">03 · Glossaire</span><h2>Les objets métier</h2>
+      <dl class="glossary"><div><dt>Service</dt><dd>Composant logique représenté dans OpsForge, par exemple le paiement ou la sauvegarde.</dd></div><div><dt>Alerte</dt><dd>Signal d'anomalie potentielle. Elle ne signifie pas encore qu'un incident est officiellement pris en charge.</dd></div><div><dt>Incident</dt><dd>Problème déclaré et suivi par l'opérateur jusqu'à sa résolution.</dd></div><div><dt>Runbook</dt><dd>Procédure de diagnostic ou de traitement, manuelle ou liée à une automatisation connue.</dd></div><div><dt>AuditLog</dt><dd>Trace horodatée indiquant qui a fait quoi, quand, sur quel objet et avec quel résultat.</dd></div><div><dt>Health</dt><dd>Vérification que le processus de l'application répond.</dd></div><div><dt>Readiness</dt><dd>Vérification que l'application peut servir du trafic avec sa base PostgreSQL.</dd></div></dl>
+    </section>
+
+    <section id="architecture">
+      <span class="help-kicker">04 · Architecture</span><h2>Une application simple, une chaîne DevOps complète</h2>
+      <div class="architecture-bands"><article><i data-lucide="monitor" aria-hidden="true"></i><div><strong>Interface Jinja + JavaScript</strong><p>Pages serveur et interactions légères, sans React.</p></div></article><article><i data-lucide="code-2" aria-hidden="true"></i><div><strong>FastAPI + SQLAlchemy</strong><p>API métier, règles de transition et audit.</p></div></article><article><i data-lucide="database" aria-hidden="true"></i><div><strong>PostgreSQL</strong><p>Données persistantes, sauvegardées et restaurables.</p></div></article><article><i data-lucide="container" aria-hidden="true"></i><div><strong>Docker, CI et k3d</strong><p>Build reproductible, tests, scan Trivy et déploiement Kubernetes local.</p></div></article><article><i data-lucide="activity" aria-hidden="true"></i><div><strong>Prometheus + Grafana</strong><p>Métriques HTTP, dashboard et alerte d'indisponibilité.</p></div></article></div>
+    </section>
+
+    <section id="monitoring">
+      <span class="help-kicker">05 · Monitoring</span><h2>Accès pendant la démonstration k3d</h2><p>Prometheus et Grafana sont des composants réels déployés dans le cluster local. Ils ne sont pas exposés en permanence par l'application.</p>
+      <pre><code>kubectl -n monitoring port-forward service/prometheus 9090:9090
+kubectl -n monitoring port-forward service/grafana 3000:3000</code></pre>
+      <p>La page <a href="/monitoring">Monitoring</a> précise ce qui est réellement mesuré et ce qui reste simulé.</p>
+    </section>
+
+    <section id="limites">
+      <span class="help-kicker">06 · Limites honnêtes</span><h2>Ce que cette version ne prétend pas faire</h2><ul class="limit-list"><li>Pas d'authentification ni de gestion de comptes : console locale mono-opérateur.</li><li>Pas de commandes ou scripts arbitraires dans les runbooks.</li><li>Pas de création automatique d'alertes OpsForge depuis Prometheus.</li><li>Les états des services métier sont des données de démonstration.</li><li>k3d, NodePort et le stockage local-path représentent un laboratoire local, pas une production multi-nœuds.</li><li>Le scan Trivy reste non bloquant et ses vulnérabilités connues sont documentées.</li></ul>
+    </section>
+
+    <section id="about">
+      <span class="help-kicker">07 · À propos</span><h2>OpsForge</h2><p>Projet personnel DevOps construit par Dyllan pour démontrer le développement, la conteneurisation, l'intégration continue, la sécurité, la sauvegarde, Kubernetes, la supervision et l'exploitation d'une application cohérente.</p><div class="about-links"><a class="button button--secondary" href="https://github.com/ThDyllan/opsforge" target="_blank" rel="noopener"><i data-lucide="github" aria-hidden="true"></i><span>Dépôt GitHub</span></a><a class="button button--ghost" href="/docs" target="_blank" rel="noopener"><i data-lucide="braces" aria-hidden="true"></i><span>Documentation API</span></a></div>
+    </section>
+  </div>
+</div>
+{% endblock %}

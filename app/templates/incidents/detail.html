@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import badge, empty_state %}
+
+{% block content %}
+<nav class="breadcrumbs" aria-label="Fil d'Ariane"><a href="/incidents">Incidents</a><i data-lucide="chevron-right" aria-hidden="true"></i><span>#{{ incident.id }}</span></nav>
+
+<header class="incident-header incident-header--{{ incident.severity }}">
+  <div class="incident-header__main">
+    <div class="incident-header__meta"><span>Incident #{{ incident.id }}</span>{{ badge(incident.severity, 'severity') }}{{ badge(incident.status) }}</div>
+    <h1>{{ incident.title }}</h1>
+    <p>{{ incident.description or "Aucune description disponible." }}</p>
+  </div>
+  <div class="incident-header__actions">
+    {% if incident.status == 'open' %}<button class="button button--primary" type="button" data-api-action data-method="PATCH" data-url="/api/incidents/{{ incident.id }}/status" data-body='{"status":"investigating"}' data-success="Investigation démarrée"><i data-lucide="search-check" aria-hidden="true"></i><span>Démarrer l'investigation</span></button>{% elif incident.status == 'investigating' %}<button class="button button--danger" type="button" data-api-action data-method="PATCH" data-url="/api/incidents/{{ incident.id }}/status" data-body='{"status":"resolved"}' data-confirm="Confirmer le retour à la normale et résoudre cet incident ?" data-success="Incident résolu"><i data-lucide="circle-check-big" aria-hidden="true"></i><span>Résoudre</span></button>{% else %}<span class="resolved-stamp"><i data-lucide="badge-check" aria-hidden="true"></i>Résolu le {{ incident.resolved_at | datetime_fr }}</span>{% endif %}
+  </div>
+</header>
+
+<div class="command-layout">
+  <div class="command-main">
+    <section class="panel incident-context">
+      <header class="panel__header"><div><h2>Contexte opérationnel</h2><p>Les informations nécessaires pour comprendre la prise en charge.</p></div></header>
+      <dl class="definition-grid">
+        <div><dt>Service</dt><dd>{% if incident.service %}<a href="/services/{{ incident.service.id }}">{{ incident.service.name }}</a><small>{{ incident.service.environment }} · état de démonstration</small>{% else %}<span class="muted">Non défini</span>{% endif %}</dd></div>
+        <div><dt>Responsable</dt><dd>{% if incident.owner %}<span class="owner"><span>{{ incident.owner[:2] | upper }}</span>{{ incident.owner }}</span>{% else %}<span class="muted">Non assigné</span>{% endif %}</dd></div>
+        <div><dt>Déclaré</dt><dd>{{ incident.created_at | datetime_fr }}</dd></div>
+        <div><dt>Dernière mise à jour</dt><dd>{{ incident.updated_at | datetime_fr }}</dd></div>
+        <div class="definition-grid__wide"><dt>Alerte source</dt><dd>{% if incident.source_alert %}<a href="/alerts?q={{ incident.source_alert.title | urlencode }}">#{{ incident.source_alert.id }} · {{ incident.source_alert.title }}</a><small>{{ incident.source_alert.message }}</small>{% else %}<span>Déclaration manuelle</span><small>Aucune alerte source associée.</small>{% endif %}</dd></div>
+      </dl>
+      {% if incident.status != 'resolved' %}
+      <form class="inline-edit" data-api-form data-method="PATCH" data-url="/api/incidents/{{ incident.id }}" data-success="Responsable mis à jour">
+        <label><span>Modifier le responsable</span><input name="owner" data-empty-null maxlength="120" value="{{ incident.owner or '' }}" placeholder="Non assigné"></label>
+        <button class="button button--secondary" type="submit">Mettre à jour</button>
+      </form>
+      {% endif %}
+    </section>
+
+    <section class="panel" id="runbooks">
+      <header class="panel__header"><div><h2>Runbooks compatibles</h2><p>Procédures contrôlées disponibles dans le contexte de cet incident.</p></div><a class="text-link" href="/runbooks">Catalogue</a></header>
+      {% if runbooks %}
+      <div class="runbook-stack">
+        {% for runbook in runbooks %}
+        <details class="runbook-row" {% if loop.first %}open{% endif %}>
+          <summary>
+            <span class="runbook-row__icon"><i data-lucide="{% if runbook.mode == 'manual' %}list-checks{% else %}zap{% endif %}" aria-hidden="true"></i></span>
+            <span><strong>{{ runbook.name }}</strong><small>{{ runbook.description }}</small></span>
+            {{ badge(runbook.mode, 'mode') }}
+            {{ badge(runbook.risk_level, 'risk') }}
+            <i class="summary-chevron" data-lucide="chevron-down" aria-hidden="true"></i>
+          </summary>
+          <div class="runbook-row__body">
+            {% if runbook.instructions %}<p class="runbook-instructions">{{ runbook.instructions }}</p>{% endif %}
+            {% if runbook.steps %}
+            <ol class="runbook-steps">{% for step in runbook.steps %}<li>{{ step }}</li>{% endfor %}</ol>
+            {% endif %}
+            <form class="runbook-execution-form" data-api-form data-method="POST" data-url="/api/runbooks/{{ runbook.key }}/execute" data-success="Runbook exécuté">
+              <input type="hidden" name="incident_id" data-number value="{{ incident.id }}">
+              {% if incident.service_id %}<input type="hidden" name="service_id" data-number value="{{ incident.service_id }}">{% endif %}
+              <input type="hidden" name="requested_by" value="Dyllan">
+              {% if runbook.mode == 'manual' %}
+              <fieldset class="checklist"><legend>Confirmer les étapes</legend>{% for step in runbook.steps %}<label><input type="checkbox" name="completed_steps" data-number data-array value="{{ loop.index0 }}"><span>{{ step }}</span></label>{% endfor %}</fieldset>
+              <div class="form-grid form-grid--2"><label><span>Résultat</span><select name="outcome" required><option value="">Sélectionner</option><option value="success">Succès</option><option value="failed">Échec</option></select></label><label><span>Conclusion opérateur</span><textarea name="notes" rows="3" placeholder="Observation ou résultat obtenu"></textarea></label></div>
+              {% endif %}
+              <div class="runbook-row__actions"><a href="/runbooks/{{ runbook.id }}">Voir la procédure</a><button class="button {% if runbook.risk_level == 'medium' or runbook.risk_level == 'high' %}button--warning{% else %}button--primary{% endif %}" type="submit"><i data-lucide="play" aria-hidden="true"></i><span>{% if runbook.mode == 'manual' %}Confirmer l'exécution{% else %}Exécuter{% endif %}</span></button></div>
+            </form>
+          </div>
+        </details>
+        {% endfor %}
+      </div>
+      {% else %}{{ empty_state("Aucun runbook compatible", "Aucune procédure activée ne correspond au contexte de cet incident.") }}{% endif %}
+    </section>
+
+    <section class="panel">
+      <header class="panel__header"><div><h2>Historique des exécutions</h2><p>Résultats et erreurs produits par les runbooks.</p></div></header>
+      {% if executions %}
+      <div class="execution-list">
+        {% for execution in executions %}
+        <article class="execution-row">
+          <span class="execution-row__status execution-row__status--{{ execution.status }}"><i data-lucide="{% if execution.status == 'success' %}circle-check{% else %}circle-x{% endif %}" aria-hidden="true"></i></span>
+          <div><strong>{{ execution.runbook.name }}</strong><p>{{ execution.output }}</p><small>{{ execution.requested_by }} · {{ execution.finished_at | datetime_fr }}</small></div>
+          {{ badge(execution.status) }}
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}<p class="empty-inline">Aucun runbook n'a encore été exécuté sur cet incident.</p>{% endif %}
+    </section>
+  </div>
+
+  <aside class="command-aside">
+    <section class="panel timeline-panel">
+      <header class="panel__header"><div><h2>Chronologie</h2><p>Source : journal d'audit OpsForge.</p></div></header>
+      <div class="timeline">
+        {% for event in timeline %}
+        <article class="timeline__event">
+          <span class="timeline__marker"><i data-lucide="{% if 'runbook' in event.action %}play{% elif 'status' in event.action %}repeat-2{% elif 'owner' in event.action %}user-round{% else %}circle-dot{% endif %}" aria-hidden="true"></i></span>
+          <div><strong>{{ event.action | action_label }}</strong><p>{{ event.actor }}</p><time>{{ event.created_at | datetime_fr }}</time>{% if event.details.output %}<blockquote>{{ event.details.output }}</blockquote>{% endif %}</div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if latest_execution %}
+    <section class="panel latest-result">
+      <span class="field-label">Dernier résultat</span>
+      <div class="latest-result__title"><i data-lucide="terminal-square" aria-hidden="true"></i><strong>{{ latest_execution.runbook.name }}</strong></div>
+      <p>{{ latest_execution.output }}</p>
+      {{ badge(latest_execution.status) }}
+    </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

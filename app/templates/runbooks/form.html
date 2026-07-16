@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import page_header %}
+
+{% block content %}
+{{ page_header("Modifier le runbook" if runbook else "Créer un runbook", "Décrivez une procédure claire, contextualisée et auditable.") }}
+
+<div class="form-layout">
+  <form class="form-panel" data-api-form data-method="{{ 'PATCH' if runbook else 'POST' }}" data-url="{{ '/api/runbooks/' ~ runbook.id if runbook else '/api/runbooks' }}" data-redirect-template="/runbooks/{id}" data-success="Runbook {{ 'mis à jour' if runbook else 'créé' }}">
+    <div class="form-section">
+      <h2>Identité de la procédure</h2>
+      {% if not runbook %}<label><span>Clé technique <em>*</em></span><input name="key" maxlength="120" required pattern="[a-z0-9]+(?:[_-][a-z0-9]+)*" data-key-target placeholder="diagnostic_service"></label>{% endif %}
+      <label><span>Nom <em>*</em></span><input name="name" maxlength="160" required data-key-source value="{{ runbook.name if runbook else '' }}" placeholder="Ex. Diagnostiquer une indisponibilité"></label>
+      <label><span>Description</span><textarea name="description" rows="3" placeholder="Quand et pourquoi utiliser cette procédure.">{{ runbook.description if runbook else '' }}</textarea></label>
+      <label><span>Instructions</span><textarea name="instructions" rows="4" placeholder="Consigne générale pour l'opérateur.">{{ runbook.instructions if runbook else '' }}</textarea></label>
+    </div>
+
+    <div class="form-section">
+      <h2>Mode et contexte</h2>
+      <div class="form-grid form-grid--3">
+        {% if runbook %}
+        <label><span>Mode</span><input value="{{ runbook.mode | label }}" disabled><small>Le mode est figé après création.</small></label>
+        {% else %}
+        <label><span>Mode</span><select name="mode" data-runbook-mode><option value="manual" selected>Manuel</option><option value="automated">Automatisé approuvé</option></select></label>
+        {% endif %}
+        <label><span>Contexte requis</span><select name="required_context">{% for value in ['none','service','incident'] %}<option value="{{ value }}" {% if (runbook and runbook.required_context == value) or (not runbook and value == 'incident') %}selected{% endif %}>{{ value | label }}</option>{% endfor %}</select></label>
+        <label><span>Niveau de risque</span><select name="risk_level">{% for value in ['low','medium','high'] %}<option value="{{ value }}" {% if (runbook and runbook.risk_level == value) or (not runbook and value == 'low') %}selected{% endif %}>{{ value | label }}</option>{% endfor %}</select></label>
+      </div>
+      {% if not runbook %}
+      <label class="automation-field" data-automation-field hidden><span>Automatisation approuvée</span><select name="automation_key"><option value="">Sélectionner</option>{% for item in automation_options %}<option value="{{ item.automation_key }}">{{ item.name }}</option>{% endfor %}</select><small>Aucune commande libre ne peut être saisie.</small></label>
+      {% endif %}
+      <label class="toggle-field"><input type="checkbox" name="enabled" data-boolean {% if not runbook or runbook.enabled %}checked{% endif %}><span><strong>Runbook activé</strong><small>Les runbooks désactivés restent visibles mais ne peuvent pas être exécutés.</small></span></label>
+    </div>
+
+    <div class="form-section">
+      <div class="section-heading"><div><h2>Étapes</h2><p>Une action claire et vérifiable par ligne.</p></div><button class="button button--small button--secondary" type="button" data-add-step><i data-lucide="plus" aria-hidden="true"></i><span>Ajouter une étape</span></button></div>
+      <div class="steps-editor" data-steps-editor>
+        {% if runbook and runbook.steps %}{% for step in runbook.steps %}<div class="step-input"><span>{{ loop.index }}</span><input name="steps" data-array value="{{ step }}" required><button class="icon-button" type="button" data-remove-step aria-label="Supprimer l'étape" title="Supprimer"><i data-lucide="trash-2" aria-hidden="true"></i></button></div>{% endfor %}{% else %}<div class="step-input"><span>1</span><input name="steps" data-array placeholder="Décrire la première vérification" required><button class="icon-button" type="button" data-remove-step aria-label="Supprimer l'étape" title="Supprimer"><i data-lucide="trash-2" aria-hidden="true"></i></button></div>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-actions"><a class="button button--ghost" href="{{ '/runbooks/' ~ runbook.id if runbook else '/runbooks' }}">Annuler</a><button class="button button--primary" type="submit"><i data-lucide="save" aria-hidden="true"></i><span>Enregistrer le runbook</span></button></div>
+  </form>
+  <aside class="context-panel"><span class="context-panel__icon"><i data-lucide="shield-check" aria-hidden="true"></i></span><h2>Deux modes sûrs</h2><p><strong>Manuel :</strong> l'opérateur suit une checklist et confirme le résultat.</p><p><strong>Automatisé :</strong> le runbook appelle uniquement une action connue et codée dans OpsForge.</p><p class="context-note">Il n'existe aucun éditeur de scripts ou de commandes système.</p></aside>
+</div>
+{% endblock %}

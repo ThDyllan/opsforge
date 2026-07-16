@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import page_header %}
+
+{% block content %}
+{{ page_header("Créer une alerte", "Injectez un signal de démonstration dans la file opérateur.") }}
+
+<div class="form-layout">
+  <form class="form-panel" data-api-form data-method="POST" data-url="/api/alerts" data-redirect="/alerts" data-success="Alerte créée">
+    <div class="form-section">
+      <h2>Signal détecté</h2>
+      <div class="form-grid form-grid--2">
+        <label><span>Service <em>*</em></span><select name="service_id" data-number required><option value="">Sélectionner un service</option>{% for service in services %}<option value="{{ service.id }}" {% if selected_service_id == service.id %}selected{% endif %}>{{ service.name }} · {{ service.environment }}</option>{% endfor %}</select></label>
+        <label><span>Source <em>*</em></span><input name="source" maxlength="80" required value="opsforge-demo" placeholder="Ex. backup-monitor"></label>
+      </div>
+      <label><span>Titre <em>*</em></span><input name="title" maxlength="200" required placeholder="Résumé clair du signal"></label>
+      <label><span>Message <em>*</em></span><textarea name="message" rows="6" required placeholder="Décrivez ce qui a été détecté et pourquoi une vérification est nécessaire."></textarea></label>
+    </div>
+    <div class="form-section">
+      <h2>Qualification initiale</h2>
+      <label class="field-short"><span>Sévérité</span><select name="severity"><option value="info">Information</option><option value="warning" selected>Avertissement</option><option value="critical">Critique</option></select></label>
+      <input type="hidden" name="status" value="new">
+    </div>
+    <div class="form-actions"><a class="button button--ghost" href="/alerts">Annuler</a><button class="button button--primary" type="submit"><i data-lucide="bell-plus" aria-hidden="true"></i><span>Créer l'alerte</span></button></div>
+  </form>
+  <aside class="context-panel"><span class="context-panel__icon"><i data-lucide="info" aria-hidden="true"></i></span><h2>Une alerte est un signal</h2><p>Elle décrit une anomalie potentielle. L'opérateur l'acquitte, l'analyse puis ouvre un incident seulement lorsqu'une prise en charge formelle est nécessaire.</p><a href="/help#glossaire">Voir le glossaire</a></aside>
+</div>
+{% endblock %}

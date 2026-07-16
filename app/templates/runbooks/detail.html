@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import badge, empty_state %}
+
+{% block content %}
+<nav class="breadcrumbs" aria-label="Fil d'Ariane"><a href="/runbooks">Runbooks</a><i data-lucide="chevron-right" aria-hidden="true"></i><span>{{ runbook.name }}</span></nav>
+<header class="object-header">
+  <div class="object-header__mark"><i data-lucide="{% if runbook.mode == 'manual' %}list-checks{% else %}zap{% endif %}" aria-hidden="true"></i></div>
+  <div class="object-header__main"><div>{{ badge(runbook.mode, 'mode') }}{{ badge(runbook.risk_level, 'risk') }}{% if runbook.enabled %}<span class="badge badge--enabled">Activé</span>{% else %}<span class="badge badge--disabled">Désactivé</span>{% endif %}</div><h1>{{ runbook.name }}</h1><p>{{ runbook.description or "Aucune description." }}</p></div>
+  <a class="button button--secondary" href="/runbooks/{{ runbook.id }}/edit"><i data-lucide="pencil" aria-hidden="true"></i><span>Modifier</span></a>
+</header>
+
+<div class="two-column two-column--wide-main">
+  <div>
+    <section class="panel">
+      <header class="panel__header"><div><h2>Procédure</h2><p>{{ runbook.instructions or "Suivre les étapes dans l'ordre." }}</p></div>{{ badge(runbook.required_context, 'context') }}</header>
+      {% if runbook.steps %}<ol class="procedure-steps">{% for step in runbook.steps %}<li><span>{{ loop.index }}</span><p>{{ step }}</p></li>{% endfor %}</ol>{% else %}<p class="empty-inline">Aucune étape définie.</p>{% endif %}
+    </section>
+
+    <section class="panel">
+      <header class="panel__header"><div><h2>Historique d'exécution</h2><p>{{ executions | length }} résultat{% if executions|length != 1 %}s{% endif %} récent{% if executions|length != 1 %}s{% endif %}.</p></div></header>
+      {% if executions %}<div class="execution-list">{% for execution in executions %}<article class="execution-row"><span class="execution-row__status execution-row__status--{{ execution.status }}"><i data-lucide="{% if execution.status == 'success' %}circle-check{% else %}circle-x{% endif %}" aria-hidden="true"></i></span><div><strong>{% if execution.incident %}<a href="/incidents/{{ execution.incident.id }}">Incident #{{ execution.incident.id }}</a>{% elif execution.service %}<a href="/services/{{ execution.service.id }}">{{ execution.service.name }}</a>{% else %}Sans contexte{% endif %}</strong><p>{{ execution.output }}</p><small>{{ execution.requested_by }} · {{ execution.finished_at | datetime_fr }}</small></div>{{ badge(execution.status) }}</article>{% endfor %}</div>{% else %}{{ empty_state("Aucune exécution", "Ce runbook n'a pas encore produit de résultat.") }}{% endif %}
+    </section>
+  </div>
+
+  <aside>
+    <section class="panel execution-console">
+      <header class="panel__header"><div><h2>Exécuter</h2><p>Sélectionnez un contexte compatible.</p></div></header>
+      {% if runbook.enabled %}
+      <form data-api-form data-method="POST" data-url="/api/runbooks/{{ runbook.key }}/execute" data-success="Runbook exécuté">
+        <input type="hidden" name="requested_by" value="Dyllan">
+        {% if runbook.required_context == 'service' %}<label><span>Service requis</span><select name="service_id" data-number required><option value="">Sélectionner</option>{% for service in services %}<option value="{{ service.id }}">{{ service.name }}</option>{% endfor %}</select></label>{% endif %}
+        {% if runbook.required_context == 'incident' %}<label><span>Incident requis</span><select name="incident_id" data-number required><option value="">Sélectionner</option>{% for incident in incidents %}<option value="{{ incident.id }}">#{{ incident.id }} · {{ incident.title }}</option>{% endfor %}</select></label>{% endif %}
+        {% if runbook.mode == 'manual' %}<fieldset class="checklist"><legend>Étapes confirmées</legend>{% for step in runbook.steps %}<label><input type="checkbox" name="completed_steps" data-number data-array value="{{ loop.index0 }}"><span>{{ step }}</span></label>{% endfor %}</fieldset><label><span>Résultat</span><select name="outcome" required><option value="">Sélectionner</option><option value="success">Succès</option><option value="failed">Échec</option></select></label><label><span>Conclusion</span><textarea name="notes" rows="4" placeholder="Résultat observé"></textarea></label>{% endif %}
+        <button class="button button--primary button--block" type="submit"><i data-lucide="play" aria-hidden="true"></i><span>{% if runbook.mode == 'manual' %}Confirmer l'exécution{% else %}Exécuter{% endif %}</span></button>
+      </form>
+      {% else %}<div class="disabled-notice"><i data-lucide="pause-circle" aria-hidden="true"></i><p>Ce runbook est désactivé. Modifiez-le avant toute exécution.</p></div>{% endif %}
+    </section>
+    <section class="panel safety-facts"><h2>Contrôle de sécurité</h2><dl><div><dt>Mode</dt><dd>{{ runbook.mode | label }}</dd></div><div><dt>Risque</dt><dd>{{ runbook.risk_level | label }}</dd></div><div><dt>Automatisation</dt><dd>{{ runbook.automation_key or "Aucune" }}</dd></div><div><dt>Commande libre</dt><dd>Interdite</dd></div></dl></section>
+  </aside>
+</div>
+{% endblock %}

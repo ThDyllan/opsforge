@@ -122,9 +122,74 @@ def test_dashboard_renders() -> None:
 
     assert response.status_code == 200
     assert "OpsForge" in response.text
-    assert "Operator console" in response.text
-    assert "Incident workspace" in response.text
-    assert "Recent runbook activity" in response.text
+    assert "Vue d'ensemble" in response.text
+    assert "Déclarer un incident" in response.text
+    assert "État réel d'OpsForge" in response.text
+    assert response.url.path == "/overview"
+
+
+def test_operator_html_routes_render() -> None:
+    with _client() as client:
+        services = client.get("/api/services").json()
+        incidents = client.get("/api/incidents").json()
+        runbooks = client.get("/api/runbooks").json()
+        paths = [
+            "/overview",
+            "/alerts",
+            "/alerts/new",
+            "/incidents",
+            "/incidents/new",
+            f"/incidents/{incidents[0]['id']}",
+            "/services",
+            "/services/new",
+            f"/services/{services[0]['id']}",
+            f"/services/{services[0]['id']}/edit",
+            "/runbooks",
+            "/runbooks/new",
+            f"/runbooks/{runbooks[0]['id']}",
+            f"/runbooks/{runbooks[0]['id']}/edit",
+            "/activity",
+            "/monitoring",
+            "/help",
+        ]
+        responses = {path: client.get(path) for path in paths}
+
+    assert all(response.status_code == 200 for response in responses.values())
+    assert "Qualifiez les signaux" in responses["/alerts"].text
+    assert "Command Center" not in responses["/incidents"].text
+    assert "Runbooks compatibles" in responses[f"/incidents/{incidents[0]['id']}"].text
+    assert "Données techniques" in responses["/monitoring"].text
+    assert "Scénario guidé" in responses["/help"].text
+
+
+def test_overview_prioritizes_critical_incidents() -> None:
+    with _client() as client:
+        service = _create_service(client, slug="severity-order")
+        low = client.post(
+            "/api/incidents",
+            json={
+                "service_id": service["id"],
+                "title": "Low severity ordering marker",
+                "description": "Lower-priority incident used to verify ordering.",
+                "severity": "low",
+            },
+        )
+        critical = client.post(
+            "/api/incidents",
+            json={
+                "service_id": service["id"],
+                "title": "Critical severity ordering marker",
+                "description": "Critical incident used to verify ordering.",
+                "severity": "critical",
+            },
+        )
+        overview = client.get("/overview")
+
+    assert low.status_code == 201
+    assert critical.status_code == 201
+    assert overview.text.index("Critical severity ordering marker") < overview.text.index(
+        "Low severity ordering marker"
+    )
 
 
 def test_create_service_and_audit_it() -> None:
@@ -192,7 +257,7 @@ def test_alert_transitions_are_forward_only() -> None:
     assert rejected.status_code == 409
 
 
-def test_dashboard_lists_actionable_alert_context() -> None:
+def test_alert_queue_lists_actionable_context() -> None:
     with _client() as client:
         service = _create_service(client, slug="operator-service")
         alert = _create_alert(
@@ -201,13 +266,13 @@ def test_dashboard_lists_actionable_alert_context() -> None:
             title="Operator alert",
             severity="critical",
         )
-        dashboard_response = client.get("/dashboard")
+        alerts_response = client.get("/alerts")
 
-    assert dashboard_response.status_code == 200
-    assert f'data-alert-id="{alert["id"]}"' in dashboard_response.text
-    assert f'value="{alert["id"]}"' in dashboard_response.text
-    assert "Operator alert" in dashboard_response.text
-    assert "Search Service" in dashboard_response.text
+    assert alerts_response.status_code == 200
+    assert f'data-alert-row="{alert["id"]}"' in alerts_response.text
+    assert f'/incidents/new?alert_id={alert["id"]}' in alerts_response.text
+    assert "Operator alert" in alerts_response.text
+    assert "Search Service" in alerts_response.text
 
 
 def test_create_incident_linked_to_alert() -> None:
@@ -384,6 +449,29 @@ def test_incident_owner_update_is_audited() -> None:
     assert any(
         log["action"] == "incident.owner_changed"
         and log["entity_id"] == incident["id"]
+        for log in logs
+    )
+
+
+def test_incident_owner_can_be_cleared_and_audited() -> None:
+    with _client() as client:
+        service = _create_service(client, slug="unassign-service")
+        incident = _create_manual_incident(client, service["id"])
+        response = client.patch(
+            f"/api/incidents/{incident['id']}",
+            json={"owner": None},
+            headers={"X-OpsForge-Actor": "Dyllan"},
+        )
+        detail = client.get(f"/incidents/{incident['id']}")
+        logs = client.get("/api/audit-logs").json()
+
+    assert response.status_code == 200
+    assert response.json()["owner"] is None
+    assert "data-empty-null" in detail.text
+    assert any(
+        log["action"] == "incident.owner_changed"
+        and log["entity_id"] == incident["id"]
+        and '"to": null' in log["details"]
         for log in logs
     )
 

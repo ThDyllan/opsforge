@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import badge, page_header %}
+
+{% block content %}
+{{ page_header("Monitoring", "Distinguez les mesures techniques réelles des états métier simulés.") }}
+
+<section class="monitoring-hero">
+  <div><span class="status-pulse"><i data-lucide="activity" aria-hidden="true"></i></span><div><span class="field-label">Plateforme locale</span><h2>OpsForge répond et PostgreSQL est prêt</h2><p>Cette page est rendue par FastAPI après une requête réelle vers la base.</p></div></div>
+  <span class="badge badge--healthy">Opérationnel</span>
+</section>
+
+<section class="monitoring-section">
+  <header class="section-title"><div><span class="section-title__icon is-real"><i data-lucide="radio-tower" aria-hidden="true"></i></span><div><h2>Supervision réelle</h2><p>Composants effectivement implémentés et validés dans le projet DevOps.</p></div></div><span class="source-chip source-chip--real">Données techniques</span></header>
+  <div class="monitor-grid">
+    <article class="monitor-item"><header><i data-lucide="heart-pulse" aria-hidden="true"></i><span class="badge badge--healthy">Disponible</span></header><h3>Health</h3><p>Confirme que le processus FastAPI répond.</p><a href="/health" target="_blank" rel="noopener">Ouvrir /health <i data-lucide="external-link" aria-hidden="true"></i></a></article>
+    <article class="monitor-item"><header><i data-lucide="database" aria-hidden="true"></i><span class="badge badge--healthy">Prêt</span></header><h3>Readiness</h3><p>Exécute <code>SELECT 1</code> vers PostgreSQL.</p><a href="/ready" target="_blank" rel="noopener">Ouvrir /ready <i data-lucide="external-link" aria-hidden="true"></i></a></article>
+    <article class="monitor-item"><header><i data-lucide="chart-no-axes-combined" aria-hidden="true"></i><span class="badge badge--enabled">Exposé</span></header><h3>Métriques FastAPI</h3><p>Compteurs HTTP et latence au format Prometheus.</p><a href="/metrics" target="_blank" rel="noopener">Ouvrir /metrics <i data-lucide="external-link" aria-hidden="true"></i></a></article>
+    <article class="monitor-item"><header><i data-lucide="container" aria-hidden="true"></i><span class="badge badge--unknown">Contexte k3d</span></header><h3>Prometheus & Grafana</h3><p>Déployés dans k3d, accessibles par port-forward pendant la démonstration.</p><a href="/help#monitoring">Procédure de démonstration</a></article>
+    <article class="monitor-item"><header><i data-lucide="siren" aria-hidden="true"></i><span class="badge badge--enabled">Validée</span></header><h3>OpsForgeApiDown</h3><p>Règle Prometheus testée par une mise à zéro contrôlée des replicas.</p><span class="monitor-item__note">Aucune notification externe : Alertmanager est hors périmètre.</span></article>
+  </div>
+</section>
+
+<section class="monitoring-section">
+  <header class="section-title"><div><span class="section-title__icon is-demo"><i data-lucide="flask-conical" aria-hidden="true"></i></span><div><h2>États métier simulés</h2><p>Valeurs enregistrées dans OpsForge pour rendre le workflow démontrable.</p></div></div><span class="source-chip source-chip--demo">Données de démonstration</span></header>
+  <div class="table-wrap"><table class="data-table"><thead><tr><th>Service</th><th>Environnement</th><th>État affiché</th><th>Source de l'état</th><th></th></tr></thead><tbody>{% for service in services %}<tr><td><strong>{{ service.name }}</strong><small>{{ service.slug }}</small></td><td>{{ service.environment }}</td><td>{{ badge(service.status) }}</td><td><span class="source-chip source-chip--demo">Saisie OpsForge</span></td><td><a class="icon-button" href="/services/{{ service.id }}" aria-label="Ouvrir {{ service.name }}" title="Ouvrir"><i data-lucide="chevron-right" aria-hidden="true"></i></a></td></tr>{% endfor %}</tbody></table></div>
+</section>
+
+<div class="integration-note"><i data-lucide="unplug" aria-hidden="true"></i><div><h2>Limite actuelle</h2><p>Prometheus détecte l'indisponibilité de l'API, mais ne crée pas automatiquement d'alerte dans OpsForge. Les deux chaînes sont volontairement présentées séparément.</p></div></div>
+{% endblock %}

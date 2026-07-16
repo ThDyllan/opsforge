@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import empty_state, page_header %}
+
+{% block content %}
+{{ page_header("Activité", "Journal horodaté des décisions, actions et résultats.") }}
+
+<section class="queue">
+  <form class="filter-bar" method="get" action="/activity">
+    <label class="search-field"><i data-lucide="search" aria-hidden="true"></i><span class="sr-only">Rechercher</span><input type="search" name="q" value="{{ filters.q }}" placeholder="Rechercher acteur, action ou détail"></label>
+    <label><span>Objet</span><select name="entity_type"><option value="">Tous</option>{% for value in ['Service','Alert','Incident','Runbook','RunbookExecution'] %}<option value="{{ value }}" {% if filters.entity_type == value %}selected{% endif %}>{{ value | entity_label }}</option>{% endfor %}</select></label>
+    <label><span>Action</span><select name="action"><option value="">Toutes</option>{% for value in actions %}<option value="{{ value }}" {% if filters.action == value %}selected{% endif %}>{{ value | action_label }}</option>{% endfor %}</select></label>
+    <button class="button button--secondary" type="submit"><i data-lucide="list-filter" aria-hidden="true"></i><span>Filtrer</span></button>
+  </form>
+  <div class="queue__summary"><strong>{{ logs | length }}</strong> événement{% if logs|length != 1 %}s{% endif %} affiché{% if logs|length != 1 %}s{% endif %}</div>
+
+  {% if logs %}
+  <div class="audit-list">
+    {% for log in logs %}
+    {% set details = log.details | details_dict %}
+    <article class="audit-row">
+      <span class="audit-row__icon"><i data-lucide="{% if 'incident' in log.action %}siren{% elif 'alert' in log.action %}bell{% elif 'runbook' in log.action %}play{% elif 'service' in log.action %}box{% else %}history{% endif %}" aria-hidden="true"></i></span>
+      <div class="audit-row__main"><strong>{{ log.action | action_label }}</strong><p><span class="owner"><span>{{ log.actor[:2] | upper }}</span>{{ log.actor }}</span> sur {{ log.entity_type | entity_label }}{% if log.entity_id %} #{{ log.entity_id }}{% endif %}</p>{% if details.output %}<blockquote>{{ details.output }}</blockquote>{% elif details.changes %}<small>{{ details.changes | length }} champ{% if details.changes|length != 1 %}s{% endif %} modifié{% if details.changes|length != 1 %}s{% endif %}</small>{% endif %}</div>
+      <div class="audit-row__target">{% if log.entity_type == 'Incident' and log.entity_id %}<a href="/incidents/{{ log.entity_id }}">Incident #{{ log.entity_id }}</a>{% elif log.entity_type == 'Service' and log.entity_id %}<a href="/services/{{ log.entity_id }}">Service #{{ log.entity_id }}</a>{% elif log.entity_type == 'Runbook' and log.entity_id %}<a href="/runbooks/{{ log.entity_id }}">Runbook #{{ log.entity_id }}</a>{% else %}<span>{{ log.entity_type | entity_label }}{% if log.entity_id %} #{{ log.entity_id }}{% endif %}</span>{% endif %}</div>
+      <time>{{ log.created_at | datetime_fr }}</time>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}{{ empty_state("Aucune activité trouvée", "Le journal ne contient aucun événement correspondant aux filtres.") }}{% endif %}
+</section>
+{% endblock %}

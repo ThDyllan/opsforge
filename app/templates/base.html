@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpsForge, console locale de gestion d'incidents DevOps.">
+  <title>{{ page_title }} | OpsForge</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Aller au contenu</a>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Navigation principale">
+      <a class="brand" href="/overview" aria-label="OpsForge - Vue d'ensemble">
+        <span class="brand__mark"><i data-lucide="anvil" aria-hidden="true"></i></span>
+        <span class="brand__copy">
+          <strong>OpsForge</strong>
+          <small>Incident operations</small>
+        </span>
+      </a>
+
+      <nav class="sidebar__nav">
+        <p class="nav-group__label">Opérations</p>
+        <a class="nav-link{% if active_nav == 'overview' %} is-active{% endif %}" href="/overview">
+          <i data-lucide="layout-dashboard" aria-hidden="true"></i><span>Vue d'ensemble</span>
+        </a>
+        <a class="nav-link{% if active_nav == 'alerts' %} is-active{% endif %}" href="/alerts">
+          <i data-lucide="bell-ring" aria-hidden="true"></i><span>Alertes</span>
+          {% if new_alert_count %}<span class="nav-count">{{ new_alert_count }}</span>{% endif %}
+        </a>
+        <a class="nav-link{% if active_nav == 'incidents' %} is-active{% endif %}" href="/incidents">
+          <i data-lucide="siren" aria-hidden="true"></i><span>Incidents</span>
+          {% if active_incident_count %}<span class="nav-count nav-count--critical">{{ active_incident_count }}</span>{% endif %}
+        </a>
+
+        <p class="nav-group__label">Ressources</p>
+        <a class="nav-link{% if active_nav == 'services' %} is-active{% endif %}" href="/services">
+          <i data-lucide="boxes" aria-hidden="true"></i><span>Services</span>
+        </a>
+        <a class="nav-link{% if active_nav == 'runbooks' %} is-active{% endif %}" href="/runbooks">
+          <i data-lucide="list-checks" aria-hidden="true"></i><span>Runbooks</span>
+        </a>
+
+        <p class="nav-group__label">Preuves</p>
+        <a class="nav-link{% if active_nav == 'activity' %} is-active{% endif %}" href="/activity">
+          <i data-lucide="history" aria-hidden="true"></i><span>Activité</span>
+        </a>
+        <a class="nav-link{% if active_nav == 'monitoring' %} is-active{% endif %}" href="/monitoring">
+          <i data-lucide="activity" aria-hidden="true"></i><span>Monitoring</span>
+        </a>
+      </nav>
+
+      <div class="sidebar__footer">
+        <a class="nav-link{% if active_nav == 'help' %} is-active{% endif %}" href="/help">
+          <i data-lucide="circle-help" aria-hidden="true"></i><span>Aide</span>
+        </a>
+        <div class="operator-card">
+          <span class="operator-card__avatar">DT</span>
+          <span><strong>{{ operator_name }}</strong><small>Opérateur local</small></span>
+          <span class="status-dot status-dot--online" title="Console locale disponible"></span>
+        </div>
+      </div>
+    </aside>
+
+    <div class="sidebar-backdrop" data-sidebar-close></div>
+
+    <div class="workspace">
+      <header class="topbar">
+        <button class="icon-button topbar__menu" type="button" data-sidebar-toggle aria-label="Ouvrir la navigation" title="Ouvrir la navigation">
+          <i data-lucide="menu" aria-hidden="true"></i>
+        </button>
+        <div class="topbar__title">
+          <span class="topbar__eyebrow">OpsForge</span>
+          <strong>{{ page_title }}</strong>
+        </div>
+        <div class="topbar__actions">
+          <a class="button button--danger" href="/incidents/new">
+            <i data-lucide="siren" aria-hidden="true"></i>
+            <span>Déclarer un incident</span>
+          </a>
+        </div>
+      </header>
+
+      <main class="content" id="main-content" tabindex="-1">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" data-toast role="status" aria-live="polite" hidden>
+    <span data-toast-icon><i data-lucide="circle-check" aria-hidden="true"></i></span>
+    <span data-toast-message></span>
+    <button class="icon-button" type="button" data-toast-close aria-label="Fermer la notification" title="Fermer">
+      <i data-lucide="x" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <script src="{{ url_for('static', path='/vendor/lucide.min.js') }}"></script>
+  <script src="{{ url_for('static', path='/app.js') }}"></script>
+</body>
+</html>

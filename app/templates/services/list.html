@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import badge, empty_state, page_header %}
+
+{% block content %}
+{{ page_header("Services", "Catalogue des services logiques supervisés ou représentés dans OpsForge.", "/services/new", "Créer un service", "plus") }}
+
+<div class="truth-banner"><i data-lucide="badge-info" aria-hidden="true"></i><div><strong>États de démonstration</strong><p>Les statuts ci-dessous sont saisis dans OpsForge. Ils ne proviennent pas automatiquement de Prometheus.</p></div><a href="/monitoring">Comprendre la différence</a></div>
+
+<section class="queue">
+  <form class="filter-bar" method="get" action="/services">
+    <label class="search-field"><i data-lucide="search" aria-hidden="true"></i><span class="sr-only">Rechercher</span><input type="search" name="q" value="{{ filters.q }}" placeholder="Rechercher nom, slug ou description"></label>
+    <label><span>Statut</span><select name="status"><option value="">Tous</option>{% for value in ['healthy','degraded','down','unknown'] %}<option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ value | label }}</option>{% endfor %}</select></label>
+    <label><span>Environnement</span><select name="environment"><option value="">Tous</option>{% for item in environments %}<option value="{{ item }}" {% if filters.environment == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></label>
+    <button class="button button--secondary" type="submit"><i data-lucide="list-filter" aria-hidden="true"></i><span>Filtrer</span></button>
+  </form>
+  <div class="queue__summary"><strong>{{ services | length }}</strong> service{% if services|length != 1 %}s{% endif %}</div>
+
+  {% if services %}
+  <div class="service-grid">
+    {% for service in services %}
+    <article class="service-card service-card--{{ service.status }}">
+      <header><span class="service-card__mark"><i data-lucide="box" aria-hidden="true"></i></span><div><h2><a href="/services/{{ service.id }}">{{ service.name }}</a></h2><p>{{ service.slug }}</p></div>{{ badge(service.status) }}</header>
+      <p class="service-card__description">{{ service.description or "Aucune description." }}</p>
+      <dl><div><dt>Environnement</dt><dd>{{ service.environment }}</dd></div><div><dt>Responsable</dt><dd>{{ service.owner or "Non assigné" }}</dd></div></dl>
+      <footer><a href="/alerts?service_id={{ service.id }}"><strong>{{ alert_counts.get(service.id, 0) }}</strong> alertes actives</a><a href="/incidents?status=active&service_id={{ service.id }}"><strong>{{ incident_counts.get(service.id, 0) }}</strong> incidents actifs</a><a class="icon-button" href="/services/{{ service.id }}" aria-label="Ouvrir {{ service.name }}" title="Ouvrir"><i data-lucide="arrow-right" aria-hidden="true"></i></a></footer>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}{{ empty_state("Aucun service trouvé", "Aucun service ne correspond aux filtres actuels.", "/services/new", "Créer un service") }}{% endif %}
+</section>
+{% endblock %}

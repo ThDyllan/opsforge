@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import page_header %}
+
+{% block content %}
+{{ page_header("Modifier le service" if service else "Créer un service", "Maintenez le catalogue indépendamment du workflow urgent des incidents.") }}
+
+<div class="form-layout">
+  <form class="form-panel" data-api-form data-method="{{ 'PATCH' if service else 'POST' }}" data-url="{{ '/api/services/' ~ service.id if service else '/api/services' }}" data-redirect-template="/services/{id}" data-success="Service {{ 'mis à jour' if service else 'créé' }}">
+    <div class="form-section">
+      <h2>Identité</h2>
+      <div class="form-grid form-grid--2">
+        <label><span>Nom <em>*</em></span><input name="name" maxlength="120" required value="{{ service.name if service else '' }}" data-slug-source placeholder="Ex. Backup Service"></label>
+        <label><span>Slug <em>*</em></span><input name="slug" maxlength="120" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value="{{ service.slug if service else '' }}" data-slug-target placeholder="backup-service"></label>
+      </div>
+      <label><span>Description</span><textarea name="description" rows="5" placeholder="Rôle du service dans le système de démonstration.">{{ service.description if service else '' }}</textarea></label>
+    </div>
+    <div class="form-section">
+      <h2>Exploitation</h2>
+      <div class="form-grid form-grid--3">
+        <label><span>Environnement <em>*</em></span><input name="environment" maxlength="50" required value="{{ service.environment if service else 'production' }}"></label>
+        <label><span>Statut</span><select name="status">{% for value in ['healthy','degraded','down','unknown'] %}<option value="{{ value }}" {% if (service and service.status == value) or (not service and value == 'unknown') %}selected{% endif %}>{{ value | label }}</option>{% endfor %}</select></label>
+        <label><span>Responsable</span><input name="owner" maxlength="120" value="{{ service.owner if service and service.owner else 'Dyllan' }}"></label>
+      </div>
+    </div>
+    <div class="form-actions"><a class="button button--ghost" href="{{ '/services/' ~ service.id if service else '/services' }}">Annuler</a><button class="button button--primary" type="submit"><i data-lucide="save" aria-hidden="true"></i><span>{{ 'Enregistrer' if service else 'Créer le service' }}</span></button></div>
+  </form>
+  <aside class="context-panel"><span class="context-panel__icon"><i data-lucide="boxes" aria-hidden="true"></i></span><h2>Service logique</h2><p>Un service représente un composant fonctionnel surveillé, comme le paiement ou la sauvegarde. Ce n'est pas un inventaire de machines.</p><p class="context-note">Le statut reste manuel et simulé dans cette version.</p></aside>
+</div>
+{% endblock %}

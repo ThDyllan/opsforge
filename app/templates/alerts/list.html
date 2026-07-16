@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import badge, empty_state, page_header %}
+
+{% block content %}
+{{ page_header("Alertes", "Qualifiez les signaux avant de les transformer en incidents.", "/alerts/new", "Créer une alerte", "plus") }}
+
+<section class="queue">
+  <form class="filter-bar" method="get" action="/alerts">
+    <label class="search-field"><i data-lucide="search" aria-hidden="true"></i><span class="sr-only">Rechercher</span><input type="search" name="q" value="{{ filters.q }}" placeholder="Rechercher titre, message ou source"></label>
+    <label><span>Statut</span><select name="status"><option value="">Tous</option><option value="new" {% if filters.status == 'new' %}selected{% endif %}>Nouvelles</option><option value="acknowledged" {% if filters.status == 'acknowledged' %}selected{% endif %}>Acquittées</option><option value="resolved" {% if filters.status == 'resolved' %}selected{% endif %}>Résolues</option></select></label>
+    <label><span>Sévérité</span><select name="severity"><option value="">Toutes</option><option value="critical" {% if filters.severity == 'critical' %}selected{% endif %}>Critique</option><option value="warning" {% if filters.severity == 'warning' %}selected{% endif %}>Avertissement</option><option value="info" {% if filters.severity == 'info' %}selected{% endif %}>Information</option></select></label>
+    <label><span>Service</span><select name="service_id"><option value="">Tous</option>{% for service in services %}<option value="{{ service.id }}" {% if filters.service_id == service.id %}selected{% endif %}>{{ service.name }}</option>{% endfor %}</select></label>
+    <button class="button button--secondary" type="submit"><i data-lucide="list-filter" aria-hidden="true"></i><span>Filtrer</span></button>
+    {% if filters.q or filters.status or filters.severity or filters.service_id %}<a class="button button--ghost" href="/alerts">Réinitialiser</a>{% endif %}
+  </form>
+
+  <div class="queue__summary"><strong>{{ alerts | length }}</strong> alerte{% if alerts|length != 1 %}s{% endif %} affichée{% if alerts|length != 1 %}s{% endif %}</div>
+
+  {% if alerts %}
+  <div class="table-wrap">
+    <table class="data-table queue-table">
+      <thead><tr><th>Détails</th><th>Service</th><th>Reçue</th><th>Sévérité</th><th>Statut</th><th>Incident</th><th class="cell-actions">Actions</th></tr></thead>
+      <tbody>
+        {% for alert in alerts %}
+        {% set linked = active_incident_by_alert.get(alert.id) %}
+        <tr data-alert-row="{{ alert.id }}">
+          <td class="cell-primary"><button class="row-expander" type="button" data-row-expand="alert-details-{{ alert.id }}" aria-expanded="false" title="Afficher le message"><i data-lucide="chevron-right" aria-hidden="true"></i></button><span><strong>{{ alert.title }}</strong><small>{{ alert.source }} · Alerte #{{ alert.id }}</small></span></td>
+          <td>{{ alert.service.name if alert.service else "Non associé" }}</td>
+          <td>{{ alert.received_at | datetime_fr }}</td>
+          <td>{{ badge(alert.severity, 'severity') }}</td>
+          <td>{{ badge(alert.status) }}</td>
+          <td>{% if linked %}<a class="object-link" href="/incidents/{{ linked.id }}">#{{ linked.id }} {{ linked.title }}</a>{% else %}<span class="muted">Aucun</span>{% endif %}</td>
+          <td class="cell-actions">
+            <div class="action-cluster">
+              {% if alert.status == 'new' %}<button class="button button--small button--secondary" type="button" data-api-action data-method="PATCH" data-url="/api/alerts/{{ alert.id }}/acknowledge" data-success="Alerte acquittée">Acquitter</button>{% endif %}
+              {% if alert.status != 'resolved' and linked %}<a class="button button--small button--primary" href="/incidents/{{ linked.id }}">Ouvrir l'incident</a>{% elif alert.status != 'resolved' %}<a class="button button--small button--primary" href="/incidents/new?alert_id={{ alert.id }}">Ouvrir un incident</a>{% endif %}
+              {% if alert.status != 'resolved' %}<button class="icon-button icon-button--danger" type="button" data-api-action data-method="PATCH" data-url="/api/alerts/{{ alert.id }}/resolve" data-confirm="Résoudre cette alerte sans modifier l'incident associé ?" data-success="Alerte résolue" aria-label="Résoudre l'alerte" title="Résoudre"><i data-lucide="circle-check" aria-hidden="true"></i></button>{% endif %}
+            </div>
+          </td>
+        </tr>
+        <tr class="detail-row" id="alert-details-{{ alert.id }}" hidden><td colspan="7"><div class="detail-row__content"><div><span class="field-label">Message complet</span><p>{{ alert.message }}</p></div><dl><div><dt>Source</dt><dd>{{ alert.source }}</dd></div><div><dt>Service</dt><dd>{{ alert.service.name if alert.service else "Non associé" }}</dd></div>{% if alert.resolved_at %}<div><dt>Résolue</dt><dd>{{ alert.resolved_at | datetime_fr }}</dd></div>{% endif %}</dl></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {{ empty_state("Aucune alerte trouvée", "Aucune alerte ne correspond aux filtres actuels.", "/alerts/new", "Créer une alerte") }}
+  {% endif %}
+</section>
+{% endblock %}

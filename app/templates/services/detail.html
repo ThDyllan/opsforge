@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import badge, empty_state %}
+
+{% block content %}
+<nav class="breadcrumbs" aria-label="Fil d'Ariane"><a href="/services">Services</a><i data-lucide="chevron-right" aria-hidden="true"></i><span>{{ service.name }}</span></nav>
+<header class="object-header">
+  <div class="object-header__mark"><i data-lucide="box" aria-hidden="true"></i></div>
+  <div class="object-header__main"><div>{{ badge(service.status) }}<span class="source-chip">Statut de démonstration</span></div><h1>{{ service.name }}</h1><p>{{ service.description or "Aucune description." }}</p></div>
+  <a class="button button--secondary" href="/services/{{ service.id }}/edit"><i data-lucide="pencil" aria-hidden="true"></i><span>Modifier</span></a>
+</header>
+
+<section class="object-facts"><dl><div><dt>Slug</dt><dd><code>{{ service.slug }}</code></dd></div><div><dt>Environnement</dt><dd>{{ service.environment }}</dd></div><div><dt>Responsable</dt><dd>{{ service.owner or "Non assigné" }}</dd></div><div><dt>Mis à jour</dt><dd>{{ service.updated_at | datetime_fr }}</dd></div></dl></section>
+
+<div class="two-column">
+  <section class="panel">
+    <header class="panel__header"><div><h2>Alertes liées</h2><p>{{ alerts | length }} signal{% if alerts|length != 1 %}s{% endif %} dans l'historique.</p></div><a class="button button--small button--secondary" href="/alerts/new?service_id={{ service.id }}">Créer une alerte</a></header>
+    {% if alerts %}<div class="compact-list">{% for alert in alerts[:8] %}<a class="compact-row" href="/alerts?q={{ alert.title | urlencode }}"><span class="compact-row__main"><strong>{{ alert.title }}</strong><small>{{ alert.received_at | datetime_fr }}</small></span>{{ badge(alert.severity, 'severity') }}{{ badge(alert.status) }}</a>{% endfor %}</div>{% else %}{{ empty_state("Aucune alerte", "Ce service n'a encore reçu aucun signal.") }}{% endif %}
+  </section>
+  <section class="panel">
+    <header class="panel__header"><div><h2>Incidents liés</h2><p>{{ incidents | length }} prise{% if incidents|length != 1 %}s{% endif %} en charge dans l'historique.</p></div><a class="button button--small button--secondary" href="/incidents/new?service_id={{ service.id }}">Déclarer</a></header>
+    {% if incidents %}<div class="compact-list">{% for incident in incidents[:8] %}<a class="compact-row" href="/incidents/{{ incident.id }}"><span class="compact-row__id">#{{ incident.id }}</span><span class="compact-row__main"><strong>{{ incident.title }}</strong><small>{{ incident.updated_at | datetime_fr }}</small></span>{{ badge(incident.severity, 'severity') }}{{ badge(incident.status) }}</a>{% endfor %}</div>{% else %}{{ empty_state("Aucun incident", "Ce service n'a encore nécessité aucune prise en charge.") }}{% endif %}
+  </section>
+</div>
+{% endblock %}

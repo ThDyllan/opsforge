@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import badge, page_header %}
+
+{% block content %}
+{{ page_header("Déclarer un incident", "Ouvrez une prise en charge formelle, depuis une alerte ou manuellement.") }}
+
+{% if source_alert %}
+<section class="source-context">
+  <span class="source-context__icon"><i data-lucide="bell-ring" aria-hidden="true"></i></span>
+  <div><span class="field-label">Alerte source #{{ source_alert.id }}</span><strong>{{ source_alert.title }}</strong><p>{{ source_alert.message }}</p></div>
+  <div>{{ badge(source_alert.severity, 'severity') }} {{ badge(source_alert.status) }}</div>
+</section>
+{% endif %}
+
+<div class="form-layout">
+  <form class="form-panel" data-api-form data-method="POST" data-url="/api/incidents" data-redirect-template="/incidents/{id}" data-success="Incident déclaré">
+    <div class="form-section">
+      <h2>Contexte</h2>
+      {% if source_alert %}<input type="hidden" name="source_alert_id" data-number value="{{ source_alert.id }}">{% endif %}
+      <label><span>Service <em>*</em></span><select name="service_id" data-number required {% if source_alert %}data-locked{% endif %}><option value="">Sélectionner un service</option>{% for service in services %}<option value="{{ service.id }}" {% if selected_service_id == service.id %}selected{% endif %}>{{ service.name }} · {{ service.environment }}</option>{% endfor %}</select></label>
+      <label><span>Titre <em>*</em></span><input name="title" maxlength="200" required value="{% if source_alert %}Incident - {{ source_alert.title }}{% endif %}" placeholder="Résumé du problème pris en charge"></label>
+      <label><span>Description <em>*</em></span><textarea name="description" rows="7" required placeholder="Décrivez l'impact observé, le contexte et le résultat attendu.">{% if source_alert %}{{ source_alert.message }}{% endif %}</textarea></label>
+    </div>
+    <div class="form-section">
+      <h2>Qualification</h2>
+      <div class="form-grid form-grid--2">
+        <label><span>Sévérité</span><select name="severity">{% set selected_severity = 'critical' if source_alert and source_alert.severity == 'critical' else ('medium' if source_alert and source_alert.severity == 'warning' else 'low') %}{% for value in ['low','medium','high','critical'] %}<option value="{{ value }}" {% if selected_severity == value %}selected{% endif %}>{{ value | label }}</option>{% endfor %}</select></label>
+        <label><span>Responsable</span><input name="owner" maxlength="120" value="Dyllan" placeholder="Nom de l'opérateur"></label>
+      </div>
+      <input type="hidden" name="status" value="open">
+    </div>
+    <div class="form-actions"><a class="button button--ghost" href="{% if source_alert %}/alerts{% else %}/incidents{% endif %}">Annuler</a><button class="button button--danger" type="submit"><i data-lucide="siren" aria-hidden="true"></i><span>Déclarer l'incident</span></button></div>
+  </form>
+  <aside class="context-panel"><span class="context-panel__icon"><i data-lucide="clipboard-check" aria-hidden="true"></i></span><h2>Ce qui sera enregistré</h2><p>L'incident démarre à l'état ouvert. Sa déclaration, son responsable, ses changements de statut et les runbooks exécutés alimenteront la chronologie d'audit.</p>{% if not source_alert %}<p class="context-note">Déclaration manuelle : le service et la description sont obligatoires.</p>{% endif %}</aside>
+</div>
+{% endblock %}

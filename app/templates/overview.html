@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import badge, empty_state, page_header %}
+
+{% block content %}
+{{ page_header("Vue d'ensemble", "Les signaux qui demandent votre attention maintenant.") }}
+
+<section class="metric-strip" aria-label="Résumé opérationnel">
+  <a class="metric metric--danger" href="/incidents?status=active&severity=critical">
+    <span class="metric__icon"><i data-lucide="shield-alert" aria-hidden="true"></i></span>
+    <span><strong>{{ stats.critical_incidents }}</strong><small>Incidents critiques</small></span>
+  </a>
+  <a class="metric" href="/incidents?status=active">
+    <span class="metric__icon"><i data-lucide="siren" aria-hidden="true"></i></span>
+    <span><strong>{{ stats.active_incidents }}</strong><small>Incidents actifs</small></span>
+  </a>
+  <a class="metric metric--warning" href="/alerts?status=new">
+    <span class="metric__icon"><i data-lucide="bell-ring" aria-hidden="true"></i></span>
+    <span><strong>{{ stats.new_alerts }}</strong><small>Nouvelles alertes</small></span>
+  </a>
+  <a class="metric" href="/alerts?status=new">
+    <span class="metric__icon"><i data-lucide="unlink" aria-hidden="true"></i></span>
+    <span><strong>{{ stats.alerts_without_incident }}</strong><small>Alertes sans incident</small></span>
+  </a>
+  <a class="metric" href="/services?status=degraded">
+    <span class="metric__icon"><i data-lucide="boxes" aria-hidden="true"></i></span>
+    <span><strong>{{ stats.impaired_services }}</strong><small>Services dégradés</small></span>
+  </a>
+</section>
+
+<div class="overview-grid">
+  <section class="panel panel--span-2">
+    <header class="panel__header">
+      <div><h2>Incidents à traiter</h2><p>Priorité aux incidents actifs les plus sévères.</p></div>
+      <a class="text-link" href="/incidents?status=active">Voir la file <i data-lucide="arrow-right" aria-hidden="true"></i></a>
+    </header>
+    {% if incidents %}
+    <div class="compact-list">
+      {% for incident in incidents %}
+      <a class="compact-row" href="/incidents/{{ incident.id }}">
+        <span class="compact-row__id">#{{ incident.id }}</span>
+        <span class="compact-row__main">
+          <strong>{{ incident.title }}</strong>
+          <small>{{ incident.service.name if incident.service else "Service non défini" }} · {{ incident.owner or "Non assigné" }}</small>
+        </span>
+        {{ badge(incident.severity, 'severity') }}
+        {{ badge(incident.status) }}
+        <i data-lucide="chevron-right" aria-hidden="true"></i>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+      {{ empty_state("Aucun incident actif", "La file d'incidents est vide.", "/incidents/new", "Déclarer un incident") }}
+    {% endif %}
+  </section>
+
+  <section class="panel platform-state">
+    <header class="panel__header"><div><h2>État réel d'OpsForge</h2><p>Contrôles de la plateforme elle-même.</p></div></header>
+    <div class="platform-check">
+      <span class="platform-check__icon is-ok"><i data-lucide="heart-pulse" aria-hidden="true"></i></span>
+      <span><strong>API FastAPI</strong><small>Processus disponible via /health</small></span>
+      <span class="badge badge--healthy">Opérationnel</span>
+    </div>
+    <div class="platform-check">
+      <span class="platform-check__icon is-ok"><i data-lucide="database" aria-hidden="true"></i></span>
+      <span><strong>PostgreSQL</strong><small>Connexion validée par cette page</small></span>
+      <span class="badge badge--healthy">Prêt</span>
+    </div>
+    <div class="platform-check">
+      <span class="platform-check__icon"><i data-lucide="chart-no-axes-combined" aria-hidden="true"></i></span>
+      <span><strong>Prometheus & Grafana</strong><small>Environnement k3d, non interrogé ici</small></span>
+      <a href="/monitoring">Détails</a>
+    </div>
+  </section>
+
+  <section class="panel panel--span-2">
+    <header class="panel__header">
+      <div><h2>Alertes récentes</h2><p>Signaux reçus, avec leur prise en charge éventuelle.</p></div>
+      <a class="text-link" href="/alerts">Voir toutes <i data-lucide="arrow-right" aria-hidden="true"></i></a>
+    </header>
+    <div class="table-wrap">
+      <table class="data-table data-table--compact">
+        <thead><tr><th>Alerte</th><th>Service</th><th>Sévérité</th><th>Statut</th><th>Prise en charge</th><th>Reçue</th></tr></thead>
+        <tbody>
+          {% for alert in recent_alerts %}
+          <tr>
+            <td><strong>{{ alert.title }}</strong><small>{{ alert.source }}</small></td>
+            <td>{{ alert.service.name if alert.service else "-" }}</td>
+            <td>{{ badge(alert.severity, 'severity') }}</td>
+            <td>{{ badge(alert.status) }}</td>
+            <td>
+              {% set linked = active_incident_by_alert.get(alert.id) %}
+              {% if linked %}<a href="/incidents/{{ linked.id }}">Incident #{{ linked.id }}</a>
+              {% elif alert.status != 'resolved' %}<a href="/incidents/new?alert_id={{ alert.id }}">Ouvrir un incident</a>
+              {% else %}<span class="muted">Aucune</span>{% endif %}
+            </td>
+            <td>{{ alert.received_at | datetime_fr }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <header class="panel__header">
+      <div><h2>Services à surveiller</h2><p>États saisis pour la démonstration.</p></div>
+      <a class="text-link" href="/services">Catalogue</a>
+    </header>
+    {% if impaired_services %}
+    <div class="status-list">
+      {% for service in impaired_services %}
+      <a href="/services/{{ service.id }}"><span class="service-dot service-dot--{{ service.status }}"></span><span><strong>{{ service.name }}</strong><small>{{ service.environment }}</small></span>{{ badge(service.status) }}</a>
+      {% endfor %}
+    </div>
+    {% else %}<p class="empty-inline">Aucun service dégradé ou indisponible.</p>{% endif %}
+  </section>
+
+  <section class="panel panel--span-3">
+    <header class="panel__header">
+      <div><h2>Dernières activités</h2><p>Actions enregistrées dans le journal d'audit.</p></div>
+      <a class="text-link" href="/activity">Ouvrir le journal <i data-lucide="arrow-right" aria-hidden="true"></i></a>
+    </header>
+    <div class="activity-feed activity-feed--horizontal">
+      {% for log in activity %}
+      <article class="activity-item">
+        <span class="activity-item__marker"></span>
+        <div><strong>{{ log.action | action_label }}</strong><p>{{ log.actor }} · {{ log.entity_type | entity_label }}{% if log.entity_id %} #{{ log.entity_id }}{% endif %}</p><time>{{ log.created_at | datetime_fr }}</time></div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

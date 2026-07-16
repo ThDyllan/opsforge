@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import badge, empty_state, page_header %}
+
+{% block content %}
+{{ page_header("Runbooks", "Procédures manuelles et automatisations explicitement approuvées.", "/runbooks/new", "Créer un runbook", "plus") }}
+
+<div class="safety-banner"><i data-lucide="shield-check" aria-hidden="true"></i><div><strong>Exécution contrôlée</strong><p>OpsForge n'exécute aucun script ou commande arbitraire. Les automatisations disponibles sont codées et auditées.</p></div></div>
+
+<section class="queue">
+  <form class="filter-bar" method="get" action="/runbooks">
+    <label class="search-field"><i data-lucide="search" aria-hidden="true"></i><span class="sr-only">Rechercher</span><input type="search" name="q" value="{{ filters.q }}" placeholder="Rechercher une procédure"></label>
+    <label><span>Mode</span><select name="mode"><option value="">Tous</option><option value="manual" {% if filters.mode == 'manual' %}selected{% endif %}>Manuel</option><option value="automated" {% if filters.mode == 'automated' %}selected{% endif %}>Automatisé</option></select></label>
+    <label><span>Disponibilité</span><select name="enabled"><option value="">Toutes</option><option value="true" {% if filters.enabled == 'true' %}selected{% endif %}>Activés</option><option value="false" {% if filters.enabled == 'false' %}selected{% endif %}>Désactivés</option></select></label>
+    <button class="button button--secondary" type="submit"><i data-lucide="list-filter" aria-hidden="true"></i><span>Filtrer</span></button>
+  </form>
+
+  {% if runbooks %}
+  <div class="runbook-catalog">
+    {% for runbook in runbooks %}
+    <article class="runbook-card{% if not runbook.enabled %} is-disabled{% endif %}">
+      <div class="runbook-card__icon"><i data-lucide="{% if runbook.mode == 'manual' %}list-checks{% else %}zap{% endif %}" aria-hidden="true"></i></div>
+      <div class="runbook-card__main"><div class="runbook-card__badges">{{ badge(runbook.mode, 'mode') }}{{ badge(runbook.risk_level, 'risk') }}{% if runbook.enabled %}<span class="badge badge--enabled">Activé</span>{% else %}<span class="badge badge--disabled">Désactivé</span>{% endif %}</div><h2><a href="/runbooks/{{ runbook.id }}">{{ runbook.name }}</a></h2><p>{{ runbook.description or "Aucune description." }}</p><div class="runbook-card__meta"><span><i data-lucide="layers-3" aria-hidden="true"></i>{{ runbook.required_context | label }}</span><span><i data-lucide="list-checks" aria-hidden="true"></i>{{ runbook.steps | length }} étape{% if runbook.steps|length != 1 %}s{% endif %}</span><span><i data-lucide="history" aria-hidden="true"></i>{{ execution_counts.get(runbook.id, 0) }} exécution{% if execution_counts.get(runbook.id, 0) != 1 %}s{% endif %}</span></div></div>
+      <a class="icon-button" href="/runbooks/{{ runbook.id }}" aria-label="Ouvrir {{ runbook.name }}" title="Ouvrir"><i data-lucide="chevron-right" aria-hidden="true"></i></a>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}{{ empty_state("Aucun runbook trouvé", "Aucune procédure ne correspond aux filtres actuels.", "/runbooks/new", "Créer un runbook") }}{% endif %}
+</section>
+{% endblock %}

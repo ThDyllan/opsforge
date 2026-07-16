@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import badge, empty_state, page_header %}
+
+{% block content %}
+{{ page_header("Incidents", "Suivez chaque problème officiellement pris en charge.", "/incidents/new", "Déclarer un incident", "siren") }}
+
+<section class="queue">
+  <form class="filter-bar" method="get" action="/incidents">
+    <label class="search-field"><i data-lucide="search" aria-hidden="true"></i><span class="sr-only">Rechercher</span><input type="search" name="q" value="{{ filters.q }}" placeholder="Rechercher un incident"></label>
+    <label><span>Statut</span><select name="status"><option value="" {% if not filters.status %}selected{% endif %}>Tous</option><option value="active" {% if filters.status == 'active' %}selected{% endif %}>Actifs</option><option value="open" {% if filters.status == 'open' %}selected{% endif %}>Ouverts</option><option value="investigating" {% if filters.status == 'investigating' %}selected{% endif %}>En investigation</option><option value="resolved" {% if filters.status == 'resolved' %}selected{% endif %}>Résolus</option></select></label>
+    <label><span>Sévérité</span><select name="severity"><option value="">Toutes</option>{% for value in ['critical','high','medium','low'] %}<option value="{{ value }}" {% if filters.severity == value %}selected{% endif %}>{{ value | label }}</option>{% endfor %}</select></label>
+    <label><span>Service</span><select name="service_id"><option value="">Tous</option>{% for service in services %}<option value="{{ service.id }}" {% if filters.service_id == service.id %}selected{% endif %}>{{ service.name }}</option>{% endfor %}</select></label>
+    <label><span>Responsable</span><select name="owner"><option value="">Tous</option><option value="unassigned" {% if filters.owner == 'unassigned' %}selected{% endif %}>Non assignés</option>{% for item in owners %}<option value="{{ item }}" {% if filters.owner == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></label>
+    <button class="button button--secondary" type="submit"><i data-lucide="list-filter" aria-hidden="true"></i><span>Filtrer</span></button>
+  </form>
+
+  <div class="queue__summary"><strong>{{ incidents | length }}</strong> incident{% if incidents|length != 1 %}s{% endif %} affiché{% if incidents|length != 1 %}s{% endif %}</div>
+
+  {% if incidents %}
+  <div class="table-wrap">
+    <table class="data-table queue-table">
+      <thead><tr><th>ID</th><th>Incident</th><th>Service</th><th>Sévérité</th><th>Responsable</th><th>Statut</th><th>Dernière activité</th><th></th></tr></thead>
+      <tbody>
+      {% for incident in incidents %}
+        <tr class="clickable-row" data-href="/incidents/{{ incident.id }}">
+          <td><a class="object-id" href="/incidents/{{ incident.id }}">#{{ incident.id }}</a></td>
+          <td class="cell-primary"><span><strong><a href="/incidents/{{ incident.id }}">{{ incident.title }}</a></strong><small>{% if incident.source_alert %}Depuis l'alerte #{{ incident.source_alert.id }}{% else %}Déclaration manuelle{% endif %}</small></span></td>
+          <td>{{ incident.service.name if incident.service else "Non défini" }}</td>
+          <td>{{ badge(incident.severity, 'severity') }}</td>
+          <td>{% if incident.owner %}<span class="owner"><span>{{ incident.owner[:2] | upper }}</span>{{ incident.owner }}</span>{% else %}<span class="muted">Non assigné</span>{% endif %}</td>
+          <td>{{ badge(incident.status) }}</td>
+          <td>{{ last_activity.get(incident.id, incident.updated_at) | datetime_fr }}</td>
+          <td><a class="icon-button" href="/incidents/{{ incident.id }}" aria-label="Ouvrir l'incident #{{ incident.id }}" title="Ouvrir"><i data-lucide="chevron-right" aria-hidden="true"></i></a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {{ empty_state("Aucun incident trouvé", "Aucun incident ne correspond aux filtres actuels.", "/incidents/new", "Déclarer un incident") }}
+  {% endif %}
+</section>
+{% endblock %}
