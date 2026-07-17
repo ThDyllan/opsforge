@@ -18,19 +18,19 @@
 
   {% if alerts %}
   <div class="table-wrap">
-    <table class="data-table queue-table">
+    <table class="data-table queue-table alerts-table">
       <thead><tr><th>Détails</th><th>Service</th><th>Reçue</th><th>Sévérité</th><th>Statut</th><th>Incident</th><th class="cell-actions">Actions</th></tr></thead>
       <tbody>
         {% for alert in alerts %}
         {% set linked = active_incident_by_alert.get(alert.id) %}
         <tr data-alert-row="{{ alert.id }}">
-          <td class="cell-primary"><button class="row-expander" type="button" data-row-expand="alert-details-{{ alert.id }}" aria-expanded="false" title="Afficher le message"><i data-lucide="chevron-right" aria-hidden="true"></i></button><span><strong>{{ alert.title }}</strong><small>{{ alert.source }} · Alerte #{{ alert.id }}</small></span></td>
-          <td>{{ alert.service.name if alert.service else "Non associé" }}</td>
-          <td>{{ alert.received_at | datetime_fr }}</td>
-          <td>{{ badge(alert.severity, 'severity') }}</td>
-          <td>{{ badge(alert.status) }}</td>
-          <td>{% if linked %}<a class="object-link" href="/incidents/{{ linked.id }}">#{{ linked.id }} {{ linked.title }}</a>{% else %}<span class="muted">Aucun</span>{% endif %}</td>
-          <td class="cell-actions">
+          <td class="cell-primary" data-label="Détails"><button class="row-expander" type="button" data-row-expand="alert-details-{{ alert.id }}" aria-expanded="false" title="Afficher le message"><i data-lucide="chevron-right" aria-hidden="true"></i></button><span><strong>{{ alert.title }}</strong><small>{{ alert.source }} · Alerte #{{ alert.id }}</small></span></td>
+          <td data-label="Service">{{ alert.service.name if alert.service else "Non associé" }}</td>
+          <td data-label="Reçue">{{ alert.received_at | datetime_fr }}</td>
+          <td data-label="Sévérité">{{ badge(alert.severity, 'severity') }}</td>
+          <td data-label="Statut">{{ badge(alert.status) }}</td>
+          <td data-label="Incident">{% if linked %}<a class="object-link" href="/incidents/{{ linked.id }}">#{{ linked.id }} {{ linked.title }}</a>{% else %}<span class="muted">Aucun</span>{% endif %}</td>
+          <td class="cell-actions" data-label="Actions">
             <div class="action-cluster">
               {% if alert.status == 'new' %}<button class="button button--small button--secondary" type="button" data-api-action data-method="PATCH" data-url="/api/alerts/{{ alert.id }}/acknowledge" data-success="Alerte acquittée">Acquitter</button>{% endif %}
               {% if alert.status != 'resolved' and linked %}<a class="button button--small button--primary" href="/incidents/{{ linked.id }}">Ouvrir l'incident</a>{% elif alert.status != 'resolved' %}<a class="button button--small button--primary" href="/incidents/new?alert_id={{ alert.id }}">Ouvrir un incident</a>{% endif %}
