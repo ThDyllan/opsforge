@@ -95,6 +95,8 @@
             </td>
             <td>{{ alert.received_at | datetime_fr }}</td>
           </tr>
+          {% else %}
+          <tr><td colspan="6" class="empty-cell">Aucune alerte récente.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -126,6 +128,8 @@
         <span class="activity-item__marker"></span>
         <div><strong>{{ log.action | action_label }}</strong><p>{{ log.actor }} · {{ log.entity_type | entity_label }}{% if log.entity_id %} #{{ log.entity_id }}{% endif %}</p><time>{{ log.created_at | datetime_fr }}</time></div>
       </article>
+      {% else %}
+      <p class="empty-inline">Aucune activité enregistrée pour le moment.</p>
       {% endfor %}
     </div>
   </section>
