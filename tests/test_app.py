@@ -346,6 +346,53 @@ def test_resolved_alert_incident_can_be_replaced_by_a_new_incident() -> None:
     assert second.json()["id"] != first["id"]
 
 
+def test_incident_form_locks_service_only_when_alert_has_one() -> None:
+    with _client() as client:
+        service = _create_service(client, slug="lock-check")
+        with_service = _create_alert(client, service["id"])
+        no_service = client.post(
+            "/api/alerts",
+            json={
+                "source": "test",
+                "title": "Alerte sans service",
+                "message": "m",
+                "severity": "warning",
+            },
+        ).json()
+        locked_form = client.get(f"/incidents/new?alert_id={with_service['id']}").text
+        open_form = client.get(f"/incidents/new?alert_id={no_service['id']}").text
+
+    assert "data-locked" in locked_form
+    assert "data-locked" not in open_form
+
+
+def test_incident_from_serviceless_alert_can_pick_a_service() -> None:
+    with _client() as client:
+        service = _create_service(client, slug="picked-service")
+        alert = client.post(
+            "/api/alerts",
+            json={
+                "source": "test",
+                "title": "Alerte sans service",
+                "message": "m",
+                "severity": "critical",
+            },
+        ).json()
+        response = client.post(
+            "/api/incidents",
+            json={
+                "source_alert_id": alert["id"],
+                "service_id": service["id"],
+                "title": "Incident from serviceless alert",
+                "description": "Operator supplies the service.",
+                "severity": "high",
+            },
+        )
+
+    assert response.status_code == 201
+    assert response.json()["service_id"] == service["id"]
+
+
 def test_manual_incident_requires_service_and_description() -> None:
     with _client() as client:
         service = _create_service(client, slug="manual-requirements")
