@@ -46,8 +46,8 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 6
           livenessProbe:
-            # Restart the pod if the postmaster stops answering queries, not just
-            # when it stops accepting TCP connections.
+            # Restart the pod if the postmaster stops accepting connections
+            # (pg_isready checks connection acceptance, not query execution).
             exec:
               command:
                 - /bin/sh

@@ -61,6 +61,12 @@ Un runbook est une procedure de diagnostic ou de traitement.
 - Un runbook manuel contient des instructions et une checklist. L'operateur confirme les etapes et le resultat.
 - Un runbook automatise appelle uniquement une action Python connue et approuvee par OpsForge.
 
+Les runbooks definis dans le code (re-synchronises au demarrage) sont manages :
+ils sont en lecture seule dans l'API et l'interface, et portent un badge
+`Manage`. L'operateur cree et maintient ses propres runbooks, qui restent
+entierement editables. Cela evite qu'une modification d'un runbook du code soit
+silencieusement ecrasee au redemarrage.
+
 OpsForge n'accepte et n'execute aucun script ou commande systeme arbitraire.
 
 ### Journal D'Audit
