@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from .database import get_db
 from .models import Alert, AuditLog, Incident, Runbook, RunbookExecution, Service
-from .runbooks import RUNBOOK_DEFINITIONS
+from .runbooks import MANAGED_RUNBOOK_KEYS, RUNBOOK_DEFINITIONS
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -610,6 +610,7 @@ def runbooks_list(
         active_nav="runbooks",
         runbooks=runbooks,
         execution_counts=execution_counts,
+        managed_keys=MANAGED_RUNBOOK_KEYS,
         filters={"q": q, "mode": mode, "enabled": enabled},
     )
 
@@ -633,6 +634,12 @@ def runbook_edit(runbook_id: int, request: Request, db: Session = Depends(get_db
     runbook = db.get(Runbook, runbook_id)
     if runbook is None:
         raise HTTPException(status_code=404, detail="Runbook introuvable.")
+    if runbook.key in MANAGED_RUNBOOK_KEYS:
+        # Managed runbooks are code-owned and read-only; the edit action is hidden
+        # in the UI, so a direct visit just returns to the detail page.
+        return RedirectResponse(
+            url=f"/runbooks/{runbook.id}", status_code=status.HTTP_303_SEE_OTHER
+        )
     return _render(
         request,
         db,
@@ -672,6 +679,7 @@ def runbook_detail(runbook_id: int, request: Request, db: Session = Depends(get_
         page_title=runbook.name,
         active_nav="runbooks",
         runbook=runbook,
+        managed=runbook.key in MANAGED_RUNBOOK_KEYS,
         executions=executions,
         services=services,
         incidents=incidents,

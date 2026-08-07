@@ -670,6 +670,62 @@ def test_arbitrary_automation_key_is_rejected() -> None:
     assert "liste approuvée" in response.json()["detail"]
 
 
+def test_managed_runbook_cannot_be_edited_via_api() -> None:
+    with _client() as client:
+        managed = next(
+            item
+            for item in client.get("/api/runbooks").json()
+            if item["key"] == "diagnostic_echec_sauvegarde"
+        )
+        response = client.patch(
+            f"/api/runbooks/{managed['id']}",
+            json={"name": "Tentative de modification"},
+        )
+        after = client.get(f"/api/runbooks/{managed['id']}").json()
+
+    assert response.status_code == 409
+    assert "managé" in response.json()["detail"]
+    assert after["name"] == managed["name"]
+
+
+def test_managed_runbook_edit_page_redirects_to_detail() -> None:
+    with _client() as client:
+        managed = next(
+            item
+            for item in client.get("/api/runbooks").json()
+            if item["key"] == "health_check_service"
+        )
+        response = client.get(
+            f"/runbooks/{managed['id']}/edit", follow_redirects=False
+        )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/runbooks/{managed['id']}"
+
+
+def test_operator_runbook_remains_editable() -> None:
+    with _client() as client:
+        created = client.post(
+            "/api/runbooks",
+            json={
+                "key": "operator_owned_runbook",
+                "name": "Runbook opérateur",
+                "description": "Créé par l'opérateur.",
+                "mode": "manual",
+                "steps": ["Étape unique"],
+                "required_context": "none",
+                "risk_level": "low",
+            },
+        ).json()
+        response = client.patch(
+            f"/api/runbooks/{created['id']}",
+            json={"name": "Runbook opérateur renommé"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "Runbook opérateur renommé"
+
+
 def test_runbook_execution_is_available_through_history_api() -> None:
     with _client() as client:
         service = _create_service(client, slug="history-service")

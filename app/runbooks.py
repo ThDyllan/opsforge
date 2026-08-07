@@ -85,6 +85,22 @@ RUNBOOK_DEFINITIONS = [
 ]
 
 
+MANAGED_RUNBOOK_KEYS: frozenset[str] = frozenset(
+    definition["key"] for definition in RUNBOOK_DEFINITIONS
+)
+
+
+def is_managed_runbook(key: str) -> bool:
+    """Managed runbooks are defined in code and re-synchronised on every startup.
+
+    Their content is owned by the seed (``_ensure_runbooks``), so any operator
+    edit would be silently overwritten at the next restart. They are therefore
+    treated as read-only; operators create and maintain their own runbooks.
+    """
+
+    return key in MANAGED_RUNBOOK_KEYS
+
+
 def approved_automation_keys() -> set[str]:
     return set(AUTOMATION_HANDLERS)
 
