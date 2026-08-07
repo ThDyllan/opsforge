@@ -670,6 +670,17 @@ def test_arbitrary_automation_key_is_rejected() -> None:
     assert "liste approuvée" in response.json()["detail"]
 
 
+def test_demo_runbook_execution_is_seeded_once() -> None:
+    # _client() seeds via _reset_database() and again via the app lifespan,
+    # so a single seeded execution here also proves seeding is idempotent.
+    with _client() as client:
+        executions = client.get("/api/runbook-executions").json()
+
+    assert len(executions) == 1
+    assert executions[0]["status"] == "success"
+    assert executions[0]["incident_id"] is not None
+
+
 def test_managed_runbook_cannot_be_edited_via_api() -> None:
     with _client() as client:
         managed = next(

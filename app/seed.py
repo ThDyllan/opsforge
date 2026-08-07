@@ -3,18 +3,21 @@ from __future__ import annotations
 import json
 from datetime import timedelta
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .domain import add_audit_log
-from .models import Alert, Incident, Runbook, Service, utc_now
-from .runbooks import RUNBOOK_DEFINITIONS
+from .models import Alert, Incident, Runbook, RunbookExecution, Service, utc_now
+from .runbooks import RUNBOOK_DEFINITIONS, execute_runbook
+from .schemas import RunbookExecutionRequest
 
 
 def seed_database(db: Session) -> None:
     services = _ensure_demo_services(db)
     _ensure_demo_signals(db, services)
     _ensure_runbooks(db)
+    db.flush()  # make freshly-added runbooks visible to the execution seeding query
+    _ensure_demo_execution(db)
     db.commit()
 
 
@@ -205,6 +208,37 @@ def _ensure_demo_signals(db: Session, services: dict[str, Service]) -> None:
                 resolved_at=resolved_at,
             )
         )
+
+
+def _ensure_demo_execution(db: Session) -> None:
+    """Seed one realistic runbook execution so the demo history is not empty.
+
+    Runs the managed ``generate_incident_report`` runbook against the primary
+    backup incident through the real ``execute_runbook`` path, which also emits
+    the matching audit trail. Idempotent: only seeded on a fresh database with
+    no existing execution.
+    """
+
+    if db.scalar(select(func.count(RunbookExecution.id))):
+        return
+
+    incident = db.scalar(
+        select(Incident).where(
+            Incident.title == "Sauvegarde de production en échec",
+            Incident.source_alert_id.is_not(None),
+        )
+    )
+    runbook = db.scalar(
+        select(Runbook).where(Runbook.key == "generate_incident_report")
+    )
+    if incident is None or runbook is None:
+        return
+
+    execute_runbook(
+        db,
+        runbook,
+        RunbookExecutionRequest(incident_id=incident.id, requested_by="Dyllan"),
+    )
 
 
 def _ensure_runbooks(db: Session) -> None:
