@@ -2,7 +2,6 @@ name: CI
 
 on:
   push:
-    branches: [main]
   pull_request:
 
 permissions:
@@ -67,10 +66,12 @@ jobs:
       - name: Build Docker image
         run: docker build -t "${IMAGE_NAME}:${IMAGE_TAG}" .
 
-      # Informational, non-blocking security scan: HIGH/CRITICAL findings are
-      # printed for review but do not fail the build (documented scope choice in
-      # docs/RISKS_AND_TECHNICAL_DEBT.md). continue-on-error keeps it advisory;
-      # no misleading exit-code is set.
+      # Advisory (non-blocking) security scan: HIGH/CRITICAL findings are printed
+      # for review (documented scope choice in docs/RISKS_AND_TECHNICAL_DEBT.md).
+      # exit-code "1" makes the step report outcome=failure when vulnerabilities
+      # are found, so the signal stays visible, while continue-on-error keeps the
+      # job green (non-blocking). Turn it into a hard gate only via an explicit
+      # policy decision (e.g. add ignore-unfixed and drop continue-on-error).
       - name: Run Trivy image scan (advisory)
         uses: aquasecurity/trivy-action@v0.36.0
         continue-on-error: true
@@ -78,6 +79,7 @@ jobs:
           scan-type: image
           image-ref: opsforge-api:${{ github.sha }}
           format: table
+          exit-code: "1"
           vuln-type: os,library
           scanners: vuln
           severity: HIGH,CRITICAL
