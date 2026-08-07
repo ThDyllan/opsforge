@@ -43,7 +43,9 @@ and the HTTP-verb discipline in the web layer is correct.
    instead of a hardcoded mismatched "DT"; add empty-states to the overview
    alerts table, overview activity feed, and monitoring services table.
 4. **Add Ruff lint gate + clean up CI** — new advisory-lint stage (`ruff check`),
-   dev tooling split into `requirements-dev.txt` (runtime image stays lean),
+   ruff moved to `requirements-dev.txt` so it is not baked into the runtime
+   image (pytest stays in the image by design, for the documented in-container
+   test flow — see the self-review note below),
    fixed the misleading Trivy step (it set `exit-code: 1` while
    `continue-on-error` swallowed it — looked blocking, never was; now honestly
    advisory), scoped `push` to main + added a `concurrency` group. Ruff also
@@ -88,6 +90,55 @@ and the HTTP-verb discipline in the web layer is correct.
   (already documented in RISKS_AND_TECHNICAL_DEBT.md).
 - The `X-OpsForge-Actor` audit actor is client-supplied (spoofable) — acceptable
   for the mono-operator scope, already documented.
+
+## Post-review validation (second pass)
+
+Re-reviewed my own 7 commits as if written by someone else, and validated on
+real infrastructure:
+
+- **Self-review correction — the "lean runtime image" claim was wrong.**
+  `pytest` (and `iniconfig`, `pluggy`) are still in `requirements.txt`, so the
+  runtime image still contains them; only `ruff` is dev-only. Kept pytest in the
+  image on purpose (the documented flow is `docker compose exec api pytest`) and
+  corrected the wording in `requirements-dev.txt` and above. Fixed forward
+  rather than rewriting history.
+- **CI actually passes** — replicated the full pipeline in a clean
+  `python:3.12-slim` container: `pip install -r requirements-dev.txt` → `ruff
+  check .` (clean) → 33 unit tests → 1 Postgres integration test (against a
+  Postgres). Green end-to-end.
+- **Kubernetes tested on the real k3d cluster**, not just YAML. Deployed the
+  hardened manifests into an isolated `opsforge-verify` namespace: both pods
+  reached `1/1 Ready`; `/health`, `/ready`, `/overview` returned 200 under the
+  read-only root filesystem + non-root + dropped-caps securityContext (verified
+  a write to `/app` is blocked); then deleted the namespace. The existing
+  `opsforge` namespace was left untouched.
+- **`managed = read-only` is coherent with runbook creation** — the create flow
+  gives operator runbooks their own unique keys (managed keys are the six fixed
+  code ones), the edit page redirects for managed runbooks, and the "Managé"
+  badge + hidden edit button render correctly.
+- **Seeded execution side effects** — validated on real Postgres via the
+  integration test (which seeds through the app lifespan). One caveat: the
+  idempotency guard skips seeding when *any* execution already exists, so an
+  already-used database (like a dev DB with prior runbook runs) will not gain
+  the demo execution — it only appears on a fresh database (`docker compose
+  down -v && up`). Harmless, but worth knowing before the jury demo.
+
+## UI review (real headless-browser screenshots, desktop + mobile)
+
+Captured every operator page at 1440px and key pages at 390px. Verdict: the
+interface is genuinely professional — consistent design system, clear badges,
+good typography, accessible patterns (labels, `aria-*`, skip link), and a
+strong honesty-forward Monitoring page (real technical supervision vs simulated
+business state) and Help page (guided scenario + "honest limits"). My changes
+render correctly: the "Managé" badge and hidden edit button, the greyed/locked
+service select pre-filled from the source alert, and the corrected avatar
+initials. Responsive works well — the `/alerts`, `/incidents` and detail pages
+collapse tables into labelled cards on mobile.
+
+Minor UI item (pre-existing, not from this branch): the overview "Alertes
+récentes" *compact* table does not collapse to cards on mobile like `/alerts`
+does; it scrolls horizontally inside its wrapper. Low priority — a candidate
+follow-up if you want full mobile parity on the overview.
 
 ## Verdict
 
