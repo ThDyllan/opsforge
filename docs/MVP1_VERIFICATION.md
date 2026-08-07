@@ -4,6 +4,17 @@
 
 2026-06-16
 
+## Historical Note
+
+This document is a point-in-time Phase 1 snapshot and is kept as historical
+record. Two statements below have since been superseded by later phases:
+
+- A `GET /api/runbook-executions` endpoint now exists (see `README.md` and
+  `app/api.py`); the note "there is no separate GET endpoint for runbook
+  executions" was true only for MVP1.
+- Six runbooks are now seeded — five automated plus one manual checklist
+  (`diagnostic_echec_sauvegarde`) — not five.
+
 ## Scope
 
 This verification inspected the existing MVP1 without changing application logic, refactoring code, fixing bugs, or adding features.

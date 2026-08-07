@@ -13,7 +13,9 @@ The workflow runs on:
 - `push`
 - `pull_request`
 
-This means changes are checked when they are pushed to GitHub and when a pull request is opened or updated.
+This means changes are checked when they are pushed to any branch on GitHub and when a pull request is opened or updated.
+
+A `concurrency` group keyed on the Git ref cancels a still-running workflow when a newer commit is pushed to the same ref, so superseded runs do not pile up.
 
 ## Workflow Steps
 
@@ -23,11 +25,14 @@ It performs these steps:
 
 1. Checkout the repository.
 2. Set up Python 3.12.
-3. Install dependencies from `requirements.txt`.
-4. Run the fast SQLite unit tests.
-5. Run a PostgreSQL integration test against a GitHub Actions service container.
-6. Build the Docker image from the project `Dockerfile`.
-7. Run a Trivy image scan against the built Docker image.
+3. Install dependencies from `requirements-dev.txt` (the runtime dependencies from `requirements.txt` plus the Ruff linter). Ruff is a development/CI tool only and is not installed into the runtime Docker image.
+4. Run the Ruff lint check (`ruff check .`).
+5. Run the fast SQLite unit tests.
+6. Run a PostgreSQL integration test against a GitHub Actions service container.
+7. Build the Docker image from the project `Dockerfile`.
+8. Run a Trivy image scan against the built Docker image.
+
+The lint step runs before the tests so style and obvious code issues fail fast, before slower work.
 
 ## Why Tests Run Before Docker Build
 
@@ -64,6 +69,8 @@ The scan is visible in GitHub Actions logs and currently checks `HIGH` and `CRIT
 For this first Phase 2 implementation, the Trivy scan is non-blocking.
 
 The scan is configured to report findings, but the workflow continues even if Trivy detects vulnerabilities.
+
+The step sets `exit-code: "1"` together with `continue-on-error: true`. Trivy therefore fails the step (its `outcome` is recorded as `failure`) when `HIGH`/`CRITICAL` vulnerabilities are found, which keeps the finding visible on the run, while `continue-on-error` prevents that from failing the overall job. Turning the scan into a hard gate remains a separate, explicit policy decision (for example adding `ignore-unfixed` and removing `continue-on-error`).
 
 This remains intentional after the Phase 3 security review. Findings are visible and documented, but the local educational project has not defined a justified blocking threshold. A future policy change must define its acceptance criteria explicitly.
 

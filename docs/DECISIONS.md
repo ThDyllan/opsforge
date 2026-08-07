@@ -617,8 +617,9 @@ The product needs predictable state changes and must prevent a source alert from
 
 Enforce these rules through the FastAPI domain layer:
 
-- alerts: `new -> acknowledged -> resolved`;
-- incidents: `open -> investigating -> resolved`;
+- alerts: forward-only `new -> acknowledged -> resolved`, with `new -> resolved`
+  also allowed (acknowledgement is optional);
+- incidents: strictly sequential `open -> investigating -> resolved`;
 - one active incident per source alert;
 - source-alert and incident service consistency;
 - resolved incidents are read-only;

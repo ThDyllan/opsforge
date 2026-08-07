@@ -203,6 +203,33 @@ Expected results:
 - `/ready` returns `{"status":"ready","service":"opsforge"}`;
 - `/dashboard` returns HTTP 200.
 
+## Workload Hardening
+
+The API Deployment and the PostgreSQL StatefulSet declare the security and
+reliability fields expected of a Kubernetes workload, aligned with the non-root
+image the `Dockerfile` already builds:
+
+- Resource `requests` and `limits` on the API container, its init container, and
+  PostgreSQL, so the Pods are no longer scheduled as BestEffort.
+- API container `securityContext`: `runAsNonRoot` with uid/gid `10001`,
+  `allowPrivilegeEscalation: false`, all Linux capabilities dropped,
+  `seccompProfile: RuntimeDefault`, and `readOnlyRootFilesystem: true`. The
+  application writes nothing to disk, so only an `emptyDir` mounted at `/tmp` is
+  writable.
+- A PostgreSQL `livenessProbe` (`pg_isready`) so a Pod whose postmaster stops
+  accepting connections is restarted, not only removed from the Service by the
+  existing `readinessProbe`. (`pg_isready` checks connection acceptance, not
+  query execution.)
+
+These settings were verified on the local k3d cluster in an isolated namespace:
+both Pods reached `1/1 Ready`, `/health`, `/ready` and `/overview` returned HTTP
+200 under the read-only root filesystem, and a write to `/app` was refused as
+expected.
+
+Deliberately left as follow-ups needing further cluster testing: PostgreSQL
+`runAsNonRoot` (the official image drops privileges from its own entrypoint) and
+a Grafana admin password supplied through a Secret.
+
 ## Phase 4 Validation Status
 
 Phase 4A and Phase 4B are implemented, locally verified, and explicitly validated by the user on 2026-07-09.
