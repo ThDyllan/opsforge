@@ -14,7 +14,7 @@ from .domain import (
     transition_allowed,
 )
 from .models import Alert, AuditLog, Incident, Runbook, RunbookExecution, Service, utc_now
-from .runbooks import approved_automation_keys, execute_runbook
+from .runbooks import approved_automation_keys, execute_runbook, is_managed_runbook
 from .schemas import (
     AlertCreate,
     AlertRead,
@@ -449,6 +449,15 @@ def update_runbook(
     runbook = db.get(Runbook, runbook_id)
     if runbook is None:
         raise HTTPException(status_code=404, detail="Runbook introuvable.")
+    if is_managed_runbook(runbook.key):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Ce runbook est managé par le code et re-synchronisé au démarrage : "
+                "il ne peut pas être modifié. Créez un runbook opérateur pour vos "
+                "propres procédures."
+            ),
+        )
 
     changes: dict[str, object] = {}
     data = payload.model_dump(exclude_unset=True)

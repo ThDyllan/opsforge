@@ -625,6 +625,11 @@ body.sidebar-compact .operator-card {
   color: #52605a;
 }
 
+.badge--managed {
+  background: var(--blue-soft);
+  color: #1d4ed8;
+}
+
 .panel,
 .queue,
 .form-panel,
