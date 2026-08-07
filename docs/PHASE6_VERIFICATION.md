@@ -16,13 +16,13 @@ Final validation still requires current-branch CI evidence, a user-led visual/re
 
 ### Domain Integrity
 
-- Alerts move forward through `new -> acknowledged -> resolved`.
+- Alerts move forward through `new -> acknowledged -> resolved`; a new alert may also be resolved directly (acknowledgement is optional).
 - Incidents move forward through `open -> investigating -> resolved`.
 - Resolved objects are not reopened in this version.
 - An incident linked to an alert must use the same service.
 - One source alert can have only one active incident.
 - Resolving an incident does not resolve the source alert automatically.
-- Manual incidents require a service, title, description, and severity.
+- Manual incidents require a service, a title, and a description (severity defaults to medium).
 - Meaningful service, alert, incident, runbook, and execution mutations are audited.
 
 ### Runbooks
