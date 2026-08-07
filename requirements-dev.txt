@@ -1,0 +1,4 @@
+# Development and CI tooling. Installs the runtime dependencies plus linters.
+# The runtime image (Dockerfile) installs only requirements.txt and stays lean.
+-r requirements.txt
+ruff==0.6.9

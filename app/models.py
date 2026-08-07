@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 import json
+from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship

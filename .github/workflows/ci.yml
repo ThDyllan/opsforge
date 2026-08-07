@@ -2,14 +2,20 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
   contents: read
 
+# Cancel superseded runs on the same ref so pushes don't pile up.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-build-scan:
-    name: Test, build, and scan
+    name: Lint, test, build, and scan
     runs-on: ubuntu-latest
 
     services:
@@ -45,7 +51,10 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          python -m pip install -r requirements-dev.txt
+
+      - name: Lint with Ruff
+        run: ruff check .
 
       - name: Run SQLite unit tests
         run: pytest tests/test_app.py
@@ -58,14 +67,17 @@ jobs:
       - name: Build Docker image
         run: docker build -t "${IMAGE_NAME}:${IMAGE_TAG}" .
 
-      - name: Run Trivy image scan
+      # Informational, non-blocking security scan: HIGH/CRITICAL findings are
+      # printed for review but do not fail the build (documented scope choice in
+      # docs/RISKS_AND_TECHNICAL_DEBT.md). continue-on-error keeps it advisory;
+      # no misleading exit-code is set.
+      - name: Run Trivy image scan (advisory)
         uses: aquasecurity/trivy-action@v0.36.0
         continue-on-error: true
         with:
           scan-type: image
           image-ref: opsforge-api:${{ github.sha }}
           format: table
-          exit-code: "1"
           vuln-type: os,library
           scanners: vuln
           severity: HIGH,CRITICAL

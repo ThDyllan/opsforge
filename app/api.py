@@ -132,7 +132,9 @@ def create_alert(
 ):
     data = payload.model_dump()
     if data["status"] != "new":
-        raise HTTPException(status_code=422, detail="Une nouvelle alerte doit commencer à l'état new.")
+        raise HTTPException(
+            status_code=422, detail="Une nouvelle alerte doit commencer à l'état new."
+        )
     if data["service_id"] is not None and db.get(Service, data["service_id"]) is None:
         raise HTTPException(status_code=404, detail="Service introuvable.")
 
@@ -244,7 +246,9 @@ def create_incident(
     source_alert = None
 
     if data["status"] != "open":
-        raise HTTPException(status_code=422, detail="Un incident déclaré doit commencer à l'état open.")
+        raise HTTPException(
+            status_code=422, detail="Un incident déclaré doit commencer à l'état open."
+        )
 
     if data["source_alert_id"] is None:
         if data["service_id"] is None or not (data["description"] or "").strip():

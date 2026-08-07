@@ -1,0 +1,20 @@
+# Ruff configuration for OpsForge.
+# Kept intentionally small and explainable for the RNCP scope.
+line-length = 100
+target-version = "py312"
+
+[lint]
+# E/W: pycodestyle, F: pyflakes (unused imports, undefined names),
+# I: import sorting. B008 (function call in argument defaults) is excluded
+# because `Depends(...)` in FastAPI route signatures is the idiomatic pattern.
+select = ["E", "F", "I", "W"]
+
+[lint.isort]
+# The codebase separates the import block from the first statement with two
+# blank lines; keep the linter aligned with that existing style.
+lines-after-imports = 2
+
+[lint.per-file-ignores]
+# test_app.py deliberately sets DATABASE_URL between imports, before importing
+# the application, so its import block must not be reordered.
+"tests/test_app.py" = ["I001"]

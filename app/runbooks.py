@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .domain import INCIDENT_TRANSITIONS, add_audit_log, json_text, transition_allowed
@@ -69,7 +68,9 @@ RUNBOOK_DEFINITIONS = [
     {
         "key": "diagnostic_echec_sauvegarde",
         "name": "Diagnostiquer un échec de sauvegarde",
-        "description": "Checklist manuelle pour qualifier l'incident de sauvegarde de démonstration.",
+        "description": (
+            "Checklist manuelle pour qualifier l'incident de sauvegarde de démonstration."
+        ),
         "mode": "manual",
         "instructions": "Suivre les étapes puis confirmer le résultat observé dans OpsForge.",
         "steps": [
