@@ -1,0 +1,36 @@
+---
+# --- Cluster (k3d) ------------------------------------------------------------
+# Same topology as k8s/k3d-cluster.yaml (1 server, API + NodePort exposed),
+# but parameterised so the exact same automation can target an isolated cluster
+# for testing without touching an existing one.
+cluster_name: opsforge
+kubeapi_host_port: "6445"      # host port for the Kubernetes API
+api_host_port: "8080"          # host port mapped to the API NodePort
+node_port: 30080               # NodePort exposed by k8s/api-service.yaml
+
+# --- Paths --------------------------------------------------------------------
+# The repository (with the k8s/ manifests and the Dockerfile) is mounted here.
+repo_path: /work
+manifests_path: "{{ repo_path }}/k8s"
+kubeconfig_path: /tmp/opsforge-ansible.kubeconfig
+
+# --- Application image --------------------------------------------------------
+# Must match the image referenced by k8s/api-deployment.yaml (imagePullPolicy: Never).
+image_name: opsforge-api
+image_tag: phase6
+
+# --- Namespaces ---------------------------------------------------------------
+app_namespace: opsforge
+monitoring_namespace: monitoring
+
+# --- PostgreSQL credentials ---------------------------------------------------
+# LOCAL DEMONSTRATION credentials only. This is NOT a real secret: it is injected
+# into a Kubernetes Secret at deploy time from these variables, so no credential
+# file is committed. Override (or move to ansible-vault) for anything real.
+db_user: opsforge
+db_password: opsforge-local-password
+db_name: opsforge
+
+# --- Behaviour ----------------------------------------------------------------
+wait_timeout: 180              # seconds to wait for each workload to become ready
+deploy_monitoring: true        # set false to skip Prometheus/Grafana

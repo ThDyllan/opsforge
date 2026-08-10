@@ -1,0 +1,19 @@
+---
+# Cleanly remove the k3d cluster created by deploy.yml (idempotent).
+- name: Tear down the OpsForge cluster
+  hosts: control
+  gather_facts: false
+  tasks:
+    - name: List existing k3d clusters
+      ansible.builtin.command: k3d cluster list -o json
+      register: k3d_clusters
+      changed_when: false
+
+    - name: Delete the k3d cluster
+      ansible.builtin.command: "k3d cluster delete {{ cluster_name }}"
+      when: cluster_name in (k3d_clusters.stdout | from_json | map(attribute='name') | list)
+
+    - name: Remove the local kubeconfig file
+      ansible.builtin.file:
+        path: "{{ kubeconfig_path }}"
+        state: absent

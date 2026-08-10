@@ -1,0 +1,11 @@
+---
+# Build the OpsForge API image and import it into the cluster.
+# The cluster uses imagePullPolicy: Never, so the image must be imported.
+- name: Build the OpsForge API image
+  ansible.builtin.command: "docker build -t {{ image_name }}:{{ image_tag }} {{ repo_path }}"
+  register: image_build
+  changed_when: "'Using cache' not in image_build.stdout"
+
+- name: Import the image into the k3d cluster
+  ansible.builtin.command: "k3d image import {{ image_name }}:{{ image_tag }} -c {{ cluster_name }}"
+  changed_when: true

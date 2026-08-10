@@ -1,0 +1,4 @@
+# Ansible collection used to talk to the Kubernetes API (idempotent apply + waits).
+collections:
+  - name: kubernetes.core
+    version: ">=3.0.0"

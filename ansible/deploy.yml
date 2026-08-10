@@ -1,0 +1,29 @@
+---
+# Automate the deployment of the OpsForge infrastructure end to end.
+#
+#   prerequisites -> k3d cluster -> build & import image -> Kubernetes resources
+#   (PostgreSQL, API, monitoring) -> wait until Ready -> verify /health and /ready
+#
+# The Kubernetes work goes through the kubernetes.core collection (idempotent
+# apply with real "wait until ready" gating), not a blind `kubectl apply`.
+- name: Deploy the OpsForge infrastructure
+  hosts: control
+  gather_facts: false
+
+  # Every kubernetes.core call targets the cluster kubeconfig written by the
+  # `cluster` role. TLS verification is skipped only for this local, ephemeral
+  # control connection reached through host.docker.internal.
+  module_defaults:
+    kubernetes.core.k8s:
+      kubeconfig: "{{ kubeconfig_path }}"
+      validate_certs: false
+    kubernetes.core.k8s_info:
+      kubeconfig: "{{ kubeconfig_path }}"
+      validate_certs: false
+
+  roles:
+    - role: prerequisites
+    - role: cluster
+    - role: image
+    - role: kubernetes_resources
+    - role: verify

@@ -1,0 +1,26 @@
+---
+# Fail fast if the control node is missing a required tool.
+- name: Ensure the required CLIs are available
+  ansible.builtin.shell: "command -v {{ item }}"
+  register: cli_check
+  changed_when: false
+  loop:
+    - docker
+    - k3d
+    - kubectl
+  loop_control:
+    label: "{{ item }}"
+
+- name: Ensure the Docker daemon is reachable
+  ansible.builtin.command: docker info
+  changed_when: false
+
+- name: Ensure the Python Kubernetes client is importable (used by kubernetes.core)
+  ansible.builtin.command: python3 -c "import kubernetes"
+  changed_when: false
+
+- name: Summarise the target
+  ansible.builtin.debug:
+    msg: >-
+      Control node ready. Target k3d cluster '{{ cluster_name }}',
+      app namespace '{{ app_namespace }}', image '{{ image_name }}:{{ image_tag }}'.
