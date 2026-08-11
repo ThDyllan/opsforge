@@ -1,0 +1,74 @@
+---
+# Deploy the OpsForge Kubernetes architecture, in dependency order, waiting for
+# each tier to become ready before moving on. Manifests are reused as-is from
+# k8s/ (this role orchestrates them, it does not redefine OpsForge).
+
+- name: Create the application and monitoring namespaces
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ manifests_path }}/{{ item }}"
+  loop:
+    - namespace.yaml
+    - monitoring-namespace.yaml
+
+- name: Create the PostgreSQL Secret from variables
+  # Injected at deploy time so no credential file is committed to Git.
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: opsforge-postgres-secret
+        namespace: "{{ app_namespace }}"
+      type: Opaque
+      stringData:
+        POSTGRES_USER: "{{ db_user }}"
+        POSTGRES_PASSWORD: "{{ db_password }}"
+        DATABASE_URL: "postgresql+psycopg://{{ db_user }}:{{ db_password }}@postgres:5432/{{ db_name }}"
+
+- name: Apply the PostgreSQL config and persistent storage
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ manifests_path }}/{{ item }}"
+  loop:
+    - configmap.yaml
+    - postgres-pvc.yaml
+
+- name: Deploy PostgreSQL and wait until it is ready
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ manifests_path }}/{{ item }}"
+    wait: true
+    wait_timeout: "{{ wait_timeout }}"
+  loop:
+    - postgres-statefulset.yaml
+    - postgres-service.yaml
+
+- name: Deploy the OpsForge API and wait until it is available
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ manifests_path }}/{{ item }}"
+    wait: true
+    wait_timeout: "{{ wait_timeout }}"
+  loop:
+    - api-deployment.yaml
+    - api-service.yaml
+
+- name: Deploy the monitoring stack (Prometheus + Grafana)
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ manifests_path }}/{{ item }}"
+    wait: true
+    wait_timeout: "{{ wait_timeout }}"
+  loop:
+    - prometheus-configmap.yaml
+    - prometheus-rules-configmap.yaml
+    - prometheus-deployment.yaml
+    - prometheus-service.yaml
+    - grafana-datasource-configmap.yaml
+    - grafana-dashboard-configmap.yaml
+    - grafana-dashboard-provider-configmap.yaml
+    - grafana-deployment.yaml
+    - grafana-service.yaml
+  when: deploy_monitoring | bool

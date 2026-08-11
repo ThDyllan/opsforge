@@ -1,0 +1,36 @@
+---
+# Create the k3d cluster only if it does not already exist (idempotent).
+- name: List existing k3d clusters
+  ansible.builtin.command: k3d cluster list -o json
+  register: k3d_clusters
+  changed_when: false
+
+- name: Create the k3d cluster
+  ansible.builtin.command: >-
+    k3d cluster create {{ cluster_name }}
+    --servers 1
+    --api-port 127.0.0.1:{{ kubeapi_host_port }}
+    --port "{{ api_host_port }}:{{ node_port }}@server:0"
+    --wait
+  when: cluster_name not in (k3d_clusters.stdout | from_json | map(attribute='name') | list)
+
+- name: Fetch the cluster kubeconfig
+  ansible.builtin.command: "k3d kubeconfig get {{ cluster_name }}"
+  register: kubeconfig_raw
+  changed_when: false
+
+- name: Write a kubeconfig reachable from the control container
+  # k3d writes the API server as https://127.0.0.1:<port>; from inside the
+  # control container that host is reached as host.docker.internal.
+  ansible.builtin.copy:
+    dest: "{{ kubeconfig_path }}"
+    mode: "0600"
+    content: "{{ kubeconfig_raw.stdout | regex_replace('https://[0-9.]+:', 'https://host.docker.internal:') }}"
+
+- name: Wait for the cluster API to answer
+  ansible.builtin.command: "kubectl --kubeconfig {{ kubeconfig_path }} --insecure-skip-tls-verify get --raw=/healthz"
+  register: apihealth
+  changed_when: false
+  retries: 15
+  delay: 4
+  until: apihealth.rc == 0

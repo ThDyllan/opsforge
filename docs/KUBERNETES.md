@@ -203,6 +203,13 @@ Expected results:
 - `/ready` returns `{"status":"ready","service":"opsforge"}`;
 - `/dashboard` returns HTTP 200.
 
+## Automated Deployment (Ansible)
+
+The manual `k3d` + `kubectl` sequence above can also be run end to end with
+Ansible, which creates the cluster, builds and imports the image, applies these
+manifests in order (waiting for each tier to be ready), and verifies `/health`
+and `/ready`. See [`ANSIBLE.md`](ANSIBLE.md) and [`../ansible/`](../ansible/).
+
 ## Workload Hardening
 
 The API Deployment and the PostgreSQL StatefulSet declare the security and

@@ -1,0 +1,42 @@
+---
+# Prove the deployment actually works: pods running + application answering.
+- name: Get the OpsForge API pods
+  kubernetes.core.k8s_info:
+    kind: Pod
+    namespace: "{{ app_namespace }}"
+    label_selectors:
+      - "app=opsforge-api"
+  register: api_pods
+
+- name: Assert an API pod is running
+  ansible.builtin.assert:
+    that:
+      - api_pods.resources | selectattr('status.phase', 'equalto', 'Running') | list | length > 0
+    fail_msg: "No running OpsForge API pod found."
+    success_msg: "OpsForge API pod is running."
+
+- name: Check /health through the NodePort
+  ansible.builtin.uri:
+    url: "http://host.docker.internal:{{ api_host_port }}/health"
+    return_content: true
+  register: health
+  retries: 12
+  delay: 3
+  until: health.status is defined and health.status == 200
+
+- name: Check /ready through the NodePort (proves PostgreSQL connectivity)
+  ansible.builtin.uri:
+    url: "http://host.docker.internal:{{ api_host_port }}/ready"
+    return_content: true
+  register: ready
+  retries: 12
+  delay: 3
+  until: ready.status is defined and ready.status == 200
+
+- name: Report the deployment result
+  ansible.builtin.debug:
+    msg:
+      - "Cluster '{{ cluster_name }}': OpsForge deployed and verified."
+      - "/health -> {{ health.status }} {{ health.json | default({}) }}"
+      - "/ready  -> {{ ready.status }} {{ ready.json | default({}) }}"
+      - "Open http://localhost:{{ api_host_port }}/overview"
