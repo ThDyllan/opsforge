@@ -16,7 +16,8 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 # Ansible + the Python Kubernetes client used by kubernetes.core.
-RUN pip install "ansible-core>=2.16,<2.18" "kubernetes>=27"
+# Pinned to the versions actually validated for this project.
+RUN pip install "ansible-core==2.17.14" "kubernetes==36.0.3"
 
 # kubectl
 RUN curl -fsSL -o /usr/local/bin/kubectl \
@@ -32,7 +33,7 @@ RUN curl -fsSL -o /usr/local/bin/k3d \
 RUN curl -fsSL "https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz" \
       | tar -xz -C /usr/local/bin --strip-components=1 docker/docker
 
-# Ansible collection for Kubernetes
-RUN ansible-galaxy collection install kubernetes.core
+# Ansible collection for Kubernetes (pinned to the validated version)
+RUN ansible-galaxy collection install kubernetes.core:6.5.0
 
 WORKDIR /work/ansible

@@ -33,15 +33,22 @@ ansible/
 Requires Docker. The control node is packaged as a container so it works on any
 machine (it drives the host Docker daemon through the mounted socket).
 
+**To try it, use a throwaway isolated cluster** (`opsforge-ansible-test`). This
+never touches any existing cluster:
+
 ```bash
-# Deploy (default cluster name "opsforge", API on http://localhost:8080)
-./run.sh
+./run.sh deploy.yml -e cluster_name=opsforge-ansible-test -e api_host_port=8090 -e kubeapi_host_port=6446
+# open http://localhost:8090/overview, then tear it back down:
+./run.sh teardown.yml -e cluster_name=opsforge-ansible-test
+```
 
-# Tear it down
-./run.sh teardown.yml
+The plain form targets a cluster named **`opsforge`** on port 8080. Use it for the
+actual demo — but note it will act on an existing `opsforge` cluster if one is
+already running, so don't use it for casual testing:
 
-# Deploy into an isolated cluster (used for testing; never touches an existing one)
-./run.sh deploy.yml -e cluster_name=opsforge-test -e api_host_port=8090 -e kubeapi_host_port=6446
+```bash
+./run.sh                 # deploy the "opsforge" cluster
+./run.sh teardown.yml    # delete it
 ```
 
 On a Linux or WSL host that already has `ansible`, `k3d`, `kubectl` and the
