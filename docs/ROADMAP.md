@@ -146,3 +146,22 @@ Status: in progress. The initial balanced review slice was validated in CI, and 
 - Desktop and responsive operator workflows are manually reviewed.
 - The current Phase 6 candidate passes GitHub Actions.
 - The user explicitly validates Phase 6 as complete.
+
+### Phase 6 Final Sub-step - Infrastructure Deployment Automation (CP N°2)
+
+Status: implemented, validated on a local k3d cluster. Added late in Phase 6, after the operator-product candidate, to close the RNCP CP N°2 competency ("Automatiser le deploiement d'une infrastructure"), which the earlier phases covered only through a manual `k3d`/`kubectl` sequence.
+
+Scope:
+
+- An Ansible playbook (`ansible/deploy.yml`, `kubernetes.core` collection) that orchestrates the existing `k8s/` manifests: create the k3d cluster (idempotent), build and import the API image, apply PostgreSQL, API, and monitoring waiting for each tier to be ready, then verify `/health` and `/ready`.
+- A containerised control node (`ansible/run.sh`) as the supported, validated way to run it.
+- Documentation and CP N°2 mapping in [`ANSIBLE.md`](ANSIBLE.md).
+
+Definition of Done:
+
+- One command deploys the whole local infrastructure and verifies it.
+- Re-running the playbook is idempotent.
+- Scope stays local k3d: no container registry, no cloud provisioning, no remote/complete CD.
+- The deployment automation is documented and mapped to CP N°2.
+
+This does not close the outstanding Phase 6 verification items above (final screenshots, current-branch CI evidence, and the manual visual/responsive review remain to be produced).

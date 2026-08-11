@@ -78,9 +78,10 @@ to it naturally. Provisioning cloud infrastructure (a VPC, a managed Kubernetes,
 There is **no separate credential manifest** in Git: the PostgreSQL `Secret` is
 generated at deploy time from the variables in `ansible/group_vars/all.yml`.
 Those variables hold a **non-sensitive local demonstration default** — the same
-throwaway credential already used by `docker-compose.yml` for local runs — not a
-real secret. Override them on the command line (`-e db_password=...`) or move them
-to `ansible-vault` for anything beyond local demonstration.
+kind of throwaway credential used by `docker-compose.yml` for local runs (the
+actual values are not identical), not a real secret. Override them on the command
+line (`-e db_password=...`) or move them to `ansible-vault` for anything beyond
+local demonstration.
 
 ## Validation performed
 

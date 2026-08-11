@@ -27,7 +27,14 @@ flowchart LR
     Build --> LocalImage[k3d local image import]
     LocalImage --> K8sAPI[OpsForge API Deployment]
     K8sAPI --> K8sDatabase[PostgreSQL StatefulSet and PVC]
+
+    Ansible[Ansible control node - ansible/run.sh] --> K3dCluster[k3d cluster create - idempotent]
+    Ansible --> LocalImage
+    Ansible --> K8sAPI
+    Ansible --> Verify[Verify /health and /ready]
 ```
+
+The two paths are distinct: GitHub Actions builds, tests, and scans the image but does not push it to a registry or deploy remotely; the Ansible control node automates the local k3d deployment of the existing manifests. There is no container registry and no remote/complete CD.
 
 ## Application Structure
 
@@ -102,6 +109,23 @@ Prometheus scrapes the API through the internal Kubernetes service. Grafana uses
 
 Prometheus does not currently create business alerts inside OpsForge. Service statuses and business alerts shown in the operator console are demonstration data and are labeled as such.
 
+### Infrastructure Automation (Ansible)
+
+The manual `k3d`/`kubectl` deployment sequence is also automated end to end with Ansible. The layering is:
+
+```text
+Containerised control node (ansible/run.sh)
+  -> Ansible (kubernetes.core collection)
+    -> k3d / Docker (cluster create, image build and import)
+    -> Kubernetes resources (PostgreSQL, API, monitoring, applied in order and waited on)
+      -> PostgreSQL / API / Prometheus / Grafana
+        -> /health and /ready verification
+```
+
+Five roles run in order: `prerequisites`, `cluster` (idempotent k3d creation), `image` (build and import), `kubernetes_resources` (apply the existing `k8s/` manifests with readiness waits), and `verify` (`/health` and `/ready` return `200`). The playbook orchestrates the existing manifests rather than redefining them, and targets a local k3d cluster only.
+
+This automation layer is separate from the CI layer: GitHub Actions prepares the image (build, test, scan) but does not publish it or perform a remote/complete CD. See [`ANSIBLE.md`](ANSIBLE.md) for the full mapping to RNCP CP N°2 and the Ansible-versus-Terraform rationale.
+
 ## Test Isolation
 
 `tests/test_app.py` recreates an in-memory SQLite schema for fast isolated feedback. `tests/postgres_integration.py` connects to the configured PostgreSQL server, creates a uniquely named temporary database, verifies the core flow, disposes its connections, and drops the temporary database.
@@ -111,7 +135,7 @@ This prevents PostgreSQL CI or local integration tests from adding records to th
 ## Deliberate Limits
 
 - The tests use both fast SQLite unit tests and one PostgreSQL integration test, but they are not exhaustive database compatibility testing.
-- Images are built in CI but not pushed to a registry. k3d image import is local and manual.
+- Images are built in CI but not pushed to a registry. The k3d image import is local (run manually or automated by the Ansible playbook), not a registry pull.
 - Prometheus and Grafana are local, use ephemeral storage, and are accessed through port-forwarding.
 - Alert detection has no Alertmanager or notification channel.
 - `metadata.create_all()` is used instead of migrations.

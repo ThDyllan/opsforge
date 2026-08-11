@@ -658,3 +658,23 @@ The bridge lets the current local database start with the new code while preserv
 Fresh and existing MVP databases can run the Phase 6 candidate. The bridge must be maintained manually and has no version history or downgrade path.
 
 If schema evolution continues after the exam scope, adopting Alembic becomes the recommended improvement.
+
+## Decision 029 - Automate the Infrastructure Deployment with Ansible
+
+### Context
+
+The RNCP TP-01414 competency CP N°2 ("Automatiser le deploiement d'une infrastructure") expects an automation tool "de type Ansible ou Terraform". Until this point the k3d/PostgreSQL/API/monitoring stack was deployed through a documented but manual sequence of `k3d` and `kubectl` commands, which did not demonstrate that competency.
+
+### Decision
+
+Add an Ansible automation (`ansible/`, using the `kubernetes.core` collection) that orchestrates the existing `k8s/` manifests: create the k3d cluster idempotently, build and import the API image, apply the PostgreSQL, API, and monitoring resources in order with readiness waits, then verify `/health` and `/ready`. Run it from a containerised control node (`ansible/run.sh`) as the supported, validated method. Keep the scope to a local k3d cluster.
+
+Choose Ansible rather than Terraform for this task. Terraform is not rejected as "cloud only": it is a legitimate infrastructure-as-code tool, but it is declarative and state-based, reconciling a described end state through providers. The task here is a procedural, ordered orchestration across several local tools (Docker build, k3d cluster and image import, Kubernetes apply, HTTP verification), which Ansible expresses naturally. Terraform would remain the more relevant choice for a future cloud-provisioning evolution (CP N°4 direction).
+
+### Reason
+
+Ansible closes the CP N°2 gap with an idempotent, readiness-gated, end-to-end run over the existing manifests, without redefining the platform. The tool choice matches the shape of the work (local multi-tool sequence) rather than following a generic preference.
+
+### Consequences
+
+The whole local infrastructure deploys and self-verifies in one command, and re-running is idempotent. The automation targets local k3d only: no container registry, no cloud provisioning, and no remote/complete CD. The containerised control node is the only validated way to run it. The full mapping and rationale live in [`ANSIBLE.md`](ANSIBLE.md).

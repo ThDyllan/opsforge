@@ -60,9 +60,9 @@ running `ansible-playbook` directly on a host is not supported as-is.
 
 - **No separate credential manifest is committed.** The PostgreSQL `Secret` is
   generated at deploy time from the variables in `group_vars/all.yml`. Those hold
-  a **non-sensitive local demo default** (the same throwaway credential as
-  `docker-compose.yml`), not a real secret — override them (`-e db_password=...`)
-  or use `ansible-vault` for anything real.
+  a **non-sensitive local demo default** (the same kind of throwaway credential as
+  `docker-compose.yml`, though not the identical values), not a real secret —
+  override them (`-e db_password=...`) or use `ansible-vault` for anything real.
 - **Idempotent.** Re-running `deploy.yml` converges without recreating the cluster
   or the resources.
 - The competency mapping (RNCP CP N°2) and the design rationale are documented in

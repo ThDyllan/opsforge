@@ -8,7 +8,7 @@ Avant l'oral, lire d'abord [`PRODUCT_GUIDE.md`](PRODUCT_GUIDE.md) et executer [`
 
 ## Pitch En 60 Secondes
 
-> OpsForge est une console locale de gestion d'incidents. Elle permet de rattacher un signal a un service, de le qualifier comme alerte, de declarer un incident lorsqu'une prise en charge est necessaire, d'executer une procedure controlee, puis de conserver la preuve de chaque decision et resultat. Autour de cette application, j'ai construit une chaine DevOps avec tests SQLite et PostgreSQL, GitHub Actions, image Docker, scan Trivy, sauvegarde/restauration, deploiement k3d et monitoring Prometheus/Grafana.
+> OpsForge est une console locale de gestion d'incidents. Elle permet de rattacher un signal a un service, de le qualifier comme alerte, de declarer un incident lorsqu'une prise en charge est necessaire, d'executer une procedure controlee, puis de conserver la preuve de chaque decision et resultat. Autour de cette application, j'ai construit une chaine DevOps avec tests SQLite et PostgreSQL, GitHub Actions, image Docker, scan Trivy, sauvegarde/restauration, un deploiement d'infrastructure k3d automatise avec Ansible, et un monitoring Prometheus/Grafana.
 
 ## Parcours De Demonstration Recommande
 
@@ -60,7 +60,7 @@ Ouvrir le dernier run GitHub Actions du commit candidat et montrer :
 - construction de l'image Docker ;
 - scan Trivy non bloquant.
 
-Dire clairement que CI prepare la livraison, mais ne deploie pas automatiquement dans Kubernetes et ne pousse pas d'image dans un registre.
+Dire clairement que la CI prepare la livraison (lint, tests, build, scan) mais ne pousse pas d'image dans un registre : il n'y a donc pas de CD complet distant. Le deploiement de l'infrastructure locale, lui, est bien automatise, mais par un autre outil : Ansible (etape 6).
 
 ### 5. Expliquer Sauvegarde Et Restauration
 
@@ -68,7 +68,28 @@ Montrer `scripts/backup.ps1` et `scripts/restore.ps1`.
 
 Le point important est que la restauration par defaut valide l'archive dans une base temporaire. Le remplacement de la base principale exige une option et une confirmation explicites.
 
-### 6. Montrer Kubernetes
+### 6. Montrer L'Automatisation Du Deploiement (Ansible)
+
+C'est la preuve de la competence CP N°2 (« Automatiser le deploiement d'une infrastructure »). Le playbook provisionne le cluster, construit et importe l'image, applique les manifests PostgreSQL/API/monitoring en attendant que chaque etage soit pret, puis verifie l'application.
+
+```bash
+# Depuis un cluster jetable isole (ne touche aucun cluster existant) :
+./run.sh deploy.yml -e cluster_name=opsforge-ansible-test -e api_host_port=8090 -e kubeapi_host_port=6446
+# ... puis teardown :
+./run.sh teardown.yml -e cluster_name=opsforge-ansible-test
+```
+
+Expliquer :
+
+- le control node est conteneurise (`ansible/run.sh`) : c'est la methode supportee et validee ;
+- cinq roles s'enchainent : prerequisites -> cluster (k3d, idempotent) -> image (build + import) -> kubernetes_resources (applique les manifests `k8s/` avec `wait: true`) -> verify ;
+- le run ne reussit que si `/health` et `/ready` repondent `200` (donc PostgreSQL joignable) ;
+- un second run ne recree rien (idempotence) ;
+- la cible reste **k3d local** : c'est de l'automatisation d'infrastructure locale, pas du cloud ni du CD complet.
+
+Preuve la plus forte : le recap du role `verify` (`/health -> 200`, `/ready -> 200`) et `kubectl get pods -A` tous `Running`.
+
+### 7. Montrer Kubernetes
 
 ```powershell
 kubectl -n opsforge get pods,svc,pvc
@@ -85,7 +106,7 @@ Expliquer :
 - `/ready` prouve que PostgreSQL est joignable ;
 - l'image est importee localement, sans registre.
 
-### 7. Montrer Le Monitoring
+### 8. Montrer Le Monitoring
 
 Afficher Prometheus, Grafana et `OpsForgeApiDown`. Si la simulation de panne est rejouee, preparer d'abord la commande de restauration :
 
@@ -108,7 +129,9 @@ Ne jamais quitter la demonstration avant d'avoir confirme le retour a `1/1`, la 
 | Pourquoi SQLite et PostgreSQL ? | SQLite donne un feedback rapide. Un test separe avec une base PostgreSQL temporaire protege le flux central contre les differences du runtime. |
 | Pourquoi `/health` et `/ready` ? | Un processus peut repondre alors que sa base est indisponible. La liveness detecte le processus ; la readiness protege le trafic si PostgreSQL n'est pas utilisable. |
 | Pourquoi Trivy reste non bloquant ? | Les findings sont visibles et documentes, mais le projet local n'a pas encore une politique de risque justifiant un seuil de blocage. CI verte ne veut pas dire image sans vulnerabilite. |
-| Est-ce du CD complet ? | Non. L'image est construite mais pas publiee, et le deploiement k3d reste manuel. C'est une preparation de livraison reproductible, pas un deploiement automatise. |
+| Est-ce du CD complet ? | Non, et il faut distinguer deux choses. Cote livraison d'image : la CI construit et scanne l'image mais ne la pousse pas dans un registre, donc pas de CD distant complet. Cote infrastructure : le deploiement k3d, lui, est bien automatise avec Ansible (`ansible/deploy.yml`), pas manuel. Ce que je n'ai pas, c'est la publication d'image et le CD vers un cluster distant. |
+| Comment automatisez-vous le deploiement de l'infrastructure ? | Avec Ansible et la collection `kubernetes.core`, execute depuis un control node conteneurise (`ansible/run.sh`). Cinq roles enchainent la creation du cluster k3d, le build/import de l'image, l'application ordonnee des manifests `k8s/` avec attente de readiness, puis une verification `/health` et `/ready`. C'est idempotent et cela cible un k3d local. Cela couvre la competence CP N°2. |
+| Pourquoi Ansible plutot que Terraform ? | Les deux sont acceptes par le referentiel. Terraform est declaratif/state-based, ideal pour provisionner du cloud via des providers. Ici la tache est une orchestration sequentielle locale multi-outils (Docker, k3d, kubectl, verification HTTP), ce qu'Ansible exprime naturellement. Terraform resterait pertinent pour une evolution de provisioning cloud. |
 | Que feriez-vous en production ? | Migrations versionnees, authentification, contraintes/concurrence renforcees, registre, gestion de secrets, sauvegardes offsite, monitoring persistant, notifications et politique de vulnerabilite. |
 
 ## Preuves A Collecter
@@ -119,6 +142,7 @@ Ne jamais quitter la demonstration avant d'avoir confirme le retour a `1/1`, la 
 - Journal Activity.
 - GitHub Actions du commit final.
 - Creation et verification de restauration d'une sauvegarde.
+- Deploiement Ansible : recap du role `verify` (`/health` et `/ready` a `200`) et run idempotent (second passage sans recreation).
 - Pods, services, PVC, `/health` et `/ready` dans k3d.
 - Cible Prometheus, regle `OpsForgeApiDown` et dashboard Grafana.
 - Scan Trivy et explication de la politique non bloquante.
