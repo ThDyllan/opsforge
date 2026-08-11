@@ -1,7 +1,7 @@
 # Ansible control node: bundles Ansible + kubernetes.core and the k3d/kubectl/docker
-# CLIs so the automation can run on any machine that has Docker (here it drives the
-# host Docker daemon through the mounted socket). On a Linux/WSL host you can instead
-# install these tools directly and skip this image.
+# CLIs. The automation is run from this container via ansible/run.sh, which drives
+# the host Docker daemon through the mounted socket. This containerised control node
+# is the supported, validated way to run it.
 FROM python:3.12-slim
 
 ENV PIP_NO_CACHE_DIR=1 \

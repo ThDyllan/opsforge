@@ -51,14 +51,10 @@ already running, so don't use it for casual testing:
 ./run.sh teardown.yml    # delete it
 ```
 
-On a Linux or WSL host that already has `ansible`, `k3d`, `kubectl` and the
-`kubernetes` Python client, you can skip the container and run the playbook
-directly:
-
-```bash
-ansible-galaxy collection install -r requirements.yml
-ansible-playbook -i inventory.ini deploy.yml
-```
+The containerised control node (`./run.sh`) is the supported, validated way to run
+this automation. The playbook assumes that control-node context — in particular it
+reaches the cluster through `host.docker.internal`, which `run.sh` wires up — so
+running `ansible-playbook` directly on a host is not supported as-is.
 
 ## Notes
 

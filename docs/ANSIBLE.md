@@ -97,7 +97,9 @@ API on port 8090) so an existing cluster was never touched:
 
 - Deploys to **local k3d**, not a cloud provider (documented scope; the same
   automation pattern would target a cloud Kubernetes for CP N°4).
-- The control node is containerised because this workstation has no full WSL Linux
-  distribution; on Linux/WSL the playbook runs directly.
+- The **containerised control node (`ansible/run.sh`) is the supported, validated
+  way** to run this automation. The playbook assumes that context — in particular
+  it reaches the cluster through `host.docker.internal`, which `run.sh` wires up —
+  so running `ansible-playbook` directly on a host is not supported as-is.
 - TLS verification is skipped **only** for the local control connection to the
   ephemeral cluster (reached through `host.docker.internal`).

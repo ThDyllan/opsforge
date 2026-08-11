@@ -5,8 +5,9 @@
 #   ./run.sh teardown.yml          # tear the cluster down
 #   ./run.sh deploy.yml -e cluster_name=opsforge-test -e api_host_port=8090 -e kubeapi_host_port=6446
 #
-# On a Linux/WSL host with ansible + k3d + kubectl installed you can instead run
-# `ansible-playbook -i inventory.ini deploy.yml` directly, without this wrapper.
+# This wrapper (the containerised control node) is the supported, validated way to
+# run the automation; the playbook assumes that context (e.g. it reaches the
+# cluster through host.docker.internal, wired up below).
 set -euo pipefail
 
 # Git Bash on Windows rewrites Unix-style paths passed to native binaries; disable
