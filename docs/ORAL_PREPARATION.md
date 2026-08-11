@@ -74,9 +74,9 @@ C'est la preuve de la competence CP N°2 (« Automatiser le deploiement d'une in
 
 ```bash
 # Depuis un cluster jetable isole (ne touche aucun cluster existant) :
-./run.sh deploy.yml -e cluster_name=opsforge-ansible-test -e api_host_port=8090 -e kubeapi_host_port=6446
+./ansible/run.sh deploy.yml -e cluster_name=opsforge-ansible-test -e api_host_port=8090 -e kubeapi_host_port=6446
 # ... puis teardown :
-./run.sh teardown.yml -e cluster_name=opsforge-ansible-test
+./ansible/run.sh teardown.yml -e cluster_name=opsforge-ansible-test
 ```
 
 Expliquer :
