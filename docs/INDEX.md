@@ -24,12 +24,13 @@ It provides the recommended path for understanding the project, its current stat
 14. [`PHASE4_VERIFICATION.md`](PHASE4_VERIFICATION.md) - Phase 4 implementation and validation evidence.
 15. [`MONITORING.md`](MONITORING.md) - Phase 5 monitoring strategy and application metrics scope.
 16. [`PHASE5_VERIFICATION.md`](PHASE5_VERIFICATION.md) - Phase 5 implementation and validation evidence.
-17. [`ARCHITECTURE.md`](ARCHITECTURE.md) - Implemented product, delivery, Kubernetes, monitoring, and test architecture.
-18. [`ORAL_PREPARATION.md`](ORAL_PREPARATION.md) - RNCP product pitch, demonstration path, jury questions, and evidence to collect.
-19. [`PHASE6_MANUAL_TEST.md`](PHASE6_MANUAL_TEST.md) - Required operator, responsive, and screenshot validation procedure.
-20. [`PHASE6_VERIFICATION.md`](PHASE6_VERIFICATION.md) - Current Phase 6 implementation evidence and remaining validation.
-21. [`RISKS_AND_TECHNICAL_DEBT.md`](RISKS_AND_TECHNICAL_DEBT.md) - Known limitations, deferred improvements, guardrails, and upcoming decisions.
-22. [`DECISIONS.md`](DECISIONS.md) - Architecture and technical decisions recorded for the project.
+17. [`ANSIBLE.md`](ANSIBLE.md) - Infrastructure deployment automation with Ansible (RNCP CP N°2) and the Ansible-versus-Terraform rationale.
+18. [`ARCHITECTURE.md`](ARCHITECTURE.md) - Implemented product, delivery, Kubernetes, monitoring, and test architecture.
+19. [`ORAL_PREPARATION.md`](ORAL_PREPARATION.md) - RNCP product pitch, demonstration path, jury questions, and evidence to collect.
+20. [`PHASE6_MANUAL_TEST.md`](PHASE6_MANUAL_TEST.md) - Required operator, responsive, and screenshot validation procedure.
+21. [`PHASE6_VERIFICATION.md`](PHASE6_VERIFICATION.md) - Current Phase 6 implementation evidence and remaining validation.
+22. [`RISKS_AND_TECHNICAL_DEBT.md`](RISKS_AND_TECHNICAL_DEBT.md) - Known limitations, deferred improvements, guardrails, and upcoming decisions.
+23. [`DECISIONS.md`](DECISIONS.md) - Architecture and technical decisions recorded for the project.
 
 ## Oral Preparation Path
 
@@ -39,10 +40,11 @@ For oral preparation, read these documents first:
 2. [`PRODUCT_GUIDE.md`](PRODUCT_GUIDE.md)
 3. [`ROADMAP.md`](ROADMAP.md)
 4. [`ARCHITECTURE.md`](ARCHITECTURE.md)
-5. [`DECISIONS.md`](DECISIONS.md)
-6. [`RISKS_AND_TECHNICAL_DEBT.md`](RISKS_AND_TECHNICAL_DEBT.md)
-7. [`ORAL_PREPARATION.md`](ORAL_PREPARATION.md)
-8. The verification file for each completed phase
+5. [`ANSIBLE.md`](ANSIBLE.md)
+6. [`DECISIONS.md`](DECISIONS.md)
+7. [`RISKS_AND_TECHNICAL_DEBT.md`](RISKS_AND_TECHNICAL_DEBT.md)
+8. [`ORAL_PREPARATION.md`](ORAL_PREPARATION.md)
+9. The verification file for each completed phase
 
 The current phase verification files are:
 

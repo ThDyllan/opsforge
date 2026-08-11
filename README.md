@@ -13,8 +13,9 @@ The implemented foundation stays intentionally explainable:
 - Managed manual runbooks and allowlisted automated runbooks
 - SQLite unit tests plus a PostgreSQL integration test
 - Docker Compose, local k3d deployment, Prometheus, and Grafana
+- Ansible automation that deploys the whole local infrastructure in one command
 
-OpsForge does not include React, authentication, Redis, Celery, Terraform, Ansible, Helm, Alertmanager, or Alembic.
+OpsForge does not include React, authentication, Redis, Celery, Terraform, a container registry, remote/complete CD, Helm, Alertmanager, or Alembic.
 
 ## Run With Docker
 
@@ -103,6 +104,12 @@ The default restore command verifies the archive in a temporary database and doe
 Phase 4 has been validated. Phase 4A provides the local k3d/PostgreSQL foundation, and Phase 4B deploys the locally imported API image through NodePort at `http://localhost:8080`.
 
 See `docs/KUBERNETES.md` and `docs/PHASE4_VERIFICATION.md` for the deployment procedure and validation evidence.
+
+## Infrastructure Automation
+
+The manual `k3d`/`kubectl` sequence above is also available as a single automated run: an **Ansible** playbook provisions the k3d cluster, builds and imports the API image, applies the PostgreSQL, API, and monitoring manifests (waiting for each tier to become ready), and verifies `/health` and `/ready`. It orchestrates the existing `k8s/` manifests through the `kubernetes.core` collection and runs from a containerised control node (`ansible/run.sh`) that targets a **local k3d** cluster. This is local-infrastructure automation, not a container registry or a remote/complete CD pipeline.
+
+See [`ansible/`](ansible/) and [`docs/ANSIBLE.md`](docs/ANSIBLE.md) for the automation and its RNCP CP N°2 mapping.
 
 ## Monitoring
 
