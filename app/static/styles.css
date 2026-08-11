@@ -625,6 +625,11 @@ body.sidebar-compact .operator-card {
   color: #52605a;
 }
 
+.badge--managed {
+  background: var(--blue-soft);
+  color: #1d4ed8;
+}
+
 .panel,
 .queue,
 .form-panel,
@@ -1205,6 +1210,12 @@ textarea:disabled {
 .muted,
 .empty-inline {
   color: var(--muted);
+}
+
+.empty-cell {
+  text-align: center;
+  color: var(--muted);
+  padding: 1.5rem 0.75rem;
 }
 
 .clickable-row {

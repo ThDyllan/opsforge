@@ -346,6 +346,53 @@ def test_resolved_alert_incident_can_be_replaced_by_a_new_incident() -> None:
     assert second.json()["id"] != first["id"]
 
 
+def test_incident_form_locks_service_only_when_alert_has_one() -> None:
+    with _client() as client:
+        service = _create_service(client, slug="lock-check")
+        with_service = _create_alert(client, service["id"])
+        no_service = client.post(
+            "/api/alerts",
+            json={
+                "source": "test",
+                "title": "Alerte sans service",
+                "message": "m",
+                "severity": "warning",
+            },
+        ).json()
+        locked_form = client.get(f"/incidents/new?alert_id={with_service['id']}").text
+        open_form = client.get(f"/incidents/new?alert_id={no_service['id']}").text
+
+    assert "data-locked" in locked_form
+    assert "data-locked" not in open_form
+
+
+def test_incident_from_serviceless_alert_can_pick_a_service() -> None:
+    with _client() as client:
+        service = _create_service(client, slug="picked-service")
+        alert = client.post(
+            "/api/alerts",
+            json={
+                "source": "test",
+                "title": "Alerte sans service",
+                "message": "m",
+                "severity": "critical",
+            },
+        ).json()
+        response = client.post(
+            "/api/incidents",
+            json={
+                "source_alert_id": alert["id"],
+                "service_id": service["id"],
+                "title": "Incident from serviceless alert",
+                "description": "Operator supplies the service.",
+                "severity": "high",
+            },
+        )
+
+    assert response.status_code == 201
+    assert response.json()["service_id"] == service["id"]
+
+
 def test_manual_incident_requires_service_and_description() -> None:
     with _client() as client:
         service = _create_service(client, slug="manual-requirements")
@@ -668,6 +715,73 @@ def test_arbitrary_automation_key_is_rejected() -> None:
 
     assert response.status_code == 422
     assert "liste approuvée" in response.json()["detail"]
+
+
+def test_demo_runbook_execution_is_seeded_once() -> None:
+    # _client() seeds via _reset_database() and again via the app lifespan,
+    # so a single seeded execution here also proves seeding is idempotent.
+    with _client() as client:
+        executions = client.get("/api/runbook-executions").json()
+
+    assert len(executions) == 1
+    assert executions[0]["status"] == "success"
+    assert executions[0]["incident_id"] is not None
+
+
+def test_managed_runbook_cannot_be_edited_via_api() -> None:
+    with _client() as client:
+        managed = next(
+            item
+            for item in client.get("/api/runbooks").json()
+            if item["key"] == "diagnostic_echec_sauvegarde"
+        )
+        response = client.patch(
+            f"/api/runbooks/{managed['id']}",
+            json={"name": "Tentative de modification"},
+        )
+        after = client.get(f"/api/runbooks/{managed['id']}").json()
+
+    assert response.status_code == 409
+    assert "managé" in response.json()["detail"]
+    assert after["name"] == managed["name"]
+
+
+def test_managed_runbook_edit_page_redirects_to_detail() -> None:
+    with _client() as client:
+        managed = next(
+            item
+            for item in client.get("/api/runbooks").json()
+            if item["key"] == "health_check_service"
+        )
+        response = client.get(
+            f"/runbooks/{managed['id']}/edit", follow_redirects=False
+        )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/runbooks/{managed['id']}"
+
+
+def test_operator_runbook_remains_editable() -> None:
+    with _client() as client:
+        created = client.post(
+            "/api/runbooks",
+            json={
+                "key": "operator_owned_runbook",
+                "name": "Runbook opérateur",
+                "description": "Créé par l'opérateur.",
+                "mode": "manual",
+                "steps": ["Étape unique"],
+                "required_context": "none",
+                "risk_level": "low",
+            },
+        ).json()
+        response = client.patch(
+            f"/api/runbooks/{created['id']}",
+            json={"name": "Runbook opérateur renommé"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "Runbook opérateur renommé"
 
 
 def test_runbook_execution_is_available_through_history_api() -> None:

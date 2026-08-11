@@ -14,7 +14,7 @@ from .domain import (
     transition_allowed,
 )
 from .models import Alert, AuditLog, Incident, Runbook, RunbookExecution, Service, utc_now
-from .runbooks import approved_automation_keys, execute_runbook
+from .runbooks import approved_automation_keys, execute_runbook, is_managed_runbook
 from .schemas import (
     AlertCreate,
     AlertRead,
@@ -132,7 +132,9 @@ def create_alert(
 ):
     data = payload.model_dump()
     if data["status"] != "new":
-        raise HTTPException(status_code=422, detail="Une nouvelle alerte doit commencer à l'état new.")
+        raise HTTPException(
+            status_code=422, detail="Une nouvelle alerte doit commencer à l'état new."
+        )
     if data["service_id"] is not None and db.get(Service, data["service_id"]) is None:
         raise HTTPException(status_code=404, detail="Service introuvable.")
 
@@ -244,7 +246,9 @@ def create_incident(
     source_alert = None
 
     if data["status"] != "open":
-        raise HTTPException(status_code=422, detail="Un incident déclaré doit commencer à l'état open.")
+        raise HTTPException(
+            status_code=422, detail="Un incident déclaré doit commencer à l'état open."
+        )
 
     if data["source_alert_id"] is None:
         if data["service_id"] is None or not (data["description"] or "").strip():
@@ -449,6 +453,15 @@ def update_runbook(
     runbook = db.get(Runbook, runbook_id)
     if runbook is None:
         raise HTTPException(status_code=404, detail="Runbook introuvable.")
+    if is_managed_runbook(runbook.key):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Ce runbook est managé par le code et re-synchronisé au démarrage : "
+                "il ne peut pas être modifié. Créez un runbook opérateur pour vos "
+                "propres procédures."
+            ),
+        )
 
     changes: dict[str, object] = {}
     data = payload.model_dump(exclude_unset=True)

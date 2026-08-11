@@ -5,8 +5,8 @@
 <nav class="breadcrumbs" aria-label="Fil d'Ariane"><a href="/runbooks">Runbooks</a><i data-lucide="chevron-right" aria-hidden="true"></i><span>{{ runbook.name }}</span></nav>
 <header class="object-header">
   <div class="object-header__mark"><i data-lucide="{% if runbook.mode == 'manual' %}list-checks{% else %}zap{% endif %}" aria-hidden="true"></i></div>
-  <div class="object-header__main"><div>{{ badge(runbook.mode, 'mode') }}{{ badge(runbook.risk_level, 'risk') }}{% if runbook.enabled %}<span class="badge badge--enabled">Activé</span>{% else %}<span class="badge badge--disabled">Désactivé</span>{% endif %}</div><h1>{{ runbook.name }}</h1><p>{{ runbook.description or "Aucune description." }}</p></div>
-  <a class="button button--secondary" href="/runbooks/{{ runbook.id }}/edit"><i data-lucide="pencil" aria-hidden="true"></i><span>Modifier</span></a>
+  <div class="object-header__main"><div>{{ badge(runbook.mode, 'mode') }}{{ badge(runbook.risk_level, 'risk') }}{% if runbook.enabled %}<span class="badge badge--enabled">Activé</span>{% else %}<span class="badge badge--disabled">Désactivé</span>{% endif %}{% if managed %}<span class="badge badge--managed" title="Défini dans le code et re-synchronisé au démarrage">Managé</span>{% endif %}</div><h1>{{ runbook.name }}</h1><p>{{ runbook.description or "Aucune description." }}</p></div>
+  {% if not managed %}<a class="button button--secondary" href="/runbooks/{{ runbook.id }}/edit"><i data-lucide="pencil" aria-hidden="true"></i><span>Modifier</span></a>{% endif %}
 </header>
 
 <div class="two-column two-column--wide-main">

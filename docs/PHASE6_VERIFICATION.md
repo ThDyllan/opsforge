@@ -16,13 +16,13 @@ Final validation still requires current-branch CI evidence, a user-led visual/re
 
 ### Domain Integrity
 
-- Alerts move forward through `new -> acknowledged -> resolved`.
+- Alerts move forward through `new -> acknowledged -> resolved`; a new alert may also be resolved directly (acknowledgement is optional).
 - Incidents move forward through `open -> investigating -> resolved`.
 - Resolved objects are not reopened in this version.
 - An incident linked to an alert must use the same service.
 - One source alert can have only one active incident.
 - Resolving an incident does not resolve the source alert automatically.
-- Manual incidents require a service, title, description, and severity.
+- Manual incidents require a service, a title, and a description (severity defaults to medium).
 - Meaningful service, alert, incident, runbook, and execution mutations are audited.
 
 ### Runbooks
@@ -33,6 +33,8 @@ Final validation still requires current-branch CI evidence, a user-led visual/re
 - Context requirements (`none`, `service`, or `incident`), enabled state, and risk level are visible.
 - Incompatible or failed attempts still create a `RunbookExecution` and audit evidence.
 - No arbitrary command, script, `eval`, or shell execution is accepted.
+- The six code-defined runbooks are managed and read-only (API `409` on edit, no edit button, `Managé` badge); operator-created runbooks remain editable. This prevents an edit from being silently overwritten by the startup re-synchronisation.
+- A demonstration `RunbookExecution` is seeded on a fresh database so the runbook history, incident timeline, and activity feed are not empty on first boot.
 
 ### Operator Console
 
@@ -124,6 +126,29 @@ Therefore, automated checks do not claim visual layout, responsive behavior, or 
 - Real platform monitoring and simulated business status are labeled separately.
 - Authentication remains intentionally absent for the local mono-operator scope.
 - Trivy remains non-blocking. The local candidate scan reports `19 HIGH` and `3 CRITICAL` Debian findings with no known fixed version; the current CI log must show and retain this evidence.
+
+## Integration Audit Evidence - 2026-08-07
+
+An independent audit (branch `integration/phase6-audit`, opened from
+`phase6-operator-ux`) added six reviewed changes: managed read-only runbooks, a
+seeded demonstration execution, UX polish with a serviceless-alert lock fix, a
+Ruff lint gate with the Trivy signal restored, Kubernetes workload hardening,
+and documentation synchronisation. Re-run evidence:
+
+| Check | Result |
+| --- | --- |
+| SQLite suite | `35 passed, 1 warning` (was 29; added managed-runbook, seed, and serviceless-alert tests) |
+| Isolated PostgreSQL integration | `1 passed, 1 warning` |
+| Ruff lint (`ruff check .`) | Clean; enforced as the first CI stage |
+| CI pipeline (replicated clean-room) | Install `requirements-dev.txt` -> Ruff -> SQLite -> PostgreSQL, all green |
+| Kubernetes hardening on real k3d (isolated namespace) | API and PostgreSQL Pods `1/1 Ready`; `/health`, `/ready`, `/overview` returned `200` under the read-only root filesystem; write to `/app` refused; namespace then deleted |
+| Serviceless-alert regression | Fixed: the service select is locked only when the source alert already has a service |
+| Managed vs operator runbooks | Managed edit rejected with `409` and redirected in the UI; operator runbook still editable |
+| Seed idempotence | One `RunbookExecution` and its two audit rows remain stable across repeated seeding |
+
+The Trivy scan remains advisory (`continue-on-error: true`) but now sets
+`exit-code: "1"`, so a `HIGH`/`CRITICAL` finding is reported as a visible step
+failure without blocking the job.
 
 ## Remaining Validation
 

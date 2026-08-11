@@ -17,7 +17,7 @@
     <div class="form-section">
       <h2>Contexte</h2>
       {% if source_alert %}<input type="hidden" name="source_alert_id" data-number value="{{ source_alert.id }}">{% endif %}
-      <label><span>Service <em>*</em></span><select name="service_id" data-number required {% if source_alert %}data-locked{% endif %}><option value="">Sélectionner un service</option>{% for service in services %}<option value="{{ service.id }}" {% if selected_service_id == service.id %}selected{% endif %}>{{ service.name }} · {{ service.environment }}</option>{% endfor %}</select></label>
+      <label><span>Service <em>*</em></span><select name="service_id" data-number required {% if source_alert and source_alert.service_id %}data-locked{% endif %}><option value="">Sélectionner un service</option>{% for service in services %}<option value="{{ service.id }}" {% if selected_service_id == service.id %}selected{% endif %}>{{ service.name }} · {{ service.environment }}</option>{% endfor %}</select></label>
       <label><span>Titre <em>*</em></span><input name="title" maxlength="200" required value="{% if source_alert %}Incident - {{ source_alert.title }}{% endif %}" placeholder="Résumé du problème pris en charge"></label>
       <label><span>Description <em>*</em></span><textarea name="description" rows="7" required placeholder="Décrivez l'impact observé, le contexte et le résultat attendu.">{% if source_alert %}{{ source_alert.message }}{% endif %}</textarea></label>
     </div>

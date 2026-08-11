@@ -172,6 +172,14 @@
     });
   });
 
+  // A locked select is pre-filled from a source object (e.g. the service of an
+  // originating alert). Disabling it keeps the value visible but excludes it
+  // from the submitted payload, so the server derives it from the source and it
+  // cannot be changed to an inconsistent value.
+  document.querySelectorAll("select[data-locked]").forEach((select) => {
+    select.disabled = true;
+  });
+
   const normalizeSlug = (value, separator) => value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")

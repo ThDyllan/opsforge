@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .domain import INCIDENT_TRANSITIONS, add_audit_log, json_text, transition_allowed
@@ -69,7 +68,9 @@ RUNBOOK_DEFINITIONS = [
     {
         "key": "diagnostic_echec_sauvegarde",
         "name": "Diagnostiquer un échec de sauvegarde",
-        "description": "Checklist manuelle pour qualifier l'incident de sauvegarde de démonstration.",
+        "description": (
+            "Checklist manuelle pour qualifier l'incident de sauvegarde de démonstration."
+        ),
         "mode": "manual",
         "instructions": "Suivre les étapes puis confirmer le résultat observé dans OpsForge.",
         "steps": [
@@ -83,6 +84,22 @@ RUNBOOK_DEFINITIONS = [
         "automation_key": None,
     },
 ]
+
+
+MANAGED_RUNBOOK_KEYS: frozenset[str] = frozenset(
+    definition["key"] for definition in RUNBOOK_DEFINITIONS
+)
+
+
+def is_managed_runbook(key: str) -> bool:
+    """Managed runbooks are defined in code and re-synchronised on every startup.
+
+    Their content is owned by the seed (``_ensure_runbooks``), so any operator
+    edit would be silently overwritten at the next restart. They are therefore
+    treated as read-only; operators create and maintain their own runbooks.
+    """
+
+    return key in MANAGED_RUNBOOK_KEYS
 
 
 def approved_automation_keys() -> set[str]:

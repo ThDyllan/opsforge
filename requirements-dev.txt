@@ -1,0 +1,8 @@
+# Development and CI tooling: runtime dependencies plus CI-only linters.
+# Ruff is kept OUT of the runtime image (the Dockerfile installs only
+# requirements.txt). Note: pytest intentionally remains in requirements.txt
+# because the documented workflow runs the test suite inside the running
+# container (`docker compose exec api pytest`), so the runtime image is not
+# fully "lean" by design — only ruff is dev-only here.
+-r requirements.txt
+ruff==0.6.9

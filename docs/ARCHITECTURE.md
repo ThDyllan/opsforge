@@ -55,7 +55,7 @@ Service -> Alert -> Incident -> Runbook -> RunbookExecution -> AuditLog
 - An alert may be attached to one service.
 - An incident may inherit the service of its source alert.
 - The API rejects an incident that supplies a service different from the source alert service.
-- Alert transitions are `new -> acknowledged -> resolved`; incident transitions are `open -> investigating -> resolved`.
+- Alert transitions are forward-only `new -> acknowledged -> resolved`; a `new` alert may also be resolved directly, so acknowledgement is optional. Incident transitions are strictly sequential `open -> investigating -> resolved`.
 - One source alert can have only one active incident. A recurring problem creates a new incident only after the previous one is resolved.
 - Resolving an incident does not automatically resolve its source alert.
 - Manual runbooks use checklists and an operator-confirmed outcome.
