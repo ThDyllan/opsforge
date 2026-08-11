@@ -5,7 +5,11 @@
 FROM python:3.12-slim
 
 ENV PIP_NO_CACHE_DIR=1 \
-    ANSIBLE_COLLECTIONS_PATH=/root/.ansible/collections
+    ANSIBLE_COLLECTIONS_PATH=/root/.ansible/collections \
+    # Point Ansible at our config explicitly. The repo is bind-mounted from a
+    # world-writable location, so Ansible would otherwise ignore ansible.cfg
+    # (and thus its inventory) for safety. An explicit ANSIBLE_CONFIG is honoured.
+    ANSIBLE_CONFIG=/work/ansible/ansible.cfg
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends curl ca-certificates tar \

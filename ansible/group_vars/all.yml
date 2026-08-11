@@ -24,9 +24,10 @@ app_namespace: opsforge
 monitoring_namespace: monitoring
 
 # --- PostgreSQL credentials ---------------------------------------------------
-# LOCAL DEMONSTRATION credentials only. This is NOT a real secret: it is injected
-# into a Kubernetes Secret at deploy time from these variables, so no credential
-# file is committed. Override (or move to ansible-vault) for anything real.
+# NON-SENSITIVE local demonstration default (the same throwaway credential used by
+# docker-compose.yml) — NOT a real secret. It is injected into a Kubernetes Secret
+# at deploy time, so no separate credential manifest is committed. Override on the
+# command line (-e db_password=...) or use ansible-vault for anything real.
 db_user: opsforge
 db_password: opsforge-local-password
 db_name: opsforge

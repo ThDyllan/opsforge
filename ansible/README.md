@@ -55,9 +55,11 @@ ansible-playbook -i inventory.ini deploy.yml
 
 ## Notes
 
-- **No secret is committed.** The PostgreSQL `Secret` is built at deploy time from
-  the (local, demo-only) variables in `group_vars/all.yml`. Override them or move
-  them to `ansible-vault` for anything real.
+- **No separate credential manifest is committed.** The PostgreSQL `Secret` is
+  generated at deploy time from the variables in `group_vars/all.yml`. Those hold
+  a **non-sensitive local demo default** (the same throwaway credential as
+  `docker-compose.yml`), not a real secret — override them (`-e db_password=...`)
+  or use `ansible-vault` for anything real.
 - **Idempotent.** Re-running `deploy.yml` converges without recreating the cluster
   or the resources.
 - The competency mapping (RNCP CP N°2) and the design rationale are documented in

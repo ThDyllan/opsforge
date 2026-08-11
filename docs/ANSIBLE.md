@@ -27,40 +27,42 @@ existing manifests in [`../k8s/`](../k8s/)** — it does not redefine OpsForge.
 | `kubernetes_resources` | Apply the manifests **in order**, waiting for each tier | `kubernetes.core.k8s` with `wait: true` |
 | `verify` | Prove it works | pods `Running` + `/health` and `/ready` return `200` |
 
-## Why this is real orchestration, not a `kubectl apply` wrapper
+## What Ansible adds here
 
-This was a deliberate design goal. The automation adds what a blind
-`kubectl apply -f k8s/` cannot:
+Ansible orchestrates the **complete, multi-tool workflow** as a single
+reproducible, idempotent run, while `kubernetes.core` manages the Kubernetes
+resources declaratively:
 
-- **Ordering with readiness gating** — PostgreSQL is applied and the playbook
-  *waits until it is ready* before deploying the API, which itself is waited on
-  before the monitoring stack. `kubernetes.core.k8s` with `wait: true` blocks on
-  the actual rollout status.
-- **Idempotent convergence** — re-running the playbook does not recreate the
-  cluster or the resources; a second run reports almost everything as `ok`
-  (unchanged).
-- **Secret injection without a committed credential** — the PostgreSQL `Secret`
-  is built at deploy time from variables, so no credential file is in Git.
+- **One workflow across several tools** — Docker (build), k3d (cluster + image
+  import), the Kubernetes API (apply), and an HTTP check are sequenced in one
+  playbook, with dependency ordering (PostgreSQL ready → API ready → monitoring).
+- **Declarative Kubernetes management** — `kubernetes.core.k8s` applies each
+  manifest and, with `wait: true`, blocks until the resource reports ready.
+- **Idempotent convergence** — re-running does not recreate the cluster or the
+  resources; a second run reports almost everything as `ok` (unchanged).
 - **End-to-end verification** — the run only succeeds if the API answers `200` on
   `/health` and `/ready` (the latter proving PostgreSQL connectivity via
   `SELECT 1`).
-- **Explicit prerequisites and a reproducible control node** — the control node
-  itself is defined as code (`ansible/Dockerfile`).
+- **Deploy-time Secret** — the PostgreSQL `Secret` is generated from variables at
+  deploy time, so no separate credential manifest is committed (see *Credentials*
+  below).
+- **Reproducible control node** — defined as code in `ansible/Dockerfile`.
 
-`k3d` and `docker` are driven through their CLIs (natural for those tools), while
-the Kubernetes API work goes through the `kubernetes.core` collection.
+`k3d` and `docker` are driven through their CLIs (natural for those tools); the
+Kubernetes work goes through the `kubernetes.core` collection.
 
 ## Why Ansible rather than Terraform
 
-Both are named by the reference. OpsForge's scope is **local, without a cloud
-provider**. Ansible fits that scope naturally: it *orchestrates* the sequence
-"prepare → create cluster → build/import → apply → wait → verify" on the local
-Docker/k3d environment. Terraform shines when it **provisions cloud resources**
-(VPC, VMs, a managed Kubernetes) — exactly the cloud layer OpsForge deliberately
-keeps out of scope. Using Terraform only to drive a local k3d cluster would be
-heavier and less honest to explain. Deploying to a cloud provider with Terraform
-is the documented next step (see CP N°4, questioned at the oral, not required in
-the project).
+Both are accepted by the reference and both are legitimate infrastructure-as-code
+tools; they simply have different strengths. Terraform is **declarative and
+state-based** — you describe a desired end state and it reconciles the real world
+to it. Ansible is **procedural orchestration** — you describe an ordered sequence
+of steps, potentially across several tools. Our task here is exactly that kind of
+sequence (prepare the control node → create the k3d cluster → build and import the
+image → apply the Kubernetes resources in order → wait → verify), so Ansible maps
+to it naturally. Provisioning cloud infrastructure (a VPC, a managed Kubernetes,
+…) would be a natural fit for Terraform, and is the direction of CP N°4
+(questioned at the oral, not required in this project).
 
 ## Mapping to CP N°2 criteria
 
@@ -70,6 +72,15 @@ the project).
 | **L'architecture est conforme au cahier des charges** | The playbook deploys the documented architecture (namespaces, PostgreSQL StatefulSet + PVC + Service, API Deployment + NodePort, Prometheus + Grafana) from the versioned `k8s/` manifests; see [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`KUBERNETES.md`](KUBERNETES.md). |
 | **Les scripts sont documentés** | Roles are small and commented; usage in [`../ansible/README.md`](../ansible/README.md); rationale and mapping in this file. |
 | *Savoir: « outil d'automatisation de type Ansible ou Terraform »* | Ansible + the `kubernetes.core` collection. |
+
+## Credentials
+
+There is **no separate credential manifest** in Git: the PostgreSQL `Secret` is
+generated at deploy time from the variables in `ansible/group_vars/all.yml`.
+Those variables hold a **non-sensitive local demonstration default** — the same
+throwaway credential already used by `docker-compose.yml` for local runs — not a
+real secret. Override them on the command line (`-e db_password=...`) or move them
+to `ansible-vault` for anything beyond local demonstration.
 
 ## Validation performed
 
