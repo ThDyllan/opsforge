@@ -20,6 +20,25 @@ router = APIRouter(include_in_schema=False)
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
+def _optional_int_query(value: str, field: str) -> int | None:
+    """Parse an optional numeric query field submitted by the filter forms.
+
+    HTML forms always submit every field, so "all" options arrive as an empty
+    string; treat that as "no filter". A non-empty, non-numeric value is an
+    explicit client error and keeps failing loudly instead of being ignored.
+    """
+    cleaned = value.strip()
+    if not cleaned:
+        return None
+    try:
+        return int(cleaned)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Le paramètre {field} doit être un entier.",
+        ) from exc
+
+
 LABELS = {
     "healthy": "Opérationnel",
     "degraded": "Dégradé",
@@ -246,9 +265,11 @@ def alerts_list(
     q: str = "",
     alert_status: str = Query(default="", alias="status"),
     severity: str = "",
-    service_id: int | None = None,
+    service_id: str = "",
     db: Session = Depends(get_db),
 ):
+    # The filter form always submits service_id, as "" when "Tous" is selected.
+    service_filter = _optional_int_query(service_id, "service_id")
     statement = select(Alert).options(
         selectinload(Alert.service), selectinload(Alert.source_incidents)
     )
@@ -265,8 +286,8 @@ def alerts_list(
         statement = statement.where(Alert.status == alert_status)
     if severity:
         statement = statement.where(Alert.severity == severity)
-    if service_id is not None:
-        statement = statement.where(Alert.service_id == service_id)
+    if service_filter is not None:
+        statement = statement.where(Alert.service_id == service_filter)
     alerts = db.scalars(statement.order_by(Alert.received_at.desc())).all()
     services = db.scalars(select(Service).order_by(Service.name)).all()
     return _render(
@@ -282,7 +303,7 @@ def alerts_list(
             "q": q,
             "status": alert_status,
             "severity": severity,
-            "service_id": service_id,
+            "service_id": service_filter,
         },
     )
 
@@ -311,10 +332,12 @@ def incidents_list(
     q: str = "",
     incident_status: str = Query(default="active", alias="status"),
     severity: str = "",
-    service_id: int | None = None,
+    service_id: str = "",
     owner: str = "",
     db: Session = Depends(get_db),
 ):
+    # The filter form always submits service_id, as "" when "Tous" is selected.
+    service_filter = _optional_int_query(service_id, "service_id")
     statement = select(Incident).options(
         selectinload(Incident.service), selectinload(Incident.source_alert)
     )
@@ -329,8 +352,8 @@ def incidents_list(
         statement = statement.where(Incident.status == incident_status)
     if severity:
         statement = statement.where(Incident.severity == severity)
-    if service_id is not None:
-        statement = statement.where(Incident.service_id == service_id)
+    if service_filter is not None:
+        statement = statement.where(Incident.service_id == service_filter)
     if owner == "unassigned":
         statement = statement.where(or_(Incident.owner.is_(None), Incident.owner == ""))
     elif owner:
@@ -358,7 +381,7 @@ def incidents_list(
             "q": q,
             "status": incident_status,
             "severity": severity,
-            "service_id": service_id,
+            "service_id": service_filter,
             "owner": owner,
         },
     )
