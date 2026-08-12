@@ -1,0 +1,15 @@
+### OpsForge - Backup + safe restore verification (Docker Compose environment)
+### Commands: .\scripts\backup.ps1 ; .\scripts\restore.ps1 -BackupFile <archive>  (default = verification restore into a temporary database)
+### Executed on 2026-08-12
+
+=== BACKUP ===
+ opsforge-db-1 Copying opsforge-db-1:/tmp/opsforge_backup_20260812_133513.dump to C:\Users\DyllanTHOUVIGNON\Desktop\Work\opsforge\backups\opsforge_backup_20260812_133513.dump
+ opsforge-db-1 Copied opsforge-db-1:/tmp/opsforge_backup_20260812_133513.dump to C:\Users\DyllanTHOUVIGNON\Desktop\Work\opsforge\backups\opsforge_backup_20260812_133513.dump
+
+Latest archive: opsforge_backup_20260812_133513.dump (24543 bytes)
+
+=== RESTORE (default safe mode: temporary verification database) ===
+ opsforge-db-1 Copying C:\Users\DyllanTHOUVIGNON\Desktop\Work\opsforge\backups\opsforge_backup_20260812_133513.dump to opsforge-db-1:/tmp/opsforge_restore.dump
+ opsforge-db-1 Copied C:\Users\DyllanTHOUVIGNON\Desktop\Work\opsforge\backups\opsforge_backup_20260812_133513.dump to opsforge-db-1:/tmp/opsforge_restore.dump
+NOTICE:  database "opsforge_restore_verify" does not exist, skipping
+

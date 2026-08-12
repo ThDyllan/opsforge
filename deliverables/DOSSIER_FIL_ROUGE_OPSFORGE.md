@@ -2,603 +2,378 @@
 
 ## Titre professionnel visé : Administrateur système DevOps (niveau 6)
 
-**Code titre : TP-01414 — RNCP36061**
+**Code titre : TP-01414 — RNCP 36061**
 
-| |     |
+| | |
 |---|---|
 | **Candidat** | Dyllan Thouvignon |
 | **Projet** | OpsForge — console locale de gestion d'incidents et sa chaîne DevOps de bout en bout, en local |
-| **Type de projet** | Projet fil rouge indépendant réalisé dans le cadre de la préparation au titre, avec cahier des charges conçu par le candidat |
+| **Type de projet** | Projet fil rouge indépendant, cahier des charges conçu par le candidat |
 | **Organisme de formation** | Liora (ex DataScientest) |
-| **Entreprise d'alternance** | BlueBearsIT (entreprise d'alternance uniquement : OpsForge n'est ni commandité, ni utilisé par elle — voir section 2.1) |
 | **Session d'examen** | 7 septembre 2026 à 09h30 — Campus Omnes Cœur Défense II, Courbevoie |
-| **Dépôt Git** | `ThDyllan/opsforge` — état technique gelé : branche `phase6-operator-ux`, commit `8ab0f70` |
-| **Version du dossier** | Brouillon v1 — contenu à relire, mise en page et captures à finaliser |
+| **Dépôt Git** | `ThDyllan/opsforge` — candidat technique gelé : branche `phase6-operator-ux`, commit `8ab0f70` |
+| **Version du document** | V2 |
+
+---
+
+## Le projet en 60 secondes
+
+**OpsForge** est une console locale de gestion d'incidents : un opérateur y qualifie des signaux (alertes), ouvre et traite des incidents, applique des procédures contrôlées (runbooks) et conserve la preuve de chaque action (journal d'audit). Autour de cette application, j'ai construit et validé une chaîne DevOps locale complète : conteneurisation, intégration continue, sauvegarde/restauration, déploiement Kubernetes, supervision, et automatisation du déploiement de l'infrastructure.
+
+Les **trois compétences obligatoires** du titre sont couvertes, chacune avec une preuve distincte :
+
+| Compétence obligatoire | Preuve principale | Où |
+|---|---|---|
+| **Automatiser le déploiement d'une infrastructure** | Playbook Ansible : toute l'infrastructure locale (cluster k3d, PostgreSQL, API, supervision) déployée et vérifiée en une commande idempotente — `/health` et `/ready` en 200 sinon échec | §5.5, §6 |
+| **Gérer des containers** | Image durcie non-root, orchestration Compose puis Kubernetes (securityContext complet, probes), stockage persistant dont la persistance est **prouvée** après destruction du pod | §5.2, §5.3, §3.5 |
+| **Exploiter une solution de supervision** | Application instrumentée, Prometheus qui la scrape, dashboard Grafana, et une alerte réelle (`OpsForgeApiDown`) observée `inactive → pending → firing → résolue` lors d'une panne provoquée puis réparée | §5.1, §3.6 |
+
+Le périmètre est assumé : tout est local et démontrable ; il n'y a ni cloud, ni registre d'images, ni déploiement continu distant, ni authentification — ce sont des choix documentés, pas des oublis (§8).
 
 ---
 
 ## Sommaire
 
-- **Introduction**
-1. **Liste des compétences du référentiel couvertes par le projet**
-   - 1.1 Les trois compétences obligatoires
-   - 1.2 Matrice compétences ↔ critères ↔ réalisations ↔ preuves ↔ limites
-   - 1.3 Compétences partiellement mises en pratique
-   - 1.4 Compétences non couvertes par le projet
-2. **Cahier des charges**
-   - 2.1 Contexte et origine du projet
-   - 2.2 Problématique et objectifs
-   - 2.3 Utilisateur cible et cas d'usage
-   - 2.4 Besoins fonctionnels
-   - 2.5 Besoins techniques
-   - 2.6 Contraintes
-   - 2.7 Livrables et critères d'acceptation
-   - 2.8 Hors périmètre (exclusions volontaires)
-   - 2.9 Évolution du périmètre : l'histoire réelle du projet
-3. **Spécifications techniques du projet**
-   - 3.1 Vue d'ensemble de l'architecture
-   - 3.2 L'application : domaine métier et modèle de données
-   - 3.3 Deux chaînes distinctes : intégration continue et automatisation d'infrastructure
-   - 3.4 La couche conteneurs
-   - 3.5 La couche Kubernetes (k3d)
-   - 3.6 La couche supervision
-   - 3.7 Sauvegarde et restauration
-   - 3.8 Sécurité
-   - 3.9 Environnements et versions
-4. **Démarche de travail et outils utilisés**
-   - 4.1 Une démarche par phases, chacune avec sa Definition of Done
-   - 4.2 Le protocole appliqué avant / pendant / après chaque phase
-   - 4.3 L'évolution du workflow Git
-   - 4.4 Outillage
-   - 4.5 Collaborations
-5. **Réalisations significatives (scripts et configurations argumentés)**
-   - 5.1 Instrumentation Prometheus de l'application
-   - 5.2 Règle d'alerte `OpsForgeApiDown`
-   - 5.3 Image Docker durcie de l'API
-   - 5.4 Manifests Kubernetes durcis (Deployment API et StatefulSet PostgreSQL)
-   - 5.5 Pipeline d'intégration continue GitHub Actions
-   - 5.6 Playbook Ansible d'automatisation du déploiement
-   - 5.7 Control node Ansible conteneurisé (`ansible/run.sh`)
-   - 5.8 Scripts de sauvegarde et de restauration PostgreSQL
-6. **Situation de travail ayant nécessité une recherche**
-   - Le fichier `ansible.cfg` ignoré : diagnostic, recherche, correction, validation
-7. **Synthèse des validations et preuves**
-8. **Limites assumées et pistes d'évolution**
-9. **Conclusion**
-- **Annexe A** — Chronologie du projet (issue de l'historique Git)
-- **Annexe B** — Liste consolidée des captures d'écran du dossier
-- **Annexe C** — Glossaire
+- Introduction
+- **1. Compétences du référentiel couvertes par le projet**
+- **2. Cahier des charges**
+- **3. Spécifications techniques** (architecture, schémas, environnements)
+- **4. Démarche de travail et outils**
+- **5. Réalisations significatives** (scripts et configurations argumentés)
+- **6. Situation de travail ayant nécessité une recherche**
+- **7. Synthèse des validations**
+- **8. Limites assumées et évolutions**
+- Conclusion
+- Annexe A — Chronologie détaillée du projet
+- Annexe B — Inventaire des preuves
+- Annexe C — Glossaire
 
 ---
 
 ## Introduction
 
-Je m'appelle Dyllan Thouvignon. Mon parcours était initialement orienté développement, notamment à travers un BTS SIO option SLAM ; j'ai ensuite suivi une formation DevOps en alternance chez BlueBearsIT (contrat d'apprentissage d'octobre 2024 à mai 2026, CFA DataScientest — aujourd'hui Liora). Durant cette alternance, mon activité en entreprise est restée principalement orientée support technique : elle ne m'a pas fourni un projet DevOps d'entreprise suffisamment complet pour servir honnêtement de support certificatif.
+Je m'appelle Dyllan Thouvignon. Mon parcours était initialement orienté développement (BTS SIO option SLAM), puis j'ai suivi une formation DevOps en alternance. Mon activité en entreprise étant restée principalement orientée support technique, elle ne m'a pas fourni un projet DevOps suffisamment complet pour couvrir les attendus certificatifs.
 
-À l'issue de ma formation, j'ai donc conçu et réalisé **OpsForge**, un projet fil rouge indépendant construit de juin à août 2026 pour préparer la certification, avec un cahier des charges que j'ai défini moi-même à partir des compétences et des attendus du référentiel. OpsForge est une console locale de gestion d'incidents (services → alertes → incidents → runbooks → journal d'audit), entourée d'une chaîne DevOps de bout en bout, en local : conteneurisation, intégration continue, sauvegarde/restauration, déploiement Kubernetes local, supervision Prometheus/Grafana, et automatisation du déploiement de l'infrastructure avec Ansible — la chaîne couvre les trois compétences obligatoires du titre, sans revendiquer ce qui n'existe pas (ni cloud, ni registre d'images, ni déploiement continu distant).
+À l'issue de ma formation, j'ai donc conçu et réalisé **OpsForge**, un projet fil rouge indépendant, construit de juin à août 2026 pour préparer la certification. Ce n'est pas un projet de mon entreprise d'alternance : il n'utilise aucune donnée ni infrastructure professionnelle, et j'en ai défini le cahier des charges moi-même, à partir des compétences et des attendus du référentiel.
 
-Le parti pris du projet est l'honnêteté technique : chaque phase a une définition de fin explicite, chaque validation est documentée avec sa date dans le dépôt, et chaque limite est assumée par écrit plutôt que masquée. Ce dossier suit le plan demandé par les modalités officielles du titre ; il présente ce qui existe réellement, ce qui a réellement été testé, et ce qui a volontairement été laissé hors périmètre.
+Le fil conducteur du projet : chaque brique doit être **réellement démontrée** — tests exécutés, alerte réellement déclenchée, persistance réellement prouvée, déploiement réellement rejoué — et chaque limite est écrite noir sur blanc dans le dépôt.
 
 ---
 
-# 1. Liste des compétences du référentiel couvertes par le projet
+# 1. Compétences du référentiel couvertes par le projet
 
-## 1.1 Les trois compétences obligatoires
+## 1.1 Les trois compétences obligatoires, critère par critère
 
-Les modalités d'évaluation du titre imposent que le projet couvre obligatoirement trois compétences. OpsForge les couvre toutes les trois, chacune avec une preuve distincte et identifiable :
-
-| Compétence obligatoire (REAC TP-01414) | Réalisation OpsForge | Où dans ce dossier |
-|---|---|---|
-| **Automatiser le déploiement d'une infrastructure** (CP n°2) | Playbook Ansible (`ansible/deploy.yml`, collection `kubernetes.core`) qui provisionne le cluster k3d, construit et importe l'image, applique les manifests Kubernetes dans l'ordre avec attente de disponibilité, puis vérifie `/health` et `/ready` — le tout en une commande, de façon idempotente | Sections 3.3, 5.6, 5.7, 6 |
-| **Gérer des containers** (CP n°7) | Image Docker durcie (non-root, digest épinglé, healthcheck), orchestration Docker Compose avec démarrage conditionné à la santé de la base, workloads Kubernetes durcis (securityContext complet, probes, ressources), stockage persistant PVC avec preuve de persistance, mise à jour par rebuild + import + rollout | Sections 3.4, 3.5, 5.3, 5.4 |
-| **Exploiter une solution de supervision** (CP n°10) | Application instrumentée (`/metrics` Prometheus), serveur Prometheus qui scrape l'API dans k3d, règle d'alerte `OpsForgeApiDown` réellement déclenchée lors d'une panne provoquée (cycle `inactive → firing → résolu` observé), console Grafana avec dashboard provisionné | Sections 3.6, 5.1, 5.2 |
-
-## 1.2 Matrice compétences ↔ critères ↔ réalisations ↔ preuves ↔ limites
-
-Pour chacune des trois compétences obligatoires, j'ai confronté le projet aux **critères de performance exacts du REAC** (Référentiel Emploi Activités Compétences du titre — « CP » désigne ci-dessous une compétence professionnelle de ce référentiel ; le découpage du projet en phases est détaillé en section 4.1) :
+Le REAC (Référentiel Emploi Activités Compétences — « CP » = compétence professionnelle) définit des critères de performance précis. Voici la confrontation exacte d'OpsForge à ces critères.
 
 ### CP n°2 — Automatiser le déploiement d'une infrastructure
 
-| Critère REAC | Comment OpsForge y répond | Preuve |
-|---|---|---|
-| « Les serveurs déployés sont fonctionnels » | Le rôle Ansible `verify` échoue si un pod API n'est pas `Running` ou si `/health` et `/ready` ne répondent pas HTTP 200 (`/ready` exécute un `SELECT 1` sur PostgreSQL) ; chaque étage est appliqué avec `wait: true` | Récapitulatif du rôle `verify` (`/health -> 200`, `/ready -> 200`) ; run idempotent `ok=21, changed=2` documenté dans `docs/ANSIBLE.md` |
-| « L'architecture est conforme au cahier des charges » | Le playbook déploie exactement l'architecture documentée (namespaces, StatefulSet PostgreSQL + PVC + Service, Deployment API + NodePort, Prometheus + Grafana) en orchestrant les manifests versionnés de `k8s/` — il ne redéfinit rien | Comparaison `k8s/` ↔ ressources déployées ; `docs/ARCHITECTURE.md`, `docs/KUBERNETES.md` |
-| « Les scripts sont documentés » | Cinq rôles courts et commentés, variables centralisées dans `group_vars/all.yml`, usage dans `ansible/README.md`, justification et correspondance RNCP dans `docs/ANSIBLE.md`, décision d'architecture n°029 dans `docs/DECISIONS.md` | Les fichiers eux-mêmes |
-| Savoir associé : « outil d'automatisation de type Ansible ou Terraform » | Ansible + collection `kubernetes.core` (le choix Ansible plutôt que Terraform est argumenté en section 5.6) | `ansible/requirements.yml`, ADR 029 |
+| Critère REAC | Réponse OpsForge |
+|---|---|
+| « Les serveurs déployés sont fonctionnels » | Le rôle Ansible `verify` échoue si un pod API n'est pas `Running` ou si `/health` et `/ready` ne répondent pas HTTP 200 (`/ready` exécute un `SELECT 1` sur PostgreSQL). Chaque étage est appliqué avec `wait: true`. Preuve rejouée le 12/08/2026 : `ok=22 changed=9 failed=0`, `/health → 200`, `/ready → 200` |
+| « L'architecture est conforme au cahier des charges » | Le playbook orchestre les manifests versionnés de `k8s/` (namespaces, StatefulSet PostgreSQL + PVC, Deployment API + NodePort, Prometheus + Grafana) — il déploie l'architecture documentée, sans rien redéfinir |
+| « Les scripts sont documentés » | Cinq rôles courts et commentés, variables centralisées, `ansible/README.md`, justification et correspondance RNCP dans `docs/ANSIBLE.md`, décision d'architecture ADR 029 |
+| Savoir associé : « outil de type Ansible ou Terraform » | Ansible + collection `kubernetes.core` (choix argumenté en §5.5) |
 
-**Limite assumée** : le déploiement cible un cluster **k3d local**, pas un fournisseur cloud. L'activité-type du REAC s'intitule « Automatiser le déploiement d'une infrastructure *dans le cloud* » ; je démontre la compétence CP n°2 d'automatisation sur une infrastructure locale et je ne revendique pas la mise en production cloud (CP n°4), qui relèvera du questionnement à l'entretien technique.
+*Limite :* cible **k3d local**, pas un fournisseur cloud — l'activité-type « …dans le cloud » n'est pas revendiquée (CP n°4 relèvera de l'entretien technique).
 
 ### CP n°7 — Gérer des containers
 
-| Critère REAC | Comment OpsForge y répond | Preuve |
-|---|---|---|
-| « Les containers sont opérationnels » | Compose : API + PostgreSQL avec healthchecks (`pg_isready`, `/health`), démarrage de l'API conditionné à `service_healthy`. Kubernetes : pods `1/1 Ready` avec probes liveness/readiness distinctes | `docker compose ps` ; `kubectl get pods` ; validations Phase 4 (2026-07-09) et audit du 2026-08-07 |
-| « Les containers sont connectés au réseau » | Réseau Compose interne (l'API joint `db:5432`) ; Services Kubernetes ClusterIP (PostgreSQL interne uniquement) et NodePort 30080 exposé sur `127.0.0.1:8080` | Manifests `k8s/*service*.yaml` ; `curl /health` via NodePort |
-| « Les containers sont connectés au stockage distant » | Volume nommé `postgres_data` en Compose ; PVC `postgres-data` (1 Gi, `ReadWriteOnce`, StorageClass `local-path`) monté par le StatefulSet — stockage externe au conteneur, dont la persistance a été **prouvée** (donnée survivant à la suppression du pod) | Preuve de persistance documentée (`docs/PHASE4_VERIFICATION.md`) : marqueur inséré, pod supprimé et recréé avec un autre UID, marqueur retrouvé |
-| « Les containers sont mis à jour » | Cycle de mise à jour explicite : rebuild de l'image (`opsforge-api:phase4` → `phase5` → `phase6`), `k3d image import`, rollout du Deployment ; l'`imagePullPolicy: Never` documente l'absence volontaire de registre | Historique des tags d'image dans les vérifications de phases ; rôle Ansible `image` |
-
-**Limite assumée** : le stockage `local-path` est local au nœud (pas de stockage réseau distribué) et il n'y a pas de registre d'images — l'import k3d local en tient lieu, ce qui est documenté comme une décision de périmètre (ADR 015).
+| Critère REAC | Réponse OpsForge |
+|---|---|
+| « Les containers sont opérationnels » | Compose : API + PostgreSQL avec healthchecks, démarrage de l'API conditionné à la santé de la base. Kubernetes : pods `1/1 Running` avec probes liveness/readiness distinctes (état constaté le 12/08/2026, §3.5) |
+| « Les containers sont connectés au réseau » | Réseau Compose interne (`db:5432`) ; Services Kubernetes ClusterIP (PostgreSQL interne uniquement) et NodePort 30080 exposé sur `127.0.0.1:8080` |
+| « Les containers sont connectés au stockage distant » | Stockage **externalisé du cycle de vie du conteneur** et porté par l'hôte — exactement le savoir-faire REAC « connecter le container au système hôte (réseau et stockage) » : volume nommé en Compose, PVC 1 Gi (`local-path`) monté par le StatefulSet en Kubernetes. La persistance est **prouvée** : une donnée survit à la destruction/recréation du pod (§3.5). *Limite énoncée : stockage local au nœud, non distribué (pas de NFS/SAN)* |
+| « Les containers sont mis à jour » | Cycle explicite : rebuild de l'image (tags `phase4` → `phase5` → `phase6`), `k3d image import`, rollout du Deployment ; `imagePullPolicy: Never` rend visible l'absence volontaire de registre |
 
 ### CP n°10 — Exploiter une solution de supervision
 
-| Critère REAC | Comment OpsForge y répond | Preuve |
+| Critère REAC | Réponse OpsForge |
+|---|---|
+| « Les indicateurs définis sont pertinents » | Métriques applicatives réelles (`opsforge_http_requests_total`, `opsforge_http_request_duration_seconds` — labels méthode / route template / code) + métrique `up` du scrape ; dashboard : disponibilité, volume, répartition par code, latence p95, répartition par route |
+| « Les alertes sont correctement interprétées » | Règle `OpsForgeApiDown` (`up{job="opsforge-api"} == 0` pendant 30 s). Panne provoquée, cycle complet observé et journalisé : `inactive → pending → firing → restauration → inactive` (validé en phase 5, **rejoué en direct le 12/08/2026** — §3.6) |
+| « Les échanges avec les développeurs sont réguliers » | *Limite du contexte individuel, assumée :* il n'y a pas d'équipe de développement — je tiens les deux rôles. La boucle supervision → développement existe réellement et elle est **tracée** dans les décisions du dépôt : ajout de `/ready` (ADR 022), labels de route en template pour maîtriser la cardinalité (ADR 017), configuration de scrape statique (ADR 018). En contexte d'équipe, ces constats seraient précisément le contenu des échanges avec les développeurs |
+
+## 1.2 Compétences partiellement mises en pratique
+
+Je ne revendique pas ces compétences comme couvertes ; le projet en met en œuvre une partie, exploitable à l'entretien technique :
+
+| CP | Mis en pratique | Ce qui manque |
 |---|---|---|
-| « Les indicateurs définis sont pertinents » | Métriques applicatives réelles : `opsforge_http_requests_total` et `opsforge_http_request_duration_seconds` (labels méthode / route template / code HTTP), plus la métrique `up` du job de scrape ; dashboard Grafana : disponibilité, volume de requêtes, répartition par code, latence p95, répartition par route | `app/main.py` ; dashboard `OpsForge Monitoring` (5 panneaux) |
-| « Les alertes sont correctement interprétées » | Règle `OpsForgeApiDown` (`up{job="opsforge-api"} == 0` pendant 30 s) ; panne provoquée par `scale --replicas=0` : l'alerte est passée `inactive → firing`, puis est revenue `inactive` après restauration — cycle complet observé et documenté le 2026-07-14 | `docs/PHASE5_VERIFICATION.md` (5D) ; procédure rejouable documentée dans `docs/MONITORING.md` |
-| « Les échanges avec les développeurs sont réguliers » | Projet individuel : je tiens les deux rôles. La boucle « supervision → développement » existe néanmoins réellement et elle est tracée : ajout de `/ready` après analyse du besoin de distinguer liveness et readiness (ADR 022) ; choix du label de route en *template* côté application pour éviter l'explosion de cardinalité côté Prometheus (ADR 017) ; configuration de scrape statique assumée après analyse du coût du service discovery (ADR 018). Le cycle de revue décrit en 4.3 et 4.5 matérialise le reste de ces allers-retours | `docs/DECISIONS.md` ; historique Git |
+| CP1 — Créer des serveurs par scripts | Création scriptée et idempotente du nœud k3d ; scripts PowerShell/bash | Pas de création de VM serveur au sens strict |
+| CP3 — Sécuriser l'infrastructure | Non-root, rootfs lecture seule, capabilities supprimées, seccomp, secrets hors Git, scan Trivy, bind loopback | Pas d'ANSSI formalisé, ni pare-feu, ni TLS, ni authentification |
+| CP5 — Environnement de test | Base PostgreSQL éphémère par test, cluster k3d jetable, conteneur de service en CI | Pas d'environnement mis à disposition d'une équipe |
+| CP6 — Stockage des données | PostgreSQL sur deux environnements, PVC prouvé, sauvegarde/restauration testées | Pas de réplication ni de gestion formalisée des droits |
+| CP8 — Mise en production avec une plateforme | Déploiement Kubernetes automatisé par Ansible, vérifié de bout en bout | Pas de pré-production/production distinctes, pas de CD |
+| CP9 — Statistiques de services | Indicateurs choisis et justifiés (ADR 017) | Pas de SLA formalisés |
 
-**Limites assumées** : pas d'Alertmanager ni de canal de notification (l'alerte se déclenche mais n'est routée vers aucun canal) ; stockage Prometheus/Grafana éphémère ; accès par `kubectl port-forward` ; métriques techniques HTTP, pas encore de métriques métier ; et surtout **les statuts métier des services affichés dans OpsForge sont simulés** — Prometheus supervise réellement l'API OpsForge elle-même, pas les services de démonstration (distinction détaillée en 3.6).
-
-## 1.3 Compétences partiellement mises en pratique
-
-Je ne revendique pas ces compétences comme couvertes : le projet en met en pratique une partie, ce que je peux expliquer à l'entretien technique, mais les critères du REAC ne sont pas remplis en totalité.
-
-| Compétence REAC | Ce que le projet met en pratique | Ce qui manque pour la couvrir |
-|---|---|---|
-| CP n°1 — Automatiser la création de serveurs à l'aide de scripts | Le rôle Ansible `cluster` crée le nœud k3d de manière scriptée et idempotente ; scripts PowerShell de sauvegarde/restauration ; scripts bash (`run.sh`) | Pas de création de machines virtuelles serveur au sens du REAC (le « nœud » est un conteneur k3d) |
-| CP n°3 — Sécuriser l'infrastructure | Conteneur non-root (UID 10001), rootfs en lecture seule, capabilities supprimées, seccomp, secrets hors Git, scan Trivy, PostgreSQL lié à `127.0.0.1` | Pas de recommandations ANSSI appliquées formellement, pas de pare-feu ni de certificats/TLS, pas d'authentification |
-| CP n°5 — Préparer un environnement de test | Base PostgreSQL éphémère et isolée pour le test d'intégration ; cluster k3d jetable `opsforge-ansible-test` pour valider l'automatisation sans toucher à l'existant ; conteneur de service PostgreSQL en CI | Pas d'environnement de test mis à disposition d'une équipe de développement, pas de pré-production distincte |
-| CP n°6 — Gérer le stockage des données | PostgreSQL opérationnel dans deux environnements, PVC persistant prouvé, sauvegardes `pg_dump` au format custom réellement produites, restauration testée vers une base temporaire, garde-fou explicite avant restauration destructive | Pas de réplication, pas de gestion formalisée des droits d'accès selon un cahier des charges, pas de sauvegardes planifiées/externalisées |
-| CP n°8 — Automatiser la mise en production d'une application avec une plateforme | L'application est déployée sur Kubernetes (plateforme de type attendu) et ce déploiement est automatisé par Ansible avec vérification de bout en bout | Pas d'environnements de pré-production/production distincts, pas de publication d'image, pas de mise en production continue des évolutions |
-| CP n°9 — Définir et mettre en place des statistiques de services | Indicateurs choisis et justifiés (ADR 017) : volume, latence p95, disponibilité, répartition par route et par code | Pas de SLA formalisés, indicateurs non exhaustifs (pas de CPU/stockage/sécurité) |
-
-## 1.4 Compétences non couvertes par le projet
-
-- **CP n°4 — Mettre l'infrastructure en production dans le cloud** : non couverte. OpsForge ne déploie sur aucun fournisseur cloud. Je l'assume explicitement : la même logique d'automatisation viserait un Kubernetes managé dans une évolution cloud (et Terraform y deviendrait pertinent), mais cela n'a pas été réalisé.
-- **CP n°11 — Échanger sur des réseaux professionnels éventuellement en anglais** : évaluée par le questionnaire professionnel, pas par le projet. Je note simplement que la documentation technique du dépôt et les messages de commit sont rédigés en anglais, conformément aux usages professionnels.
-
-Conformément aux modalités, les compétences non couvertes par le projet feront l'objet d'un questionnement lors de l'entretien technique.
+**Non couvertes :** CP4 (mise en production cloud — aucun cloud déployé) ; CP11 (anglais — évaluée par le questionnaire ; la documentation du dépôt et les messages de commit sont rédigés en anglais). Conformément aux modalités, ces compétences feront l'objet du questionnement complémentaire à l'entretien technique.
 
 ---
 
 # 2. Cahier des charges
 
-## 2.1 Contexte et origine du projet
+## 2.1 Contexte
 
-OpsForge est un **projet fil rouge indépendant**, réalisé dans le cadre de ma préparation au titre Administrateur système DevOps. Il ne s'agit pas d'un projet d'entreprise : j'en ai conçu le cahier des charges moi-même, à partir des compétences et des attendus du référentiel. Mon activité en entreprise étant restée principalement orientée support technique et ne m'ayant pas fourni un projet DevOps suffisamment complet pour couvrir les attendus certificatifs, j'ai choisi de construire ce projet indépendant, dimensionné précisément pour mettre en œuvre — réellement, pas sur le papier — les compétences du référentiel. Il a été réalisé à l'issue de ma formation en alternance, de juin à août 2026 (premier commit du dépôt le 17 juin 2026).
-
-Trois clarifications importantes :
-
-- OpsForge **n'est pas un projet interne BlueBearsIT** : l'entreprise n'en est ni le client, ni le commanditaire, ni l'utilisateur, et le projet ne contient aucune donnée professionnelle réelle.
-- Le domaine choisi (gestion d'incidents) est inspiré de mon expérience de support : je connais le cycle « signal → prise en charge → procédure → traçabilité » pour l'avoir vécu au quotidien, ce qui m'a permis de concevoir un domaine métier crédible sans copier un outil existant.
-- Le projet est **pédagogique et démonstratif** : c'est une plateforme locale d'apprentissage appliqué, pas un produit destiné à la production.
+OpsForge est un projet fil rouge indépendant, réalisé dans le cadre de ma préparation au titre. J'en ai conçu le cahier des charges à partir du référentiel. Le domaine choisi — la gestion d'incidents — est inspiré de mon expérience de support : je connais le cycle « signal → prise en charge → procédure → traçabilité » pour l'avoir vécu au quotidien, ce qui m'a permis de définir un domaine métier crédible sans copier un outil existant ni utiliser la moindre donnée professionnelle réelle.
 
 ## 2.2 Problématique et objectifs
 
-**Problématique retenue.** Quand un service supervisé se dégrade, comment garantir qu'un opérateur puisse qualifier le signal, décider d'une prise en charge, appliquer une procédure sûre et prouver ensuite chaque décision — et comment livrer cette application avec une chaîne DevOps complète : tests automatisés, conteneurisation, déploiement automatisé, supervision réelle et sauvegardes vérifiées ?
+**Problématique.** Quand un service supervisé se dégrade, comment garantir qu'un opérateur puisse qualifier le signal, décider d'une prise en charge, appliquer une procédure sûre et prouver ensuite chaque décision — et comment livrer cette application avec une vraie chaîne DevOps : tests automatisés, conteneurs, déploiement automatisé, supervision réelle, sauvegardes vérifiées ?
 
-**Objectifs du projet :**
+**Objectifs.**
 
-1. Construire une application métier fonctionnelle et démontrable : la console d'incidents OpsForge, avec un cycle de vie strict des objets et un audit systématique.
-2. L'entourer d'une chaîne DevOps couvrant les trois compétences obligatoires du titre : automatisation du déploiement de l'infrastructure, gestion des conteneurs, exploitation d'une solution de supervision.
-3. Produire pour chaque brique une **preuve d'exécution réelle** (et pas seulement du code) : tests verts, endpoints vérifiés, alerte réellement déclenchée, persistance réellement prouvée, déploiement réellement rejoué.
-4. Garder l'ensemble **simple, explicable et défendable** à l'oral : chaque choix doit pouvoir être justifié en quelques phrases, chaque limite doit être connue et assumée.
+1. Une application métier fonctionnelle et démontrable, au cycle de vie strict et à l'audit systématique.
+2. Une chaîne DevOps locale couvrant les trois compétences obligatoires du titre.
+3. Une **preuve d'exécution réelle** pour chaque brique — pas seulement du code.
+4. Un ensemble simple, explicable et défendable à l'oral, aux limites connues et écrites.
 
-## 2.3 Utilisateur cible et cas d'usage
+## 2.3 Utilisateur et cas d'usage
 
-L'utilisateur cible est un **opérateur unique** (moi, dans le rôle d'un technicien d'exploitation). Son parcours type, entièrement réalisable dans l'interface sans outil externe :
+L'utilisateur est un **opérateur unique** (rôle : technicien d'exploitation). Parcours type, entièrement réalisable dans l'interface :
 
-1. Un signal arrive sur un service du catalogue (ex. « Backup Service ») → il est enregistré comme **alerte** (`new`).
-2. L'opérateur qualifie l'alerte : il l'**acquitte**, puis décide si elle justifie une prise en charge.
-3. Si oui, il ouvre un **incident** depuis l'alerte (une alerte ne peut avoir qu'un seul incident actif), s'en attribue la responsabilité et le passe en **investigation**.
-4. Il applique un **runbook** : soit une procédure manuelle à étapes cochées, soit une automatisation limitée à une liste d'actions approuvées dans le code — jamais de commande arbitraire.
-5. Chaque action produit une entrée d'**audit** ; l'incident dispose d'une timeline complète.
-6. Il **résout** l'incident, puis résout séparément l'alerte : le cycle du signal et celui de la prise en charge restent indépendants.
+1. Un signal arrive sur un service du catalogue → enregistré comme **alerte** (`new`) ;
+2. L'opérateur **acquitte** l'alerte, puis décide s'il ouvre un **incident** (une alerte n'a qu'un incident actif à la fois) ;
+3. Il s'attribue l'incident, le passe en **investigation**, applique un **runbook** — checklist manuelle ou automatisation limitée à une liste d'actions approuvées dans le code ;
+4. Chaque action alimente le **journal d'audit** et la timeline de l'incident ;
+5. Il **résout** l'incident, puis résout l'alerte séparément : le cycle du signal et celui de la prise en charge sont indépendants.
 
-## 2.4 Besoins fonctionnels
+![Vue d'ensemble OpsForge — la console au démarrage d'une prise de poste](assets/screenshots/01_overview.png)
+*Figure 1 — Vue d'ensemble : incidents à traiter, alertes récentes avec leur état, état réel de la plateforme (à droite, « contrôles de la plateforme elle-même ») et services de démonstration.*
 
-| Réf. | Besoin | Détail |
-|---|---|---|
-| BF-1 | Catalogue de services | Créer et gérer des services de démonstration (nom, slug, environnement, statut métier saisi, propriétaire) |
-| BF-2 | File d'alertes | Créer, rechercher, filtrer, acquitter, résoudre des alertes ; cycle `new → acknowledged → resolved` strictement en avant (résolution directe possible) |
-| BF-3 | Gestion d'incidents | Ouvrir un incident depuis une alerte ou manuellement ; cycle `open → investigating → resolved` strictement séquentiel ; un seul incident actif par alerte source ; incident résolu en lecture seule |
-| BF-4 | Runbooks | Procédures manuelles à checklist (succès impossible si étapes incomplètes) et automatisations limitées à une liste de clés approuvées ; les runbooks définis dans le code sont « managés » (lecture seule) |
-| BF-5 | Audit | Chaque mutation significative et chaque tentative d'exécution de runbook (y compris les échecs contrôlés) crée une entrée d'audit ; timeline par incident ; journal global |
-| BF-6 | Console opérateur | Interface multipage utilisable sans Swagger : Vue d'ensemble, Alertes, Incidents (avec Command Center), Services, Runbooks, Activité, Monitoring, Aide |
-| BF-7 | Honnêteté de l'interface | La page Monitoring distingue explicitement les contrôles réels de la plateforme (`/health`, `/ready`, `/metrics`, Prometheus, Grafana) des données métier simulées |
+## 2.4 Besoins
 
-## 2.5 Besoins techniques
+**Fonctionnels :** catalogue de services ; file d'alertes (cycle `new → acknowledged → resolved`, strictement en avant) ; incidents (cycle `open → investigating → resolved`, un seul incident actif par alerte, incident résolu en lecture seule) ; runbooks manuels à checklist et automatisations sur liste approuvée (jamais de commande arbitraire) ; audit de toutes les mutations, y compris les échecs contrôlés ; console multipage utilisable sans outil externe ; distinction affichée entre contrôles réels de la plateforme et états métier simulés.
 
-| Réf. | Besoin | Détail |
-|---|---|---|
-| BT-1 | API et persistance | API FastAPI documentée, modèle SQLAlchemy, PostgreSQL comme base d'exécution |
-| BT-2 | Conteneurisation | Image Docker de l'API (non-root, healthcheck) ; environnement local Docker Compose complet |
-| BT-3 | Intégration continue | Pipeline GitHub Actions à chaque push/PR : lint, tests unitaires, test d'intégration PostgreSQL, build d'image, scan de vulnérabilités |
-| BT-4 | Tests | Suite rapide (SQLite en mémoire) couvrant le domaine, plus un test d'intégration de bout en bout sur PostgreSQL réel dans une base éphémère |
-| BT-5 | Sauvegarde | Sauvegarde `pg_dump` scriptée, restauration vérifiée par défaut dans une base temporaire, garde-fou explicite avant toute restauration destructive |
-| BT-6 | Déploiement Kubernetes | Cluster k3d local : Deployment API, StatefulSet PostgreSQL, ConfigMap, Secret, PVC persistant, sondes liveness/readiness distinctes, exposition NodePort |
-| BT-7 | Supervision | `/metrics` Prometheus dans l'application ; Prometheus et Grafana déployés dans le cluster ; une règle d'alerte démontrable sur panne réelle |
-| BT-8 | Automatisation d'infrastructure | Déploiement complet de l'infrastructure locale en une commande, idempotent, avec vérification finale automatique (ajouté en cours de projet — voir 2.9) |
-| BT-9 | Traçabilité | Historique Git propre ; documentation par phase ; décisions d'architecture consignées (ADR) ; preuves de validation datées |
+**Techniques :** API FastAPI + PostgreSQL ; image Docker non-root avec healthcheck ; environnement Docker Compose complet ; CI à chaque push (lint, tests SQLite, test d'intégration PostgreSQL, build, scan de vulnérabilités) ; sauvegarde `pg_dump` scriptée avec restauration de vérification sans risque ; déploiement Kubernetes local (Deployment, StatefulSet, ConfigMap, Secret, PVC, probes, NodePort) ; supervision Prometheus/Grafana avec une alerte démontrable ; **déploiement complet de l'infrastructure en une commande idempotente** (besoin ajouté en cours de projet — §2.7) ; traçabilité générale (Git, documentation par phase, décisions d'architecture).
 
-## 2.6 Contraintes
+## 2.5 Contraintes
 
-- **Poste de travail Windows 11** avec Docker Desktop : les choix (k3d plutôt qu'une VM, scripts PowerShell pour la sauvegarde, control node Ansible conteneurisé) découlent directement de cette contrainte réelle.
-- **Projet individuel** mené en parallèle de mon activité professionnelle, sur une période resserrée (juin à août 2026) : le temps disponible impose des phases courtes, finies et validées une par une plutôt qu'un chantier global.
-- **Aucune donnée réelle** : ni données client, ni références à l'outillage interne de l'entreprise ; le scénario de démonstration est générique.
-- **Budget zéro cloud** : tout tourne localement ; aucune ressource cloud n'est provisionnée.
-- **Sécurité par conception du périmètre** : l'application ne doit jamais exécuter de commande système arbitraire (contrainte vérifiée par inspection et par test automatisé).
-- **Changement de poste de travail en cours de projet** : le projet a changé de machine entre les phases 5 et 6 ; la reproductibilité (Git, images, manifests) devait le permettre sans perte.
+- Poste **Windows 11 + Docker Desktop** : ce choix contraint directement l'outillage (k3d plutôt qu'une VM, PowerShell pour les sauvegardes, control node Ansible conteneurisé).
+- **Projet individuel** mené en parallèle de mon activité professionnelle, sur une période resserrée (juin → août 2026) : phases courtes, finies et validées une à une.
+- **Aucune donnée réelle**, budget **zéro cloud**, et **aucune exécution de commande arbitraire** par l'application (vérifié par inspection et par test).
+- Changement de poste de travail en cours de projet : la reproductibilité (Git, images, manifests) devait le permettre — et l'a permis.
 
-## 2.7 Livrables et critères d'acceptation
+## 2.6 Livrables et critères d'acceptation
 
-**Livrables :**
+**Livrables :** le dépôt Git complet (application, tests, Dockerfile, Compose, `k8s/`, `ansible/`, scripts, CI) ; la documentation projet (`docs/` : architecture, guides, 29 décisions d'architecture, risques, un fichier de vérification daté par phase) ; le présent dossier et son support de présentation.
 
-1. Le dépôt Git `opsforge` complet : application, tests, Dockerfile, Compose, manifests `k8s/`, automatisation `ansible/`, scripts `scripts/`, pipeline `.github/workflows/ci.yml`.
-2. La documentation projet dans `docs/` : architecture, guides par domaine (Kubernetes, monitoring, CI/CD, sauvegarde, sécurité, Ansible), 29 décisions d'architecture, registre des risques et dettes, un fichier de vérification daté par phase.
-3. Le présent dossier de projet et son support de présentation.
+**Critères d'acceptation globaux :** environnement Compose fonctionnel (`/health`, `/ready`, console) ; tests verts en local et en CI ; pods Kubernetes `1/1 Ready` et application joignable depuis Windows ; persistance PostgreSQL prouvée après recréation du pod ; alerte de supervision réellement déclenchée puis résolue ; déploiement d'infrastructure rejouable en une commande auto-vérifiée ; sauvegarde produite et restauration vérifiée sans toucher la base principale ; chaque phase validée explicitement et documentée.
 
-**Critères d'acceptation globaux** (chaque phase ayant en plus sa propre Definition of Done, cf. section 4) :
+## 2.7 Hors périmètre et évolution du périmètre
 
-- `docker compose up --build` produit un environnement fonctionnel ; `/health`, `/ready` et la console répondent.
-- La suite de tests passe localement et dans GitHub Actions (y compris le test PostgreSQL).
-- Le déploiement Kubernetes aboutit à des pods `1/1 Ready` et une application joignable depuis Windows.
-- La persistance des données PostgreSQL survit à la recréation du pod (preuve exigée, pas supposée).
-- L'alerte de supervision se déclenche réellement lors d'une panne provoquée, puis se résout.
-- Le déploiement complet de l'infrastructure est rejouable en une commande et se vérifie lui-même.
-- Une sauvegarde est produite et sa restauration est vérifiée sans toucher à la base principale.
-- Chaque validation de phase est explicite, datée et documentée dans le dépôt.
+**Exclusions volontaires** (décisions documentées — ADR, `docs/RISKS_AND_TECHNICAL_DEBT.md`) : cloud et Terraform ; registre d'images et déploiement continu distant ; authentification ; Alembic ; Alertmanager et notifications ; Helm ; React ; haute disponibilité.
 
-## 2.8 Hors périmètre (exclusions volontaires)
+**Évolution du périmètre — l'histoire réelle.** Le projet est parti d'un MVP volontairement réduit (application + Compose + 7 tests, cadré par un document initial fixant six phases prévisionnelles et une règle : rien n'entre dans une phase sans décision explicite). Deux extensions ont été décidées en cours de route, tracées dans le dépôt :
 
-Ces exclusions sont des décisions documentées (ADR et `docs/RISKS_AND_TECHNICAL_DEBT.md`), pas des oublis :
+- **La phase 6 est devenue une phase produit** : le tableau de bord unique ne permettait pas une démonstration opérateur crédible → console multipage, Command Center par incident, runbooks managés, règles de domaine durcies, campagne de tests portée de 8 à 35 tests.
+- **Ansible a été ajouté en fin de projet** : en confrontant le projet aux critères exacts du REAC, j'ai constaté que mon déploiement k3d, documenté mais **manuel**, ne prouvait pas la compétence obligatoire d'automatisation. J'ai fermé cet écart par un périmètre ciblé — automatiser le déploiement existant, sans rien redéfinir (ADR 029, §5.5, §6).
 
-- Pas de déploiement cloud, pas de Terraform (pertinent pour une évolution cloud, pas pour ce périmètre local — argumenté en 5.6).
-- Pas de registre d'images ni de déploiement continu distant : la CI prépare et valide la livraison, elle ne publie pas.
-- Pas d'authentification ni de gestion d'utilisateurs (application locale mono-opérateur ; les champs « acteur » sont déclaratifs).
-- Pas d'Alembic : `metadata.create_all()` plus un pont de compatibilité additif au démarrage (ADR 006 et 028).
-- Pas d'Alertmanager ni de notifications ; pas de Helm ; pas de React ; pas de Redis/Celery.
-- Pas de haute disponibilité : un seul nœud, une seule réplique de chaque workload.
-
-## 2.9 Évolution du périmètre : l'histoire réelle du projet
-
-Ce cahier des charges n'a pas été écrit en totalité le premier jour, et je préfère le montrer que le cacher : le périmètre a évolué de manière contrôlée, phase par phase, et chaque extension est tracée.
-
-**Le point de départ (juin 2026)** était un MVP volontairement réduit : l'application FastAPI + PostgreSQL sous Docker Compose, le flux `Service → Alerte → Incident → Runbook → Audit`, un tableau de bord simple, 7 tests. Dès ce stade, un document de cadrage fixait la règle du jeu : six phases prévisionnelles (MVP, CI/CD, sauvegarde/sécurité, Kubernetes, monitoring, documentation d'examen), une Definition of Done par phase, une validation explicite par phase, et l'interdiction par défaut de tout ce qui n'est pas demandé.
-
-**Les extensions décidées en cours de route**, toutes documentées :
-
-- **Phase 6 élargie** : initialement prévue comme une simple phase de documentation d'examen, elle est devenue une phase produit (« Operational Product and Exam Evidence ») quand j'ai constaté que le tableau de bord unique ne permettait pas une démonstration opérateur crédible : console multipage, Command Center par incident, runbooks managés, transitions strictement contrôlées, audit renforcé, et une campagne de tests étendue (7 tests au MVP, 8 à l'issue de la phase 5, 35 au terme de la phase 6).
-- **L'ajout d'Ansible (août 2026)** : en confrontant le projet aux critères exacts du REAC pour la compétence obligatoire « Automatiser le déploiement d'une infrastructure », j'ai constaté que ma séquence de déploiement k3d, documentée mais **manuelle** (`k3d cluster create`, puis une série de `kubectl apply`), ne constituait pas une preuve solide d'automatisation. J'ai donc ajouté un périmètre ciblé : automatiser ce déploiement existant avec Ansible, sans rien redéfinir de l'architecture. C'est l'objet du besoin BT-8, de la décision ADR 029, et de la section 6 de ce dossier.
-
-Cette progression n'est pas une faiblesse du cahier des charges : c'est une démarche itérative assumée, où chaque phase validée fige un socle avant d'ouvrir la suivante, et où une relecture du référentiel a déclenché une correction de périmètre au bon moment — avant l'examen, pas après.
+Cette progression itérative est une caractéristique du projet : chaque phase validée fige un socle, et une relecture du référentiel a déclenché une correction de périmètre au bon moment.
 
 ---
 
-# 3. Spécifications techniques du projet
+# 3. Spécifications techniques
 
-## 3.1 Vue d'ensemble de l'architecture
-
-Le schéma ci-dessous présente l'architecture complète : l'application, la supervision qui l'observe, et les deux chaînes distinctes qui l'entourent — intégration continue d'un côté, automatisation du déploiement local de l'autre. Ces deux chaînes sont **indépendantes** : l'image validée par la CI n'est pas transmise au déploiement (pas de registre) ; le rôle Ansible `image` reconstruit l'image localement. *(Mise en page finale : ce schéma sera exporté en image pour le PDF remis au jury.)*
+## 3.1 Architecture logique
 
 ```mermaid
 flowchart LR
-    subgraph Application["Application OpsForge"]
-        User[Opérateur unique] --> Web[Console Jinja2 multipage]
+    subgraph App["Application OpsForge"]
+        User[Opérateur] --> Web[Console Jinja2]
         Web --> API[API FastAPI]
-        API --> Domain[Domaine : transitions + runbooks approuvés]
+        API --> Domain[Domaine : transitions strictes + runbooks approuvés]
         Domain --> DB[(PostgreSQL)]
-        API --> Audit[AuditLog / timeline incident]
+        API --> Audit[Journal d'audit / timeline]
         API --> Metrics["/metrics"]
     end
 
-    subgraph Supervision["Supervision (dans k3d)"]
+    subgraph Supervision["Supervision réelle (k3d)"]
         Metrics --> Prometheus[Prometheus]
         Prometheus --> Grafana[Dashboard Grafana]
         Prometheus --> Rule[Règle OpsForgeApiDown]
     end
 
-    subgraph CI["Intégration continue (GitHub Actions)"]
-        Push[push / pull request] --> Lint[Ruff]
-        Lint --> Unit[35 tests SQLite]
-        Unit --> Integ[1 test d'intégration PostgreSQL]
-        Integ --> Build[Build image Docker]
-        Build --> Trivy[Scan Trivy - advisory]
+    subgraph CI["Chaîne 1 — Intégration continue (GitHub Actions)"]
+        Push[push / PR] --> Pipeline[Ruff → 35 tests SQLite → 1 test PostgreSQL → build image → scan Trivy advisory]
     end
 
-    subgraph Infra["Automatisation d'infrastructure (Ansible)"]
-        RunSh[Control node conteneurisé ./ansible/run.sh] --> Cluster[k3d cluster create - idempotent]
-        RunSh --> Import[Build + import de l'image]
-        RunSh --> Apply[Apply ordonné des manifests k8s/ avec wait]
-        Apply --> Verify[Vérification /health + /ready]
+    subgraph Infra["Chaîne 2 — Automatisation d'infrastructure (Ansible)"]
+        RunSh[Control node conteneurisé ./ansible/run.sh] --> Steps[k3d cluster → build+import image → apply k8s/ ordonné avec wait → verify /health + /ready]
     end
 ```
 
-Points structurants :
+Les deux chaînes du bas sont **indépendantes** : la CI valide le code et l'image mais ne publie ni ne déploie rien (pas de registre) ; Ansible reconstruit l'image localement et déploie l'infrastructure locale. *(Les schémas seront exportés en image lors de la mise en page finale.)*
 
-- **Une seule application, deux environnements d'exécution** : Docker Compose pour le développement, les tests et les sauvegardes ; Kubernetes (k3d) pour le déploiement orchestré local et la supervision.
-- **Deux chaînes distinctes et non confondues** : la CI valide le code et l'image mais ne publie ni ne déploie rien ; l'automatisation Ansible déploie l'infrastructure locale mais ne fait pas partie de la CI. Il n'y a ni registre d'images ni déploiement continu distant, et je le présente ainsi.
-- **La supervision est réelle et porte sur OpsForge lui-même** : Prometheus scrape l'API déployée dans k3d ; les statuts métier affichés dans la console sont, eux, des données de démonstration.
+## 3.2 Topologie de déploiement
 
-`[CAPTURE À PRODUIRE — Console : page /overview avec données opérationnelles actives]`
-Commande / écran à reproduire : `docker compose up --build -d` puis ouvrir `http://localhost:8000/overview`.
-
-## 3.2 L'application : domaine métier et modèle de données
-
-### Les six objets du domaine
-
-| Objet | Rôle | Champs clés |
-|---|---|---|
-| `Service` | Élément du catalogue supervisé (démonstration) | nom, slug unique, environnement, statut métier saisi (`healthy/degraded/down/unknown`), propriétaire |
-| `Alert` | Signal entrant, éventuellement rattaché à un service | source, titre, message, sévérité (`info/warning/critical`), statut (`new/acknowledged/resolved`) |
-| `Incident` | Prise en charge officielle d'un problème | service, alerte source, sévérité (`low→critical`), statut (`open/investigating/resolved`), responsable, horodatages |
-| `Runbook` | Procédure : manuelle (checklist) ou automatisée (clé approuvée) | clé unique, mode, instructions, étapes, contexte requis, niveau de risque, clé d'automatisation |
-| `RunbookExecution` | Trace de chaque tentative d'exécution, succès ou échec contrôlé | runbook, service, incident, statut, demandeur, sortie, détails |
-| `AuditLog` | Journal en append-only de toutes les mutations significatives | action, type et id d'objet, acteur, détails, horodatage |
-
-### Les règles de domaine (appliquées côté serveur, testées négativement)
-
-- Transitions d'alerte **strictement en avant** : `new → acknowledged → resolved` (résolution directe autorisée, jamais de retour en arrière) ; transitions d'incident **strictement séquentielles** : `open → investigating → resolved`, sans réouverture. Toute transition invalide renvoie HTTP 409.
-- **Une alerte n'a qu'un seul incident actif** : la création d'un second incident sur la même alerte source renvoie 409 avec l'identifiant de l'incident déjà actif.
-- Un incident créé depuis une alerte **hérite du service de l'alerte** ; fournir un service différent est rejeté.
-- **Résoudre un incident ne résout pas l'alerte source** : le cycle du signal et celui de la prise en charge sont indépendants (c'est un choix de modélisation que je peux défendre : un correctif peut être appliqué alors que le signal doit encore être confirmé puis clos séparément).
-- **Aucune exécution arbitraire** : un runbook automatisé ne peut référencer qu'une clé de la liste approuvée dans le code (5 clés) ; proposer une clé inconnue (`shell_command`, par exemple) est rejeté en 422. Les runbooks définis dans le code sont « managés » : re-synchronisés au démarrage et en lecture seule (PATCH → 409).
-- **Tout est audité**, y compris les échecs contrôlés d'exécution de runbook.
-
-Ces règles sont couvertes par la suite de tests (35 tests SQLite dont de nombreux tests négatifs : transition interdite, doublon d'incident, clé non approuvée, checklist incomplète, édition d'un runbook managé) et par un test d'intégration PostgreSQL qui rejoue le flux complet `service → alerte → incident → exécution de runbook → audit` dans une base éphémère créée puis supprimée par le test lui-même.
-
-`[CAPTURES À PRODUIRE — Console, parcours opérateur complet (5 écrans) : file d'alertes avec une alerte dépliée ; Incident Command Center avant résolution ; checklist du runbook manuel avec résultat en succès ; timeline de l'incident ; journal global Activité]`
-Commande / écran à reproduire : dérouler le scénario opérateur de `docs/ORAL_PREPARATION.md` (étape 2) sur `http://localhost:8000` — captures n°2 à 6 de l'annexe B.
-
-### Structure du code
-
-| Fichier | Responsabilité |
-|---|---|
-| `app/main.py` | démarrage (création du schéma + pont de compatibilité + seed), `/health`, `/ready`, `/metrics`, middleware de métriques |
-| `app/api.py` | les 22 routes JSON sous `/api` (services, alertes, incidents, runbooks, exécutions, audit) et leurs gardes (409/422) — 26 endpoints au total avec `/health`, `/ready`, `/metrics` et la redirection `/` portés par `main.py` |
-| `app/web.py` | composition des 8 sections de la console (18 routes HTML au total : listes, vues de détail, formulaires ; lecture seule — les mutations passent par la même API JSON que les tests) |
-| `app/domain.py` | tables de transitions, acteur de la requête, aides d'audit |
-| `app/runbooks.py` | définitions seedées, liste d'automatisations approuvées, moteur d'exécution |
-| `app/models.py` / `app/schemas.py` | persistance SQLAlchemy / contrats Pydantic (littéraux de statuts, validations croisées) |
-| `app/seed.py` | scénario de démonstration générique et idempotent |
-| `app/migrations.py` | pont additif de compatibilité de schéma exécuté au démarrage |
-
-## 3.3 Deux chaînes distinctes : intégration continue et automatisation d'infrastructure
-
-C'est la distinction la plus importante du projet, et je la présente explicitement parce qu'elle est souvent source de confusion.
-
-### La chaîne d'intégration continue (GitHub Actions)
-
-À chaque `push` et `pull request`, un pipeline unique (« Lint, test, build, and scan ») exécute dans l'ordre :
-
-1. **Ruff** (`ruff check .`) — le lint échoue vite, avant les tests ;
-2. **35 tests unitaires SQLite** (`pytest tests/test_app.py`) — retour rapide sur le domaine ;
-3. **1 test d'intégration PostgreSQL** (`pytest tests/postgres_integration.py`) contre un conteneur de service `postgres:16-alpine` démarré par le job — le flux central est prouvé sur le moteur de base réel ;
-4. **Build de l'image Docker** taguée avec le SHA du commit ;
-5. **Scan Trivy** en mode advisory (détaillé en 5.5).
-
-Ce que cette chaîne **ne fait pas**, volontairement : elle ne pousse pas l'image vers un registre et ne déploie rien. C'est de l'intégration continue avec préparation de livraison, pas du déploiement continu distant.
-
-### La chaîne d'automatisation du déploiement d'infrastructure (Ansible)
-
-Indépendamment de la CI, une seule commande locale déploie toute l'infrastructure :
-
-```text
-./ansible/run.sh
-   └── control node conteneurisé (image opsforge-ansible-control)
-         └── ansible-playbook deploy.yml
-               ├── rôle prerequisites   : outils requis présents, sinon échec immédiat
-               ├── rôle cluster         : création k3d idempotente + kubeconfig adapté
-               ├── rôle image           : docker build + k3d image import
-               ├── rôle kubernetes_resources :
-               │      namespaces → Secret généré → ConfigMap + PVC
-               │      → PostgreSQL (wait) → API (wait) → Prometheus + Grafana (wait)
-               └── rôle verify          : pod Running + /health = 200 + /ready = 200
+```mermaid
+flowchart TB
+    subgraph Host["Poste Windows 11 — Docker Desktop"]
+        CN[Control node Ansible<br/>conteneur éphémère] -- pilote --> K3D
+        Browser[Navigateur / kubectl] -- "127.0.0.1:8080 → NodePort 30080" --> SVC
+        subgraph K3D["Cluster k3d « opsforge » (1 nœud)"]
+            subgraph NSApp["namespace opsforge"]
+                SVC[Service NodePort 30080] --> DEP[Deployment opsforge-api<br/>non-root, rootfs RO, probes]
+                DEP --> PSVC[Service postgres ClusterIP 5432]
+                PSVC --> STS[StatefulSet postgres-0]
+                STS --> PVC[(PVC postgres-data<br/>1 Gi local-path)]
+            end
+            subgraph NSMon["namespace monitoring"]
+                PROM[Prometheus] -- "scrape :8000/metrics (15 s)" --> DEP
+                GRAF[Grafana] --> PROM
+            end
+        end
+    end
 ```
 
-Le run ne réussit **que si l'application répond** : le rôle `verify` interroge `/health` et `/ready` à travers le NodePort, et `/ready` prouve la connectivité PostgreSQL (`SELECT 1`). Un second run converge sans rien recréer (idempotence observée : `ok=21, changed=2`). Un playbook `teardown.yml` symétrique supprime le cluster.
+Accès à la supervision par `kubectl port-forward` (Prometheus 9090, Grafana 3000) — choix documenté qui évite d'exposer davantage un environnement local.
 
-`[CAPTURE À PRODUIRE — Terminal : PLAY RECAP Ansible d'un déploiement complet + messages du rôle verify (/health -> 200, /ready -> 200)]`
-Commande / écran à reproduire : `./ansible/run.sh deploy.yml -e cluster_name=opsforge-ansible-test -e api_host_port=8090 -e kubeapi_host_port=6446` (cluster jetable, ne touche pas au cluster `opsforge` existant).
+## 3.3 Le domaine applicatif
 
-`[CAPTURE À PRODUIRE — Terminal : second run idempotent, PLAY RECAP montrant ok=21 changed=2 (ou valeurs équivalentes constatées)]`
-Commande / écran à reproduire : relancer la même commande `./ansible/run.sh deploy.yml -e cluster_name=opsforge-ansible-test ...` immédiatement après le premier run.
+Six objets : `Service`, `Alert`, `Incident`, `Runbook`, `RunbookExecution`, `AuditLog`. Les règles sont appliquées **côté serveur** et testées négativement :
 
-`[CAPTURE À PRODUIRE — Terminal : teardown du cluster jetable]`
-Commande / écran à reproduire : `./ansible/run.sh teardown.yml -e cluster_name=opsforge-ansible-test`.
+- transitions strictement en avant (alerte `new → acknowledged → resolved`, résolution directe possible ; incident `open → investigating → resolved`, sans réouverture) — transition invalide → HTTP 409 ;
+- une alerte n'a qu'un **seul incident actif** (le doublon → 409 avec l'identifiant de l'incident existant) ; l'incident hérite du service de son alerte source ; résoudre l'incident ne résout pas l'alerte ;
+- **aucune exécution arbitraire** : 5 clés d'automatisation approuvées dans le code, clé inconnue → 422 ; les runbooks définis dans le code sont « managés » (lecture seule, PATCH → 409) ; un runbook manuel ne peut pas être déclaré réussi avec une checklist incomplète ;
+- toute mutation significative et toute tentative d'exécution — y compris les échecs contrôlés — produisent une entrée d'audit.
 
-## 3.4 La couche conteneurs
+Structure du code : `main.py` (démarrage, `/health`, `/ready`, `/metrics`, middleware de métriques), `api.py` (22 routes JSON + gardes), `web.py` (8 sections de console, 18 routes HTML), `domain.py` (transitions), `runbooks.py` (liste approuvée + moteur), `models.py`/`schemas.py`, `seed.py` (scénario de démonstration idempotent), `migrations.py` (pont additif de schéma au démarrage).
 
-### Image de l'API
+![Incident Command Center](assets/screenshots/03_incident_command_center.png)
+*Figure 2 — Le Command Center d'un incident : contexte opérationnel, alerte source, runbooks compatibles (manuel/automatisé, niveau de risque), chronologie issue du journal d'audit, historique des exécutions.*
 
-L'image applicative est construite depuis un `Dockerfile` court et durci : base `python:3.12-slim` **épinglée par digest** (reproductibilité des builds et des scans), utilisateur **non-root dédié UID 10001**, `HEALTHCHECK` intégré appelant `/health` sans dépendance à curl, port 8000, démarrage `uvicorn`. Le détail argumenté est en section 5.3.
+## 3.4 Conteneurs : de Compose à Kubernetes
 
-### Environnement Docker Compose
+- **Image API** : base `python:3.12-slim` épinglée par digest, utilisateur non-root UID 10001, `HEALTHCHECK` intégré (§5.2).
+- **Compose** (développement, tests, sauvegardes) : PostgreSQL avec healthcheck `pg_isready` et API démarrée seulement quand la base est saine (`depends_on: service_healthy`) ; base publiée sur `127.0.0.1` uniquement ; `tests/` monté en lecture seule.
+- **Kubernetes** (déploiement orchestré local) : mêmes conteneurs, contraintes renforcées — init container `wait-for-postgres`, probes distinctes (`/ready` = base joignable, `/health` = processus vivant), securityContext complet, requests/limits (§5.3).
+- **Mise à jour** : rebuild → `k3d image import` → rollout ; pas de registre (`imagePullPolicy: Never`, ADR 015).
 
-Deux services : `db` (`postgres:16-alpine`) et `api` (build local). Trois mécanismes méritent l'attention :
+## 3.5 Stockage et persistance (prouvée)
 
-- le **healthcheck PostgreSQL** (`pg_isready`) combiné à `depends_on: condition: service_healthy` : l'API ne démarre qu'une fois la base réellement prête — c'est l'équivalent Compose de l'init container utilisé ensuite côté Kubernetes ;
-- la base est publiée sur **`127.0.0.1:5432` uniquement** : accessible aux outils locaux, pas au réseau ;
-- le répertoire `tests/` est monté **en lecture seule** dans le conteneur API, ce qui permet `docker compose exec api pytest` sans embarquer les tests dans l'image.
-
-### Cycle de vie et mise à jour
-
-La mise à jour d'un conteneur suit un cycle explicite et démontrable : modification du code → rebuild de l'image (nouveau tag de phase : `phase4`, `phase5`, `phase6`) → `k3d image import` → rollout Kubernetes. L'absence de registre est un choix documenté (ADR 015) : `imagePullPolicy: Never` rend cette contrainte visible dans les manifests au lieu de la masquer.
-
-## 3.5 La couche Kubernetes (k3d)
-
-### Topologie
-
-- Cluster **k3d** (k3s dans Docker) nommé `opsforge` : 1 nœud serveur, API Kubernetes sur `127.0.0.1:6445`, port Windows `127.0.0.1:8080` mappé vers le NodePort `30080`. k3d a été choisi (ADR 014) parce qu'il réutilise Docker Desktop sous Windows : pas de VM ni de configuration réseau séparée, cluster reproductible en une commande.
-- Namespace `opsforge` pour l'application, namespace `monitoring` pour la supervision.
-
-### Ressources applicatives
-
-| Ressource | Choix notables |
-|---|---|
-| `Deployment opsforge-api` (1 réplique) | init container `wait-for-postgres` (`pg_isready` en boucle — remplace le `depends_on` de Compose sans modifier l'application) ; probes distinctes : **readiness `/ready`** (base joignable) et **liveness `/health`** (processus vivant) ; requests/limits CPU-mémoire ; securityContext complet (détaillé en 5.4) |
-| `StatefulSet postgres` (1 réplique) | probes readiness **et** liveness `pg_isready` ; volume monté depuis le PVC |
-| `PVC postgres-data` | 1 Gi, `ReadWriteOnce`, StorageClass `local-path` — la persistance a été prouvée (voir ci-dessous) |
-| `ConfigMap` / `Secret` | configuration non sensible d'un côté ; de l'autre `k8s/secret.example.yaml` versionné avec des valeurs à remplacer, le vrai `secret.local.yaml` étant ignoré par Git (et généré à la volée par Ansible dans le déploiement automatisé) |
-| `Service` NodePort 30080 | « le plus petit mécanisme local satisfaisant l'accès externe » (ADR 015) ; pas d'Ingress ni de TLS dans ce périmètre |
-
-### Pourquoi un StatefulSet pour PostgreSQL
-
-Un Deployment convient à l'API parce qu'elle est sans état : n'importe quel pod équivalent peut la remplacer. PostgreSQL, lui, possède un état sur disque : le StatefulSet fournit une identité stable (`postgres-0`) et un attachement stable au stockage persistant, ce qui correspond au cycle de vie d'une base de données.
-
-### La preuve de persistance
-
-Je n'ai pas voulu me contenter d'un PVC `Bound` : la persistance a été **prouvée** lors de la validation de la phase 4 (documentée dans `docs/PHASE4_VERIFICATION.md`) : insertion d'un marqueur (`phase4a-persisted`) dans une table, suppression du pod `postgres-0`, recréation automatique par le StatefulSet (l'UID du pod change, prouvant qu'il s'agit d'un nouveau pod), et le marqueur est toujours présent. La limite est énoncée dans la même documentation : cette preuve couvre la recréation du pod, pas la suppression complète du cluster — c'est précisément le rôle des sauvegardes de la phase 3.
-
-`[CAPTURE À PRODUIRE — Terminal : kubectl -n opsforge get pods,svc,pvc montrant les pods 1/1 Running et le PVC Bound]`
-Commande / écran à reproduire : `kubectl -n opsforge get pods,svc,pvc` sur le cluster déployé.
-
-`[CAPTURE À PRODUIRE — Terminal : preuve de persistance PostgreSQL — marqueur présent avant suppression du pod, pod recréé (UID différent), marqueur retrouvé]`
-Commande / écran à reproduire : suivre la procédure « persistence check » de `docs/KUBERNETES.md` (création table + insert, `kubectl delete pod postgres-0`, `rollout status`, select du marqueur, drop de la table).
-
-## 3.6 La couche supervision
-
-### Ce qui est supervisé — et ce qui ne l'est pas
-
-C'est le point d'honnêteté central du projet :
-
-- **Réel** : Prometheus supervise l'API OpsForge déployée dans k3d. Les métriques `opsforge_http_requests_total` et `opsforge_http_request_duration_seconds` sont produites par un vrai middleware applicatif ; la métrique `up` du job de scrape alimente une vraie règle d'alerte ; Grafana affiche ces données réelles.
-- **Simulé** : les statuts métier des services du catalogue (« Backup Service » en panne, etc.) sont des données de démonstration saisies dans OpsForge. Prometheus ne crée pas d'alerte métier dans OpsForge. La page `/monitoring` de la console affiche explicitement cette distinction à l'utilisateur.
-
-### Chaîne de collecte
+PostgreSQL utilise un **StatefulSet** (identité stable `postgres-0`, attachement stable au stockage) avec un **PVC de 1 Gi** en StorageClass `local-path` : le stockage est externalisé du cycle de vie du conteneur et porté par l'hôte. État constaté sur le cluster déployé par Ansible (12/08/2026, extrait de `deliverables/evidence/kubernetes_state.txt`) :
 
 ```text
-FastAPI (middleware) ──> /metrics ──> Prometheus (scrape 15 s, job "opsforge-api",
-   cible statique opsforge-api.opsforge.svc.cluster.local:8000)
-        ├──> Grafana (datasource provisionnée par ConfigMap, uid opsforge-prometheus)
-        │       └──> dashboard "OpsForge Monitoring" (5 panneaux)
-        └──> règle OpsForgeApiDown : up{job="opsforge-api"} == 0 pendant 30 s
+pod/opsforge-api-68cbc5b54b-wrdqg   1/1     Running
+pod/postgres-0                      1/1     Running
+service/opsforge-api   NodePort    8000:30080/TCP
+persistentvolumeclaim/postgres-data   Bound   1Gi   RWO   local-path
 ```
 
-- La configuration de scrape est **statique** (ADR 018) : pas de service discovery ni de RBAC — complexité non justifiée pour un cluster local à cible unique, et configuration plus facile à expliquer.
-- Le dashboard comporte cinq panneaux : disponibilité (`up`), volume de requêtes (`rate` sur 1 min), répartition par code HTTP, **latence p95** (`histogram_quantile(0.95, ...)`), répartition par route.
-- Le seuil `for: 30s` de l'alerte est justifié : avec un scrape et une évaluation toutes les 15 s, 30 s évitent le faux positif d'un raté de scrape isolé tout en restant démontrables à l'oral.
-- Accès par `kubectl port-forward` (Prometheus 9090, Grafana 3000) : choix documenté qui évite de recréer le cluster ou d'ajouter un Ingress prématurément.
+**Preuve de persistance** (rejouée le 12/08/2026, `deliverables/evidence/pvc_persistence.txt`) : un marqueur est inséré, le pod est détruit, le StatefulSet le recrée — l'UID change, la donnée survit :
 
-### La démonstration de panne (réellement exécutée)
+```text
+pod UID avant  : 554c3801-0b0e-42b7-8bf2-99ced94fd488
+INSERT INTO persistence_check VALUES ('dossier-v2-persisted');
+pod "postgres-0" deleted  →  StatefulSet recrée le pod
+pod UID après  : e035ce38-526f-4b3b-9ef5-91aadb3c09f1   (pod réellement nouveau)
+SELECT marker  : dossier-v2-persisted                    (donnée retrouvée)
+```
 
-Lors de la validation de la phase 5 (2026-07-14), le cycle complet a été observé et documenté : API à l'état normal (`up` = 1, alerte `inactive`) → `kubectl -n opsforge scale deployment/opsforge-api --replicas=0` → `up` = 0 → l'alerte `OpsForgeApiDown` passe à **`firing`** (visible dans l'interface de Prometheus et via son API `/api/v1/alerts` — à ne pas confondre avec les alertes métier d'OpsForge) → restauration `--replicas=1` → `/health` répond de nouveau → `up` = 1 → alerte de retour à `inactive`. La procédure est rejouable telle quelle pour la démonstration devant le jury.
+*Limite :* `local-path` est local au nœud — la persistance couvre la recréation du pod, pas la destruction du cluster ; c'est le rôle des sauvegardes (§3.7).
 
-`[CAPTURE À PRODUIRE — Prometheus : page Targets montrant le job opsforge-api UP]`
-Commande / écran à reproduire : `kubectl -n monitoring port-forward svc/prometheus 9090:9090` puis `http://localhost:9090/targets`.
+## 3.6 Supervision : réel vs simulé
 
-`[CAPTURE À PRODUIRE — Prometheus : OpsForgeApiDown en état FIRING après scale de l'API à 0]`
-Commande / écran à reproduire : `kubectl -n opsforge scale deployment/opsforge-api --replicas=0`, attendre ~1 min, ouvrir `http://localhost:9090/alerts` ; **puis restaurer** avec `--replicas=1` et vérifier le retour à `inactive`.
+**Le point d'honnêteté central du projet :** Prometheus supervise **OpsForge lui-même** (l'API déployée dans k3d). Les statuts métier des services du catalogue sont des données de démonstration saisies dans l'application, et la console l'affiche explicitement.
 
-`[CAPTURE À PRODUIRE — Grafana : dashboard "OpsForge Monitoring" avec ses 5 panneaux alimentés]`
-Commande / écran à reproduire : `kubectl -n monitoring port-forward svc/grafana 3000:3000`, `http://localhost:3000`, dossier OpsForge.
+![Page Monitoring de la console](assets/screenshots/05_monitoring.png)
+*Figure 3 — La page Monitoring sépare la « Supervision réelle » (health, readiness, métriques, Prometheus/Grafana, règle testée) des « États métier simulés » (source : saisie OpsForge), et affiche la limite (pas d'ingestion des alertes Prometheus dans OpsForge).*
 
-`[CAPTURE À PRODUIRE — Console : page /monitoring montrant la distinction données réelles / données simulées]`
-Commande / écran à reproduire : ouvrir `http://localhost:8000/monitoring` (Compose) ou `http://localhost:8080/monitoring` (k3d).
+La chaîne réelle : middleware FastAPI → `/metrics` → scrape Prometheus toutes les 15 s (cible statique, job `opsforge-api`) → dashboard Grafana provisionné par ConfigMaps (5 panneaux : disponibilité, volume, codes, latence p95, routes) → règle `OpsForgeApiDown` (`up == 0` pendant 30 s, calibrée sur l'intervalle de scrape).
+
+![Cible Prometheus UP](assets/screenshots/06_prometheus_targets_up.png)
+*Figure 4 — Prometheus scrape réellement l'API : cible `opsforge-api (1/1 up)` sur `/metrics`.*
+
+**Panne provoquée et alerte réelle** — cycle complet journalisé (12/08/2026, `deliverables/evidence/prometheus_alert_cycle.txt`) :
+
+```text
+$ kubectl -n opsforge scale deployment/opsforge-api --replicas=0
+t+20s : up=0  OpsForgeApiDown=inactive
+t+40s : up=0  OpsForgeApiDown=pending
+t+70s : up=0  OpsForgeApiDown=firing      >>> FIRING observé <<<
+$ kubectl -n opsforge scale deployment/opsforge-api --replicas=1
+t+20s : up=1  OpsForgeApiDown=firing
+t+40s : up=1  OpsForgeApiDown=inactive    >>> rétabli, alerte résolue <<<
+```
+
+![OpsForgeApiDown en FIRING](assets/screenshots/07_prometheus_alert_firing.png)
+*Figure 5 — L'alerte `OpsForgeApiDown` en état FIRING pendant la panne provoquée.*
+
+![Dashboard Grafana OpsForge Monitoring](assets/screenshots/08_grafana_dashboard.png)
+*Figure 6 — Le dashboard « OpsForge Monitoring » pendant la session de preuve : disponibilité UP, volume de requêtes (le creux correspond à la panne provoquée), 319 réponses 200 et 2 réponses 503 (redémarrage), latence p95, répartition par route.*
+
+*Limites :* pas d'Alertmanager (l'alerte est visible dans Prometheus, non routée) ; stockage Prometheus/Grafana éphémère ; métriques techniques HTTP, pas métier.
 
 ## 3.7 Sauvegarde et restauration
 
-Deux scripts PowerShell ciblent le PostgreSQL de l'environnement Docker Compose :
+Deux scripts PowerShell ciblent le PostgreSQL de Compose : `backup.ps1` (`pg_dump --format=custom` exécuté dans le conteneur, archive copiée vers `backups/`, refus d'une archive vide) et `restore.ps1` (validation `pg_restore --list`, puis **par défaut** restauration dans une base temporaire de vérification ; la base principale exige `-MainDatabase` **et** la saisie exacte de `RESTORE`). Preuve rejouée le 12/08/2026 (`deliverables/evidence/backup_restore.txt`) :
 
-- **`scripts/backup.ps1`** : lit l'utilisateur et la base depuis le conteneur `db` en cours d'exécution, vérifie `pg_isready`, exécute `pg_dump --format=custom --no-owner --no-privileges` **dans** le conteneur, copie l'archive vers `backups/opsforge_backup_<horodatage>.dump`, nettoie le fichier temporaire et refuse une archive vide. Des archives réelles produites le 2026-07-06 attestent l'exécution (validation de phase 3 : archive de 19 785 octets).
-- **`scripts/restore.ps1`** : valide d'abord l'archive (`pg_restore --list`), puis restaure **par défaut dans une base temporaire de vérification** (`opsforge_restore_verify`), compte les tables restaurées (6 tables publiques lors de la validation), et supprime la base temporaire. La restauration dans la base principale exige le drapeau `-MainDatabase` **et** la saisie exacte du mot `RESTORE` (comparaison sensible à la casse) ; le script arrête alors l'API avant la restauration et la redémarre ensuite.
+```text
+Backup created: backups\opsforge_backup_20260812_133513.dump   (24 543 octets)
+Restore verified in temporary database 'opsforge_restore_verify' (6 public tables).
+```
 
-Limites énoncées dans la documentation : sauvegardes locales, non chiffrées, non planifiées, sans rotation ni copie externe — un mécanisme démontrable et sûr, pas une stratégie de sauvegarde d'entreprise. Ces scripts ne couvrent pas le PostgreSQL du cluster k3d (la persistance y repose sur le PVC, et les données de démonstration sont reproductibles par le seed).
-
-`[CAPTURE À PRODUIRE — Terminal : exécution de backup.ps1 (archive créée avec taille) puis restore.ps1 en mode vérification (base temporaire, tables comptées, nettoyage)]`
-Commande / écran à reproduire : `.\scripts\backup.ps1` puis `.\scripts\restore.ps1 -BackupFile backups\<fichier>.dump` avec Compose démarré.
+*Limite :* sauvegarde locale, non planifiée, non chiffrée, sans rotation — un mécanisme démontrable, pas une stratégie d'entreprise.
 
 ## 3.8 Sécurité
 
-La sécurité du projet est une sécurité de périmètre, appliquée en couches et documentée :
-
-1. **Par conception applicative** : aucune exécution de commande arbitraire — les runbooks automatisés ne peuvent appeler que 5 comportements Python approuvés dans le code ; l'absence de `subprocess`/`os.system`/`eval`/`exec` est vérifiée ; un test rejette explicitement une clé d'automatisation non approuvée.
-2. **Conteneur** : utilisateur non-root UID 10001, image de base épinglée par digest, healthcheck.
-3. **Kubernetes** : securityContext complet (non-root, rootfs lecture seule, capabilities toutes supprimées, seccomp `RuntimeDefault`, pas d'escalade), requests/limits, vérifié en conditions réelles (écriture dans `/app` refusée, application fonctionnelle en lecture seule).
-4. **Secrets** : `.env` et `k8s/secret.local.yaml` ignorés par Git ; seuls des exemples à valeurs de démonstration sont versionnés ; dans le déploiement Ansible, le Secret PostgreSQL est généré à la volée depuis des variables (valeur par défaut locale non sensible, surchargeable par `-e` ou externalisable dans `ansible-vault`).
-5. **Chaîne d'approvisionnement** : scan Trivy à chaque build. Politique assumée : le scan est **advisory** (visible mais non bloquant) ; le dernier scan de l'image épinglée rapportait **19 vulnérabilités HIGH et 3 CRITICAL** d'origine Debian, sans correctif disponible. Une CI verte ne signifie donc pas « image sans vulnérabilité », et je le dis tel quel.
-
-Limites énoncées : pas d'authentification, pas de TLS, pas de gestionnaire de secrets d'entreprise, pas de seuil de blocage de vulnérabilités défini.
+En couches, toutes documentées : (1) par conception — aucune exécution de commande arbitraire, liste d'automatisations approuvées, absence de `subprocess`/`eval` vérifiée ; (2) conteneur — non-root UID 10001, digest épinglé ; (3) Kubernetes — securityContext complet vérifié en conditions réelles (§5.3) ; (4) secrets — `.env` et `secret.local.yaml` ignorés par Git, Secret généré à la volée par Ansible ; (5) chaîne d'approvisionnement — scan Trivy **advisory** à chaque build : le dernier scan de l'image épinglée rapportait 19 HIGH / 3 CRITICAL d'origine Debian sans correctif disponible — une CI verte ne signifie pas « image sans vulnérabilité », et c'est assumé (ADR 013, §5.4).
 
 ## 3.9 Environnements et versions
 
-| Composant | Version | Épinglage |
-|---|---|---|
-| Python / FastAPI app | Python 3.12 (image `python:3.12-slim@sha256:c3d81d25…`) — app OpsForge v0.2.0 | digest + `requirements.txt` résolu |
-| PostgreSQL | `postgres:16-alpine` (Compose, CI et k3d) | tag |
-| k3d / k3s | k3d v5.9.0 / k3s v1.35.5-k3s1 (validation phase 4) | — |
-| Prometheus / Grafana | `prom/prometheus:v2.55.1` / `grafana/grafana:11.3.1` | tags |
-| Control node Ansible | `ansible-core==2.17.14`, client Python `kubernetes==36.0.3`, collection `kubernetes.core:6.5.0`, kubectl v1.31.5, k3d v5.9.0, CLI Docker 27.5.1 | versions exactes validées, épinglées dans `ansible/Dockerfile` |
-| CI | GitHub Actions, `actions/checkout@v5`, `setup-python@v6`, `trivy-action@v0.36.0` | tags d'actions |
-| Poste de travail | Windows 11 + Docker Desktop (Git Bash pour `run.sh`, PowerShell pour les scripts) | — |
+| Composant | Version |
+|---|---|
+| Application | Python 3.12 (digest épinglé), FastAPI/SQLAlchemy 2.x, OpsForge v0.2.0 |
+| Base de données | PostgreSQL 16 (`postgres:16-alpine`) partout |
+| Cluster | k3d v5.9.0 / k3s v1.35.x, kubectl client v1.34 |
+| Supervision | Prometheus v2.55.1, Grafana 11.3.1 |
+| Control node Ansible | ansible-core 2.17.14, kubernetes.core 6.5.0, client Python kubernetes 36.0.3, kubectl v1.31.5, k3d v5.9.0, CLI Docker 27.5.1 — versions validées, épinglées dans `ansible/Dockerfile` |
+| CI | GitHub Actions (checkout@v5, setup-python@v6, trivy-action@v0.36.0) |
+| Poste | Windows 11 + Docker Desktop |
 
-Note honnête sur les versions : le kubectl embarqué dans le control node (v1.31.5) est plus ancien que le k3s du cluster (v1.35.x), au-delà de la fenêtre de compatibilité officielle (±1 version mineure). Les opérations utilisées (lecture `/healthz`, apply via `kubernetes.core`) fonctionnent et ont été validées telles quelles ; l'alignement de ces versions est une évolution identifiée (section 8).
+*Note :* le kubectl du control node (v1.31.5) est plus ancien que le k3s du cluster (v1.35.x), au-delà de la fenêtre officielle ±1 version mineure ; fonctionnel sur les opérations utilisées et validé tel quel — alignement listé en évolution (§8).
 
 ---
 
-# 4. Démarche de travail et outils utilisés
+# 4. Démarche de travail et outils
 
-## 4.1 Une démarche par phases, chacune avec sa Definition of Done
-
-Le projet a été découpé en six phases, définies dès le cadrage initial puis affinées. Chaque phase possède un périmètre écrit, une **Definition of Done** vérifiable, un fichier de preuve daté (`docs/PHASE<i>_VERIFICATION.md`) et une **validation explicite** avant de passer à la suivante :
+## 4.1 Six phases, chacune finie et validée
 
 | Phase | Contenu | Validation |
 |---|---|---|
-| 1 — MVP local | FastAPI + PostgreSQL + Compose, flux `Service → Alerte → Incident → Runbook → Audit`, 7 tests | validée le 2026-06-16 |
-| 2 — CI/CD | GitHub Actions : tests, build d'image, scan Trivy | validée le 2026-06-18 (run vert sur GitHub) |
-| 3 — Sauvegarde & sécurité | scripts backup/restore, stratégie de secrets, documentation sécurité | validée le 2026-07-06 |
-| 4 — Kubernetes | cluster k3d, PostgreSQL StatefulSet + PVC (4A) puis API (4B), preuve de persistance | validée le 2026-07-09 (4A vérifiée le 07-07, 4B le 07-08) |
-| 5 — Supervision | `/metrics` (5A), Prometheus (5B), Grafana (5C), règle d'alerte + panne provoquée (5D) | validée le 2026-07-14 sur l'état du commit `23194f0` (validation documentée par le commit `9bcb271`) |
-| 6 — Produit opérateur & preuves d'examen | console multipage, règles de domaine renforcées, runbooks managés, audit, 35 tests, durcissement Kubernetes, puis ajout ciblé d'Ansible (sous-étape CP n°2) | **en cours de finalisation** : l'audit d'intégration du 2026-08-07 et l'automatisation Ansible sont faits ; restent la revue visuelle manuelle et la collecte des captures finales (les placeholders de ce dossier) |
+| 1 — MVP local | Application + Compose + 7 tests | 16/06/2026 |
+| 2 — CI/CD | GitHub Actions : tests, build, scan Trivy | 18/06/2026 (run vert) |
+| 3 — Sauvegarde & sécurité | backup/restore, stratégie de secrets | 06/07/2026 |
+| 4 — Kubernetes | Cluster k3d, PostgreSQL + PVC, API, **preuve de persistance** | 09/07/2026 |
+| 5 — Supervision | `/metrics`, Prometheus, Grafana, **alerte réellement déclenchée** | 14/07/2026 |
+| 6 — Produit opérateur & preuves | Console multipage, domaine durci, 35 tests, durcissement K8s, puis **Ansible** (sous-étape CP n°2) | En cours de finalisation : audit d'intégration et Ansible faits ; preuves du présent dossier produites le 12/08/2026 ; reste la revue visuelle/responsive manuelle avant validation explicite |
 
-Je tiens à cette dernière ligne telle qu'elle est : la documentation du projet dit explicitement ce qui reste à faire, et ce dossier ne déclare pas la phase 6 « validée » tant que la revue manuelle et les captures ne sont pas terminées.
+Chaque phase a un périmètre écrit, une **Definition of Done** vérifiable, un fichier de preuve daté (`docs/PHASE<i>_VERIFICATION.md`) et une validation explicite. Un protocole écrit encadre l'avant/pendant/après (relecture de l'état, départ propre, périmètre figé ; « aucune idée nouvelle n'entre silencieusement dans la phase en cours » ; preuves consignées puis validation). Les choix techniques importants sont consignés dans **29 décisions d'architecture** (ADR) — contexte, décision, raison, conséquences — qui servent aussi de préparation à l'oral.
 
-## 4.2 Le protocole appliqué avant / pendant / après chaque phase
+## 4.2 Workflow Git
 
-Un protocole écrit (`docs/PHASE_SYNC_PROTOCOL.md`) encadre chaque phase :
+Le workflow a évolué avec le projet : commits directs sur `main` pour les phases 1 à 5 (workflow solo simple, un commit de validation par phase), première branche dédiée pour le candidat produit de la phase 6, puis — pour l'audit final et l'ajout d'Ansible — un vrai cycle par branches et **Pull Requests avec commits de merge** (l'historique des branches est préservé). Une branche d'expérimentation a servi de terrain de revue puis n'a **jamais été fusionnée** : une branche d'intégration propre a été ré-implémentée en six commits revus, intégrant les corrections identifiées en revue (dont une vraie régression d'interface et la restauration du signal d'échec Trivy). Le détail commité par commit est en annexe A.
 
-- **Avant** : relire l'état du projet (contexte, roadmap, décisions, risques, vérification de la phase précédente), partir d'un dépôt propre, confirmer l'objectif et la Definition of Done, figer le périmètre exact.
-- **Pendant** : petits changements vérifiables ; toute idée nouvelle est soit rejetée, soit documentée comme travail futur, soit explicitement approuvée avant implémentation — « aucune idée nouvelle n'entre silencieusement dans la phase en cours ».
-- **Après** : vérifier chaque item de la Definition of Done, consigner les preuves dans le fichier de vérification, mettre à jour la documentation (roadmap, index, décisions), valider explicitement, pousser, puis vérifier que GitHub Actions est vert.
+## 4.3 Outils
 
-Deux règles de ce protocole ont particulièrement structuré le projet :
+Python 3.12 / FastAPI / SQLAlchemy / Pydantic / Jinja2 · pytest (SQLite en mémoire + intégration PostgreSQL) · Ruff · Docker & Docker Compose · GitHub Actions · Trivy · k3d/k3s · kubectl · Ansible + `kubernetes.core` · prometheus-client, Prometheus, Grafana · pg_dump/pg_restore (PowerShell) · Git/GitHub.
 
-- **La règle d'apprentissage pour l'oral** : une phase n'est pas terminée tant que je ne peux pas répondre clairement à « qu'est-ce qui a été construit ? pourquoi ? comment ça marche ? comment ça a été vérifié ? quelles sont les limites ? qu'améliorer ensuite ? ». C'est ce qui a produit les 29 décisions d'architecture (ADR) du dépôt : chaque choix technique important y est consigné avec son contexte, sa décision, sa raison et ses conséquences.
-- **La règle d'honnêteté des preuves** : ne jamais déclarer testé ce qui a seulement été inspecté. C'est ce qui distingue, dans tout le dépôt comme dans ce dossier, « validé à l'exécution, à telle date » de « présent dans le code ».
+## 4.4 Collaborations
 
-## 4.3 L'évolution du workflow Git
+OpsForge est un **projet individuel** : pas de client, pas d'équipe — je tiens tous les rôles et chaque validation de phase est ma décision, tracée dans le dépôt.
 
-Le workflow Git a évolué avec le projet, et cette évolution est elle-même instructive :
-
-1. **Phases 1 à 5 et début de phase 6 (juin – juillet 2026)** : workflow solo simple, commits directs sur `main`, un commit de validation par phase (`Validate Phase X …`), vérification de la CI après chaque push. C'est le workflow décrit dans `docs/GIT_WORKFLOW.md`. La phase 6 a ensuite inauguré la première branche dédiée du projet (`phase6-operator-ux`), sur laquelle le candidat produit a été construit.
-2. **Audit de la phase 6 (7 août 2026)** : passage à un vrai travail par branches. Une branche d'expérimentation a servi de terrain de revue — auto-revue documentée, puis seconde passe de revue assistée par IA (dispositif décrit en 4.5) ; elle n'a **jamais été fusionnée** : à la place, une branche d'intégration propre (`integration/phase6-audit`) a été ré-implémentée en 6 commits revus, intégrant directement les corrections identifiées — dont une vraie régression détectée en revue (le verrouillage du champ service pour une alerte sans service) et la restauration du signal d'échec Trivy.
-3. **Intégration finale (10-11 août 2026)** : workflow complet par Pull Requests avec commits de merge (pas de squash, l'historique des branches est préservé) : PR #1 (audit, merge `489552f`), PR #2 (Ansible, merge `0becdf8`), PR #3 (synchronisation documentaire, merge `8ab0f70`). La branche `main` n'a pas encore reçu cette intégration : le candidat d'examen est figé sur `phase6-operator-ux` (la branche dédiée de la phase 6, cible des trois Pull Requests) au commit `8ab0f70`. [À CONFIRMER AVEC DYLLAN — avant la session : fusionner vers `main` ou poser un tag (ex. `jury-2026-09`), pour que le clonage par défaut ne montre pas un état obsolète]
-
-À noter honnêtement : `docs/GIT_WORKFLOW.md` décrit toujours le workflow solo de la première période et n'a pas été mis à jour pour refléter le passage aux Pull Requests — c'est un écart documentaire connu, visible dans l'historique, que j'assume comme tel.
-
-## 4.4 Outillage
-
-| Domaine | Outils |
-|---|---|
-| Développement | Python 3.12, FastAPI, SQLAlchemy 2.x, Pydantic, Jinja2, JavaScript sans framework |
-| Tests & qualité | pytest (SQLite en mémoire + intégration PostgreSQL), Ruff |
-| Conteneurs | Docker, Docker Compose, image durcie non-root |
-| CI | GitHub Actions, Trivy (scan d'image advisory) |
-| Orchestration | Kubernetes via k3d (k3s dans Docker), kubectl |
-| Automatisation d'infrastructure | Ansible (`ansible-core` 2.17.14), collection `kubernetes.core` 6.5.0, control node conteneurisé |
-| Supervision | prometheus-client (instrumentation), Prometheus v2.55.1, Grafana 11.3.1 |
-| Sauvegarde | pg_dump/pg_restore via scripts PowerShell |
-| Traçabilité | Git + GitHub (branches, Pull Requests), documentation Markdown versionnée, ADR |
-
-## 4.5 Collaborations
-
-OpsForge est un **projet individuel** : il n'y a ni client, ni équipe de développement, ni équipe d'exploitation distincte — je tiens l'ensemble des rôles, de la définition du besoin à la validation finale, et chaque validation de phase est ma décision, tracée dans le dépôt.
-
-OpsForge étant un projet individuel, j'ai utilisé des **assistants d'IA comme outils** d'aide à la conception, à l'implémentation et à la revue, selon des règles écrites dans le dépôt (`docs/ENGINEERING_CHARTER.md`, `docs/PHASE_SYNC_PROTOCOL.md`). Je suis resté responsable du cadrage, des choix techniques, des arbitrages et de la validation des résultats ; les changements importants ont été vérifiés et testés avant leur intégration.
-
-C'est ce processus qui donne au projet son cycle de revue, visible dans l'historique Git : chaque évolution substantielle est passée par « proposition → implémentation → revue → correction → validation » — branche d'expérimentation revue puis ré-implémentée proprement, corrections explicitement attribuées à la revue dans les messages de commit, rapport de revue conservé sur la branche d'expérimentation. Dans la suite du dossier, « revue » désigne cette revue outillée, conduite sous ma responsabilité.
+OpsForge étant un projet individuel, j'ai utilisé des assistants d'IA comme outils d'aide à la conception, à l'implémentation et à la revue, selon des règles écrites dans le dépôt (`docs/ENGINEERING_CHARTER.md`, `docs/PHASE_SYNC_PROTOCOL.md`). Je suis resté responsable du cadrage, des choix techniques, des arbitrages et de la validation des résultats ; les changements importants ont été vérifiés et testés avant leur intégration. C'est ce processus qui donne au projet son cycle de revue visible dans l'historique Git (« proposition → implémentation → revue → correction → validation ») ; dans la suite du dossier, « revue » désigne cette revue outillée, conduite sous ma responsabilité.
 
 ---
 
 # 5. Réalisations significatives (scripts et configurations argumentés)
 
-Cette section présente les réalisations les plus significatives du projet, avec pour chacune : le besoin, l'extrait utile (jamais le fichier entier), l'explication, la justification du choix, la preuve de fonctionnement et la limite éventuelle. Les extraits proviennent du dépôt au commit `8ab0f70` ; ils sont condensés pour la lecture — les lignes non essentielles sont élidées et les coupures signalées par `# […]` — sans altération du contenu cité.
+Chaque réalisation suit le même fil : besoin → extrait utile → choix → preuve → limite. Les extraits proviennent du dépôt au commit `8ab0f70`, condensés pour la lecture (coupures signalées par `# […]`) ; les fichiers complets sont dans Git.
 
-## 5.1 Instrumentation Prometheus de l'application
+## 5.1 Instrumentation et alerte de supervision (CP n°10)
 
-**Besoin.** Superviser réellement OpsForge suppose que l'application expose ses propres métriques — pas seulement des métriques système génériques.
-
-**Extrait — `app/main.py` (définition des métriques et middleware) :**
+**Besoin.** Superviser réellement OpsForge : des métriques produites par l'application elle-même, et une alerte qui se déclenche vraiment.
 
 ```python
 HTTP_REQUESTS_TOTAL = Counter(
@@ -606,107 +381,42 @@ HTTP_REQUESTS_TOTAL = Counter(
     "Total HTTP requests handled by OpsForge.",
     ["method", "route", "status_code"],
 )
-HTTP_REQUEST_DURATION_SECONDS = Histogram(
-    "opsforge_http_request_duration_seconds",
-    "HTTP request latency in seconds for OpsForge.",
-    ["method", "route", "status_code"],
-)
+# […] middleware : chronomètre chaque requête et alimente compteur + histogramme
+labels = {"method": request.method, "route": _route_label(request),
+          "status_code": str(response.status_code)}
 ```
-
-```python
-@app.middleware("http")
-async def collect_http_metrics(request: Request, call_next):
-    if request.url.path == "/metrics":
-        return await call_next(request)
-
-    start_time = perf_counter()
-    response = await call_next(request)
-    elapsed = perf_counter() - start_time
-    labels = {
-        "method": request.method,
-        "route": _route_label(request),
-        "status_code": str(response.status_code),
-    }
-    HTTP_REQUESTS_TOTAL.labels(**labels).inc()
-    HTTP_REQUEST_DURATION_SECONDS.labels(**labels).observe(elapsed)
-    return response
-```
-
-**Explication.** Un middleware HTTP chronomètre chaque requête et incrémente un compteur et un histogramme, avec trois labels : méthode, route et code de statut. Deux détails comptent :
-
-- le label `route` utilise le **template de route FastAPI** (`/api/services/{service_id}` et non `/api/services/42`) : sans cela, chaque identifiant créerait une série de métriques distincte et ferait exploser la cardinalité côté Prometheus ;
-- les requêtes vers `/metrics` sont exclues du comptage, pour que la supervision ne se mesure pas elle-même.
-
-**Preuve.** Test automatisé (`test_metrics_endpoint_exposes_prometheus_metrics`) ; lors de la validation de la phase 5, la cible Prometheus était `UP` et les requêtes PromQL sur ces deux métriques retournaient des séries.
-
-**Lien avec `/health` et `/ready`.** La même couche expose la liveness (`/health` : le processus répond, sans toucher la base) et la readiness (`/ready` : `SELECT 1` sur PostgreSQL, 503 sinon). Cette séparation (ADR 022) permet à Kubernetes de ne pas router de trafic vers une API vivante mais privée de sa base — et c'est `/ready` qui sert de preuve de connectivité dans la vérification Ansible.
-
-**Limite.** Métriques techniques HTTP uniquement ; les indicateurs métier (nombre d'incidents ouverts, etc.) sont une évolution identifiée, pas une réalisation.
-
-## 5.2 Règle d'alerte `OpsForgeApiDown`
-
-**Besoin.** Le critère « les alertes sont correctement interprétées » exige une alerte qui se déclenche réellement, pas une capture d'un état vert.
-
-**Extrait — `k8s/prometheus-rules-configmap.yaml` (règle complète) :**
 
 ```yaml
-groups:
-  - name: opsforge-alerts
-    rules:
-      - alert: OpsForgeApiDown
-        expr: up{job="opsforge-api"} == 0
-        for: 30s
-        labels:
-          severity: critical
-          service: opsforge-api
-        annotations:
-          summary: OpsForge API is down
-          description: Prometheus cannot scrape the OpsForge API metrics endpoint.
+- alert: OpsForgeApiDown
+  expr: up{job="opsforge-api"} == 0
+  for: 30s
+  labels: {severity: critical, service: opsforge-api}
 ```
 
-**Explication et choix.** La règle s'appuie sur la métrique synthétique `up` du job de scrape : elle se déclenche dès que Prometheus **ne parvient plus à joindre** l'API, quelle qu'en soit la cause — c'est plus robuste qu'une règle sur une métrique applicative, qui disparaît en même temps que l'application. Le `for: 30s` est calibré sur l'intervalle de scrape (15 s) : assez long pour ignorer un raté isolé, assez court pour une démonstration.
+**Choix.** Le label `route` utilise le *template* FastAPI (`/api/services/{service_id}`), pas l'URL réelle : sans cela, chaque identifiant créerait une série Prometheus distincte (explosion de cardinalité — ADR 017). `/metrics` est exclu de son propre comptage. La règle s'appuie sur la métrique `up` du scrape — elle détecte l'injoignabilité quelle qu'en soit la cause, là où une métrique applicative disparaît avec l'application ; `for: 30s` est calibré sur le scrape de 15 s (un raté isolé ne déclenche pas).
 
-**Preuve.** Cycle complet observé et documenté le 2026-07-14 : scale à 0 → `up`=0 → état `firing` (constaté dans l'interface de Prometheus et via son API `/api/v1/alerts`) → restauration → retour `inactive`. Rejouable en démonstration.
+**Preuve.** Cible `UP`, dashboard alimenté, et cycle `inactive → pending → firing → résolu` observé en direct (figures 4-6, §3.6). **Limite.** Pas de routage de notification (pas d'Alertmanager).
 
-**Limite.** Pas d'Alertmanager : l'alerte est visible dans Prometheus mais ne notifie personne. C'est une décision de périmètre (ADR 020) : la règle suffit à prouver la détection ; le routage de notifications est une évolution.
+## 5.2 Image Docker durcie (CP n°7)
 
-## 5.3 Image Docker durcie de l'API
-
-**Besoin.** L'image applicative doit être reproductible et ne pas tourner en root — dans Compose comme dans Kubernetes.
-
-**Extrait — `Dockerfile` (l'essentiel des 22 lignes ; `HEALTHCHECK` replié sur deux lignes pour la lisibilité) :**
+**Besoin.** Une image reproductible qui ne tourne jamais en root, dans Compose comme dans Kubernetes.
 
 ```dockerfile
 FROM python:3.12-slim@sha256:c3d81d25b3154142b0b42eb1e61300024426268edeb5b5a26dd7ddf64d9daf28
 # […]
 RUN useradd --create-home --shell /usr/sbin/nologin --uid 10001 opsforge \
     && chown opsforge:opsforge /app
-
-COPY --chown=opsforge:opsforge app ./app
-
 USER opsforge
 # […]
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD ["python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health', timeout=3)"]
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-**Explication et choix.**
+**Choix.** Digest épinglé (deux builds espacés donnent la même base ; le scan porte sur une image identifiée — ADR 024) ; UID 10001 réutilisé tel quel dans le securityContext Kubernetes ; healthcheck en Python pur (aucune dépendance ajoutée pour la sonde). **Preuve.** Construite à chaque commit en CI ; conteneur `healthy` en Compose ; la même image tourne sous rootfs en lecture seule dans k3d. **Limite.** Les 19 HIGH / 3 CRITICAL Debian résiduels du scan restent visibles et sans correctif disponible — assumés.
 
-- **Digest épinglé** : `python:3.12-slim` est figé par son SHA-256 (ADR 024). Deux builds espacés dans le temps produisent la même base ; le scan Trivy porte sur une image identifiée, pas sur un tag mouvant.
-- **Utilisateur non-root UID 10001** : créé sans shell de connexion ; le même UID est réutilisé dans le securityContext Kubernetes (`runAsUser: 10001`), ce qui rend le durcissement cohérent entre les deux environnements.
-- **HEALTHCHECK en Python pur** : appelle `/health` via la bibliothèque standard — aucune dépendance (curl/wget) ajoutée à l'image juste pour la sonde.
+## 5.3 Workloads Kubernetes durcis et stockage persistant (CP n°7)
 
-**Preuve.** Image construite en CI à chaque commit ; conteneur `healthy` dans Compose ; la même image (importée dans k3d) tourne sous contrainte `readOnlyRootFilesystem` sans modification.
-
-**Limite.** Build mono-stage (suffisant ici : les dépendances sont installées via wheels, sans toolchain de compilation à séparer) ; les 19 HIGH / 3 CRITICAL Debian résiduels du scan restent visibles et sans correctif disponible — assumés, pas masqués.
-
-## 5.4 Manifests Kubernetes durcis (Deployment API et StatefulSet PostgreSQL)
-
-**Besoin.** Déployer l'application dans Kubernetes avec des workloads qui redémarrent bien, ne reçoivent du trafic que lorsqu'ils sont prêts, et appliquent le principe du moindre privilège.
-
-**Extrait — `k8s/api-deployment.yaml` (securityContext et probes du conteneur API) :**
+**Besoin.** Déployer avec le principe du moindre privilège, des démarrages ordonnés, et un stockage qui survit aux pods.
 
 ```yaml
           securityContext:
@@ -715,414 +425,263 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
             runAsGroup: 10001
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-            capabilities:
-              drop: ["ALL"]
-            seccompProfile:
-              type: RuntimeDefault
+            capabilities: {drop: ["ALL"]}
+            seccompProfile: {type: RuntimeDefault}
           # […]
-          readinessProbe:
-            httpGet:
-              path: /ready
-              port: http
-            initialDelaySeconds: 3
-            periodSeconds: 5
-            # […]
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            # […]
+          readinessProbe: {httpGet: {path: /ready, port: http}}
+          livenessProbe:  {httpGet: {path: /health, port: http}}
 ```
 
-**Explication et choix.**
+**Choix.** Les deux probes sont **différentes**, et c'est le point clé : `/ready` (SELECT 1 sur PostgreSQL) retire l'API du Service quand la base est injoignable ; `/health` ne redémarre le conteneur que si le processus ne répond plus — utiliser `/ready` en liveness provoquerait des redémarrages en boucle pendant une panne de base. Un init container `pg_isready` sérialise le démarrage (l'équivalent du `depends_on` de Compose). PostgreSQL est un **StatefulSet** adossé au PVC (§3.5) ; seul `/tmp` (emptyDir) est inscriptible.
 
-- Le conteneur tourne **non-root, sans capabilities, sous seccomp, avec un système de fichiers racine en lecture seule** ; seul `/tmp` (un `emptyDir`) est inscriptible. Une compromission de l'application ne permettrait ni élévation ni modification de l'image en cours d'exécution.
-- Les **deux probes sont différentes** et c'est voulu : la readiness (`/ready`) retire l'API du Service quand PostgreSQL est injoignable ; la liveness (`/health`) ne redémarre le conteneur que si le processus lui-même ne répond plus. Utiliser `/ready` en liveness provoquerait des redémarrages en boucle pendant une panne de base — exactement ce qu'il faut éviter.
-- Un **init container** `wait-for-postgres` (boucle `pg_isready`) sérialise le démarrage : l'équivalent Kubernetes du `depends_on: service_healthy` de Compose, sans modifier l'application.
-- Côté PostgreSQL, le StatefulSet a reçu une **livenessProbe** `pg_isready` (un postmaster bloqué est redémarré, pas seulement retiré des endpoints du Service), avec la réserve documentée que `pg_isready` teste l'acceptation de connexion, pas l'exécution de requêtes.
+**Preuve.** Vérifié sur cluster réel : pods `1/1 Ready`, pages en 200 sous rootfs lecture seule, écriture dans `/app` refusée (audit du 07/08/2026) ; état re-constaté et persistance re-prouvée le 12/08/2026 (§3.5). **Limite.** Une réplique de chaque workload — la haute disponibilité n'est pas l'objectif du périmètre.
 
-**Preuve.** Vérifié sur le cluster k3d réel dans un namespace isolé (audit du 2026-08-07) : les deux pods `1/1 Ready`, `/health`, `/ready` et `/overview` en HTTP 200 sous rootfs en lecture seule, et une tentative d'écriture dans `/app` refusée comme attendu.
+## 5.4 Pipeline d'intégration continue (chaîne 1)
 
-**Limite.** Une réplique de chaque workload, `local-path` mono-nœud : la disponibilité n'est pas l'objectif de ce périmètre. Suivi documenté : `runAsNonRoot` pour PostgreSQL (l'image officielle abandonne ses privilèges via son entrypoint) et le mot de passe Grafana en Secret.
-
-## 5.5 Pipeline d'intégration continue GitHub Actions
-
-**Besoin.** Vérifier chaque commit automatiquement : qualité du code, comportement du domaine, compatibilité avec le vrai moteur de base, construction de l'image, et visibilité des vulnérabilités.
-
-**Extrait — `.github/workflows/ci.yml` (enchaînement des vérifications et politique Trivy) :**
+**Besoin.** Vérifier chaque commit : qualité, comportement du domaine, compatibilité avec le moteur de base réel, image, vulnérabilités.
 
 ```yaml
       - name: Lint with Ruff
         run: ruff check .
-
       - name: Run SQLite unit tests
         run: pytest tests/test_app.py
-
       - name: Run PostgreSQL integration test
-        env:
-          DATABASE_URL: postgresql+psycopg://opsforge:opsforge@127.0.0.1:5432/opsforge
+        env: {DATABASE_URL: postgresql+psycopg://opsforge:opsforge@127.0.0.1:5432/opsforge}
         run: pytest tests/postgres_integration.py
-
       - name: Build Docker image
         run: docker build -t "${IMAGE_NAME}:${IMAGE_TAG}" .
-
       - name: Run Trivy image scan (advisory)
         uses: aquasecurity/trivy-action@v0.36.0
         continue-on-error: true
-        with:
-          scan-type: image
-          image-ref: opsforge-api:${{ github.sha }}
-          # […]
-          exit-code: "1"
-          severity: HIGH,CRITICAL
+        with: {scan-type: image, image-ref: "opsforge-api:${{ github.sha }}",
+               exit-code: "1", severity: "HIGH,CRITICAL"}  # […]
 ```
 
-**Explication et choix.**
+**Choix.** Ordre voulu : lint (échec rapide) → 35 tests SQLite (secondes) → test d'intégration contre un conteneur `postgres:16-alpine` démarré par le job — ce test crée une base au nom unique, rejoue le flux complet, puis la supprime : la CI ne peut pas polluer une base de démonstration. La subtilité Trivy : `exit-code: "1"` garde le signal visible quand des HIGH/CRITICAL existent, `continue-on-error: true` maintient le job vert — politique advisory explicite (ADR 013), transformable en portail bloquant par une décision documentée.
 
-- **Ordre voulu** : le lint échoue en premier (rapide), puis les 35 tests SQLite (retour en secondes), puis le test PostgreSQL contre un conteneur de service `postgres:16-alpine` démarré par le job — le flux central est prouvé sur le moteur d'exécution réel avant de dépenser du temps en build et scan.
-- **Le test PostgreSQL est isolé par construction** : il crée une base au nom unique, y rejoue le flux complet, puis la supprime — la CI ne peut pas polluer une base de démonstration, et le test le vérifie lui-même.
-- **La subtilité Trivy** : `exit-code: "1"` fait échouer **l'étape** quand des HIGH/CRITICAL sont trouvés (le signal reste visible, l'étape s'affiche en échec), tandis que `continue-on-error: true` maintient **le job** vert (non bloquant). J'obtiens ainsi les deux propriétés voulues : un signal de sécurité impossible à rater, et une politique assumée de non-blocage tant qu'un seuil n'a pas été explicitement décidé. Un commentaire dans le fichier documente comment en faire un jour un vrai portail bloquant.
-- Un groupe `concurrency` annule les runs rendus obsolètes par un push plus récent sur la même référence.
+**Preuve.** Run du candidat gelé `8ab0f70` vérifié le 12/08/2026 via l'API GitHub (`deliverables/evidence/github_actions_run.txt`) :
 
-**Preuve.** Runs verts sur GitHub Actions ; premier run documenté dès le commit racine (phase 2, validée sur run vert), pipeline rejoué en clean-room lors de l'audit du 2026-08-07.
+```text
+run 31493449973 - CI - branch phase6-operator-ux - sha 8ab0f70 - conclusion: success
+Lint with Ruff ................ success      Build Docker image ............. success
+Run SQLite unit tests ......... success      Run Trivy image scan (advisory)  success*
+Run PostgreSQL integration test success
+```
 
-**Limite.** Pas de publication d'image ni de déploiement : c'est de l'intégration continue, et le dossier ne prétend pas autre chose.
+*\* l'API GitHub aplatit l'issue d'une étape `continue-on-error` ; l'interface web, elle, affiche l'état advisory de l'étape.*
 
-`[CAPTURE À PRODUIRE — GitHub Actions : run vert du commit final montrant les étapes Lint / SQLite / PostgreSQL / Build / Trivy (étape Trivy en échec advisory, job vert)]`
-Commande / écran à reproduire : onglet Actions du dépôt `ThDyllan/opsforge`, run du commit `8ab0f70` (ou dernier run de la branche `phase6-operator-ux`), vue du job « Lint, test, build, and scan » dépliée.
+`[CAPTURE À PRODUIRE — GitHub Actions : vue graphique du run 31493449973 (job « Lint, test, build, and scan » déplié) — nécessite une session navigateur authentifiée]`
 
-## 5.6 Playbook Ansible d'automatisation du déploiement
+**Limite.** La CI ne publie pas l'image et ne déploie rien : intégration continue, pas de CD distant.
 
-**Besoin.** Remplacer la séquence manuelle documentée (`k3d cluster create` puis huit `kubectl apply` et des vérifications à la main) par une automatisation en une commande, idempotente et auto-vérifiée — la preuve de la compétence obligatoire CP n°2.
+## 5.5 Automatisation du déploiement d'infrastructure avec Ansible (CP n°2, chaîne 2)
 
-**Pourquoi Ansible plutôt que Terraform.** Les deux outils sont cités par le référentiel et les deux sont légitimes ; ils n'ont simplement pas la même force — et Terraform n'est pas « réservé au cloud ». Terraform est **déclaratif et à état** : on décrit un état cible, il réconcilie le monde réel via des providers. Ma tâche est une **orchestration procédurale multi-outils locale** : préparer le control node → créer le cluster k3d → construire et importer l'image → appliquer des manifests dans un ordre imposé par les dépendances → attendre → vérifier en HTTP. C'est exactement la forme d'exécution qu'Ansible exprime naturellement (et la collection `kubernetes.core` m'apporte le déclaratif là où il le faut, sur les ressources Kubernetes). Terraform deviendrait le choix le plus pertinent pour une évolution de provisioning d'infrastructure cloud — direction CP n°4, non réalisée ici. Ce raisonnement est consigné dans la décision ADR 029.
+**Besoin.** Remplacer la séquence manuelle documentée (`k3d cluster create` + une série de `kubectl apply`) par une commande unique, idempotente et auto-vérifiée.
 
-**Extrait 1 — `ansible/roles/cluster/tasks/main.yml` (création idempotente du cluster) :**
+**Pourquoi Ansible plutôt que Terraform.** Les deux sont cités par le référentiel et légitimes — et Terraform n'est pas « réservé au cloud ». Terraform est déclaratif et à état : on décrit un état cible qu'il réconcilie via des providers. Ma tâche est une **orchestration procédurale multi-outils locale** (préparer le control node → créer le cluster → construire/importer l'image → appliquer des manifests dans un ordre imposé → attendre → vérifier en HTTP) : la forme d'exécution qu'Ansible exprime naturellement, la collection `kubernetes.core` apportant le déclaratif sur les ressources Kubernetes. Terraform deviendrait pertinent pour un provisioning cloud (direction CP n°4, non réalisée). — ADR 029.
 
 ```yaml
-- name: List existing k3d clusters
-  ansible.builtin.command: k3d cluster list -o json
-  register: k3d_clusters
-  changed_when: false
-
+# rôle cluster — création idempotente
 - name: Create the k3d cluster
   ansible.builtin.command: >-
-    k3d cluster create {{ cluster_name }}
-    --servers 1
+    k3d cluster create {{ cluster_name }} --servers 1
     --api-port 127.0.0.1:{{ kubeapi_host_port }}
-    --port "{{ api_host_port }}:{{ node_port }}@server:0"
-    --wait
+    --port "{{ api_host_port }}:{{ node_port }}@server:0" --wait
   when: cluster_name not in (k3d_clusters.stdout | from_json | map(attribute='name') | list)
 ```
 
-Le cluster n'est créé **que s'il n'existe pas** : le playbook peut être rejoué sans détruire l'existant. Tous les paramètres (nom, ports) sont des variables : le même playbook déploie le cluster de démonstration `opsforge` (port 8080) ou un cluster jetable isolé `opsforge-ansible-test` (port 8090) pour tester sans risque.
-
-**Extrait 2 — `ansible/roles/kubernetes_resources/tasks/main.yml` (Secret généré, déploiement ordonné et attendu) :**
-
 ```yaml
+# rôle kubernetes_resources — Secret généré, déploiement ordonné et attendu
 - name: Create the PostgreSQL Secret from variables
-  # Injected at deploy time so no credential file is committed to Git.
   kubernetes.core.k8s:
-    state: present
     definition:
-      apiVersion: v1
       kind: Secret
-      metadata:
-        name: opsforge-postgres-secret
-        namespace: "{{ app_namespace }}"
-      type: Opaque
-      stringData:
-        POSTGRES_USER: "{{ db_user }}"
-        POSTGRES_PASSWORD: "{{ db_password }}"
-        DATABASE_URL: "postgresql+psycopg://{{ db_user }}:{{ db_password }}@postgres:5432/{{ db_name }}"
-
-# […]
+      stringData: {POSTGRES_USER: "{{ db_user }}", POSTGRES_PASSWORD: "{{ db_password }}"}  # […]
 - name: Deploy PostgreSQL and wait until it is ready
-  kubernetes.core.k8s:
-    state: present
-    src: "{{ manifests_path }}/{{ item }}"
-    wait: true
-    wait_timeout: "{{ wait_timeout }}"
-  loop:
-    - postgres-statefulset.yaml
-    - postgres-service.yaml
+  kubernetes.core.k8s: {src: "{{ manifests_path }}/{{ item }}", wait: true}  # […]
 ```
 
-Deux idées ici. D'abord, **aucun manifest de Secret n'est versionné** : le Secret Kubernetes est généré au déploiement depuis les variables — la valeur par défaut, non sensible et réservée à la démonstration locale, vit dans `ansible/group_vars/all.yml`, et elle est surchargeable par `-e db_password=…` ou externalisable dans `ansible-vault` pour tout usage réel. Ensuite, chaque étage est appliqué avec **`wait: true`** : Ansible bloque jusqu'à ce que la ressource soit réellement prête, ce qui impose l'ordre des dépendances (PostgreSQL prêt → API prête → supervision) au lieu d'un `kubectl apply` aveugle de tout le répertoire.
-
-**Extrait 3 — `ansible/roles/verify/tasks/main.yml` (le déploiement se prouve lui-même) :**
-
 ```yaml
+# rôle verify — le déploiement se prouve lui-même
 - name: Check /ready through the NodePort (proves PostgreSQL connectivity)
   ansible.builtin.uri:
     url: "http://host.docker.internal:{{ api_host_port }}/ready"
-    return_content: true
-  register: ready
   retries: 12
-  delay: 3
   until: ready.status is defined and ready.status == 200
 ```
 
-Le run ne se termine avec succès que si un pod API est `Running` **et** si `/health` puis `/ready` répondent 200 — `/ready` exécutant un `SELECT 1`, la réussite du playbook prouve la chaîne complète jusqu'à la base.
+**Choix.** Cluster créé seulement s'il n'existe pas (rejouable sans danger) ; **aucun manifest de Secret versionné** — généré au déploiement depuis des variables (défaut local non sensible, surchargeable `-e` / `ansible-vault`) ; chaque étage appliqué avec `wait: true` (PostgreSQL prêt → API prête → supervision), pas un apply aveugle ; le run ne réussit **que si l'application répond** (`/ready` = preuve de la chaîne complète jusqu'à la base). Le tout s'exécute depuis un **control node conteneurisé** (`./ansible/run.sh`) aux versions épinglées — indispensable sous Windows, et né d'une vraie situation de recherche (§6).
 
-**Preuve.** Validations documentées dans `docs/ANSIBLE.md` et dans les messages de commit : déploiement complet depuis zéro sur le cluster isolé `opsforge-ansible-test` (`/health = 200`, `/ready = 200`), second run idempotent (`ok=21, changed=2`), cycle teardown/recréation, le cluster `opsforge` préexistant restant intact. Captures listées en annexe B à produire lors de la répétition finale.
+**Preuve.** Rejouée intégralement le 12/08/2026 sur cluster isolé (`deliverables/evidence/ansible_*.txt`) :
 
-**Limites.** Cible k3d locale uniquement (pas de cloud) ; `validate_certs: false` limité à la connexion de contrôle locale vers le cluster éphémère ; la méthode supportée et validée est le control node conteneurisé (section 5.7) — l'exécution directe du playbook sur un hôte Linux n'a pas été validée et n'est pas revendiquée.
-
-## 5.7 Control node Ansible conteneurisé (`ansible/run.sh`)
-
-**Besoin.** Ansible ne s'exécute pas nativement sous Windows. J'ai défini le **control node comme du code** : une image Docker qui embarque exactement les versions validées — le même environnement d'exécution, reproductible sur tout poste disposant de Docker (décision consignée dans l'ADR 029 et `docs/ANSIBLE.md`).
-
-**Extrait — `ansible/Dockerfile` (versions épinglées ; le fichier épingle aussi kubectl v1.31.5, k3d v5.9.0 et la CLI Docker 27.5.1 en binaires) et `ansible/run.sh` (câblage) :**
-
-```dockerfile
-    ANSIBLE_CONFIG=/work/ansible/ansible.cfg
-# […]
-RUN pip install "ansible-core==2.17.14" "kubernetes==36.0.3"
-# […]
-RUN ansible-galaxy collection install kubernetes.core:6.5.0
+```text
+Déploiement complet  : PLAY RECAP  ok=22  changed=9  failed=0
+                       "/health -> 200 {'status': 'ok', 'service': 'opsforge'}"
+                       "/ready  -> 200 {'status': 'ready', 'service': 'opsforge'}"
+Second run (idempotence) : PLAY RECAP  ok=21  changed=2  failed=0
+Teardown                 : PLAY RECAP  ok=3   changed=1  failed=0
 ```
 
-```bash
-export MSYS_NO_PATHCONV=1
+**Limites.** Cible k3d locale uniquement ; le control node conteneurisé est la seule méthode validée ; `validate_certs: false` limité à la connexion de contrôle locale vers le cluster éphémère.
 
-docker run --rm \
-  --add-host=host.docker.internal:host-gateway \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v "$repo":/work \
-  opsforge-ansible-control \
-  ansible-playbook -i inventory.ini "$playbook" "$@"
-```
+## 5.6 Sauvegarde et restauration sûres
 
-**Explication et choix.**
-
-- Le conteneur monte **la socket Docker de l'hôte** : le `docker build`, le `k3d cluster create` et l'import d'image lancés depuis le conteneur agissent sur le démon Docker du poste — le control node pilote l'hôte sans rien y installer.
-- `--add-host=host.docker.internal:host-gateway` rend l'hôte joignable **depuis** le conteneur : c'est par ce nom que le playbook atteint l'API Kubernetes du cluster k3d (le rôle `cluster` réécrit le kubeconfig en conséquence) et que le rôle `verify` appelle `/health` et `/ready` via le NodePort.
-- `MSYS_NO_PATHCONV=1` neutralise la réécriture de chemins de Git Bash sous Windows, qui corrompait les chemins de montage (`/var/run/docker.sock`, `/work`).
-- La ligne `ENV ANSIBLE_CONFIG=…` et le `-i inventory.ini` explicite sont le résultat direct de la situation de recherche racontée en section 6.
-
-**Preuve.** C'est par ce chemin (`./ansible/run.sh`) que toutes les validations Ansible ont été rejouées de bout en bout après correction, y compris après l'épinglage des versions.
-
-**Limite.** Cette méthode est la seule validée, et la documentation le dit explicitement — une exécution directe sur un hôte Linux exigerait de revalider le contexte réseau.
-
-## 5.8 Scripts de sauvegarde et de restauration PostgreSQL
-
-**Besoin.** Pouvoir prouver qu'une sauvegarde existe **et** qu'elle est restaurable — sans jamais risquer la base de démonstration par une fausse manœuvre.
-
-**Comportements clés (scripts PowerShell `scripts/backup.ps1` et `scripts/restore.ps1`) :**
-
-- La sauvegarde s'exécute **dans** le conteneur (`pg_dump --format=custom --no-owner --no-privileges`), est copiée vers `backups/` puis contrôlée (fichier non vide). Le format custom permet l'inspection (`pg_restore --list`) et la restauration sélective.
-- La restauration **par défaut ne touche jamais la base principale** : elle valide l'archive, restaure dans une base temporaire `opsforge_restore_verify`, compte les tables restaurées, puis supprime la base temporaire.
-- La restauration réelle exige deux actions volontaires :
+**Besoin.** Prouver qu'une sauvegarde existe **et** qu'elle est restaurable, sans jamais risquer la base par une fausse manœuvre.
 
 ```powershell
 if ($MainDatabase) {
     $confirmation = Read-Host "This will replace objects in database '$dbName'. Type RESTORE to continue"
-    if ($confirmation -cne "RESTORE") {
-        Write-Host "Restore cancelled."
-        return
-    }
+    if ($confirmation -cne "RESTORE") { Write-Host "Restore cancelled." ; return }
 }
 ```
 
-Le drapeau `-MainDatabase` **et** la saisie exacte de `RESTORE` (comparaison sensible à la casse `-cne`) ; le script arrête alors l'API le temps de la restauration puis la redémarre. Un simple appui sur Entrée, pressé trop vite, annule : il ne détruit pas.
-
-**Preuve.** Validation de la phase 3 (2026-07-06) : archive réelle produite (19 785 octets — conservée localement sur le poste de démonstration, le répertoire `backups/` étant volontairement ignoré par Git ; l'exécution est documentée avec taille et horodatage dans `docs/PHASE3_VERIFICATION.md`), archive validée par `pg_restore --list`, restauration de vérification réussie (6 tables publiques restaurées dans la base temporaire, puis nettoyage), et vérification que `backups/*` est bien ignoré par Git.
-
-**Limite.** Sauvegarde locale du PostgreSQL Compose uniquement : ni chiffrement, ni planification, ni rotation, ni copie externe, ni couverture du PostgreSQL k3d — un mécanisme démontrable, pas une stratégie d'entreprise, et c'est écrit tel quel dans la documentation.
+**Choix.** Format custom (inspectable par `pg_restore --list`) ; restauration **par défaut dans une base temporaire** de vérification, comptage des tables, nettoyage ; la base principale exige le drapeau `-MainDatabase` **et** la saisie exacte de `RESTORE` (sensible à la casse) — un Entrée pressé trop vite annule ; l'API est arrêtée pendant une restauration réelle puis redémarrée. **Preuve.** Rejouée le 12/08/2026 : archive de 24 543 octets créée puis restauration vérifiée (6 tables) dans `opsforge_restore_verify` (§3.7). **Limite.** Locale, non planifiée, non chiffrée.
 
 ---
 
 # 6. Situation de travail ayant nécessité une recherche
 
-## Le fichier `ansible.cfg` ignoré dans le control node conteneurisé
+## Le fichier `ansible.cfg` silencieusement ignoré dans le control node conteneurisé
 
-Cette situation s'est produite lors de l'intégration finale d'Ansible (10-11 août 2026). Elle est entièrement traçable dans le dépôt : les commits `9d04fc4`, `0b21505`, `732d6fa` et `e808ccf` en portent le déroulé, et les fichiers `ansible/Dockerfile` et `ansible/run.sh` en conservent les traces commentées.
+Situation survenue lors de l'intégration d'Ansible (10-11 août 2026), entièrement traçable dans le dépôt (commits `9d04fc4`, `0b21505`, `732d6fa`, `e808ccf` ; commentaires conservés dans `ansible/Dockerfile` et `ansible/run.sh`).
 
-### Le problème
-
-Pour exécuter Ansible depuis mon poste Windows, j'avais choisi un control node conteneurisé : une image Docker embarquant Ansible et les CLI nécessaires, le dépôt étant monté dans le conteneur en `/work`. À la première exécution du playbook dans ce conteneur, le résultat a été déroutant :
+**Le problème.** Ansible ne s'exécutant pas nativement sous Windows, j'avais choisi un control node conteneurisé : une image Docker embarquant Ansible et les CLI, le dépôt monté en `/work`. Première exécution du playbook dans ce conteneur :
 
 ```text
 skipping: no hosts matched
 ```
 
-Le play ne trouvait **aucun hôte** — alors que l'inventaire (`inventory.ini`, un simple `localhost ansible_connection=local`) existait bel et bien, déclaré dans `ansible.cfg` juste à côté du playbook.
+Aucun hôte trouvé — alors que l'inventaire (`localhost ansible_connection=local`) existait, déclaré dans `ansible.cfg` juste à côté du playbook.
 
-### L'analyse
+**Le diagnostic.** Hypothèses testées dans l'ordre : inventaire mal écrit ? — non, il fonctionnait passé à la main. Mauvais répertoire de travail ? — non, le `WORKDIR` était correct. Le fichier `ansible.cfg` est-il seulement lu ? — `ansible --version` affichait `config file = None` : Ansible ignorait silencieusement la configuration, donc l'inventaire qu'elle déclare.
 
-J'ai vérifié les hypothèses dans l'ordre :
+**La recherche.** La documentation officielle d'Ansible décrit un comportement de sécurité précis : **un `ansible.cfg` situé dans un répertoire courant inscriptible par tous (*world-writable*) est refusé**, pour empêcher l'injection d'une configuration malveillante dans un répertoire partagé ; un chemin désigné explicitement via `ANSIBLE_CONFIG` reste honoré. Or c'était exactement mon contexte sans que je l'aie provoqué : un dépôt Windows monté par bind-mount Docker apparaît world-writable côté Linux. Le comportement d'Ansible était correct et documenté — c'est mon environnement qui le déclenchait.
 
-1. *L'inventaire est-il mal écrit ?* Non — le même inventaire fonctionnait quand je le passais à la main.
-2. *Ansible s'exécute-t-il dans le bon répertoire ?* Oui — le `WORKDIR` du conteneur était bien `/work/ansible`.
-3. *Le fichier `ansible.cfg` est-il seulement lu ?* C'était la bonne piste : `ansible --version` affichait `config file = None`. Ansible ignorait silencieusement le `ansible.cfg` du répertoire courant — et donc la déclaration d'inventaire qu'il contient, d'où le « no hosts matched ».
+**Les options et le choix.** Trois pistes : `chmod` du répertoire à chaque run (fragile) ; tout passer en ligne de commande sans `ansible.cfg` (disperse la configuration) ; fixer `ANSIBLE_CONFIG` dans l'image — la solution prévue par l'outil pour ce cas. J'ai retenu la troisième, doublée d'une ceinture de sécurité : `ENV ANSIBLE_CONFIG=/work/ansible/ansible.cfg` cuit dans l'image, **plus** un `-i inventory.ini` explicite dans `run.sh`.
 
-### La recherche
+**Le second enseignement — le plus important.** En corrigeant, j'ai découvert plus embarrassant que le bug : mes validations initiales avaient été faites avec des commandes ajustées à la main pendant le débogage, et le wrapper `run.sh` documenté ne portait pas ces réglages (ni l'inventaire explicite, ni `--add-host=host.docker.internal:host-gateway`, ni `MSYS_NO_PATHCONV=1` qui neutralise la réécriture de chemins de Git Bash). Quiconque aurait exécuté le `./run.sh` documenté — le jury, par exemple — aurait reproduit l'échec initial. Le message du commit de correction le dit sans détour : *« run.sh did not carry the settings the successful runs actually used »*. J'ai donc :
 
-La documentation officielle d'Ansible, sur la résolution du fichier de configuration, décrit un comportement de sécurité précis : **Ansible refuse de charger un `ansible.cfg` situé dans un répertoire courant inscriptible par tous** (*world-writable*), pour empêcher qu'un fichier de configuration malveillant déposé dans un répertoire partagé soit exécuté à l'insu de l'utilisateur. Un chemin de configuration désigné **explicitement** via la variable d'environnement `ANSIBLE_CONFIG` reste en revanche honoré.
+1. aligné `run.sh` sur le chemin réellement validé ;
+2. **re-testé l'intégralité du parcours en n'utilisant que `./run.sh`** sur un cluster isolé (déploiement complet, second run idempotent, teardown) ;
+3. épinglé les versions exactes du control node validé pour garder la validation reproductible ;
+4. retiré de la documentation une affirmation que je ne pouvais pas prouver — le commit initial prétendait que le playbook « tourne aussi directement sur un hôte Linux/WSL » ; ce chemin n'avait jamais été validé et n'aurait pas fonctionné tel quel (le kubeconfig est réécrit vers `host.docker.internal`, un nom fourni par le conteneur). Le control node conteneurisé est devenu **la seule méthode supportée et validée**.
 
-Or c'était exactement mon contexte, sans que je l'aie provoqué : un dépôt Windows monté par bind-mount Docker apparaît, côté Linux, avec des permissions *world-writable*. Le comportement d'Ansible était donc correct et documenté — c'est mon environnement d'exécution qui le déclenchait.
+**Ce que j'en retiens.** Un comportement de sécurité d'un outil peut n'apparaître que dans un contexte d'exécution particulier — le diagnostic passe par la documentation, pas par des essais au hasard. Et surtout : **l'artefact documenté doit être exactement celui qui a été validé** ; retirer une affirmation non prouvée de sa propre documentation est une correction de qualité au même titre qu'un correctif de code.
 
-### Les solutions envisagées et le choix
+---
 
-| Option | Analyse |
+# 7. Synthèse des validations
+
+| Domaine | Preuve principale | Résultat |
+|---|---|---|
+| Application & tests | 35 tests SQLite + 1 test d'intégration PostgreSQL (base éphémère) | Verts en local et en CI |
+| Intégration continue | Run GitHub Actions du candidat gelé `8ab0f70` | `success` (toutes étapes) — vérifié le 12/08/2026 |
+| Conteneurs & Kubernetes | Pods `1/1 Running`, PVC `Bound`, durcissement vérifié sous rootfs lecture seule | Constaté le 07/08 et re-constaté le 12/08/2026 |
+| Persistance | Donnée survivant à la destruction/recréation du pod PostgreSQL (UID différent) | Prouvée en phase 4, **re-prouvée le 12/08/2026** |
+| Supervision | Cible UP, dashboard alimenté, cycle d'alerte `inactive → firing → résolu` | Validé en phase 5, **rejoué en direct le 12/08/2026** |
+| Automatisation d'infrastructure | Déploiement complet en une commande + idempotence + teardown, `/health` et `/ready` en 200 | Validé aux commits Ansible, **rejoué le 12/08/2026** (`ok=22/9`, `ok=21/2`) |
+| Sauvegarde | Archive produite + restauration vérifiée en base temporaire (6 tables) | Validée en phase 3, **rejouée le 12/08/2026** |
+
+Les preuves du 12/08/2026 (logs bruts et captures) sont versionnées sous `deliverables/evidence/` et `deliverables/assets/screenshots/` ; l'historique détaillé phase par phase reste dans `docs/PHASE<i>_VERIFICATION.md` (chronologie en annexe A).
+
+**État de la phase 6 :** l'audit d'intégration, l'automatisation Ansible et les preuves ci-dessus sont faits ; la **revue visuelle et responsive manuelle** du parcours opérateur (procédure `docs/PHASE6_MANUAL_TEST.md`) reste à dérouler avant la validation explicite de la phase — elle sera effectuée lors de la répétition générale.
+
+---
+
+# 8. Limites assumées et évolutions
+
+Toutes documentées dans le dépôt (`docs/RISKS_AND_TECHNICAL_DEBT.md`, ADR) — des choix de périmètre, pas des fonctions prétendues :
+
+| Domaine | Limite | Évolution naturelle |
+|---|---|---|
+| Infrastructure | k3d mono-nœud local, pas de cloud ; stockage `local-path` local au nœud, non distribué | Kubernetes managé + Terraform (CP n°4) ; stockage réseau |
+| Livraison | Pas de registre, pas de CD distant ; import k3d (manuel ou Ansible) | Registre + déploiement déclenché par la CI |
+| Application | Pas d'authentification (acteurs déclaratifs) ; unicité d'incident actif garantie par l'application (409), pas par contrainte en base | Authentification ; contrainte PostgreSQL partielle |
+| Schéma | `create_all()` + pont additif, pas d'historique de migrations | Alembic |
+| Supervision | Pas d'Alertmanager/notifications ; stockage éphémère ; Grafana `admin/admin` local ; port-forward ; métriques techniques ; **états métier simulés** | Alertmanager, persistance, métriques métier, ingestion d'alertes dans OpsForge |
+| Sécurité | Trivy advisory (19 HIGH / 3 CRITICAL sans correctif, visibles, non bloquants) ; pas de TLS | Seuil de blocage explicite ; TLS |
+| Sauvegardes | Locales, non planifiées, non chiffrées, sans rotation | Planification, chiffrement, externalisation |
+| Outillage | Écart de versions kubectl control node (v1.31) / k3s (v1.35) | Alignement des versions épinglées |
+| Contexte | Projet individuel : le critère relationnel « échanges avec les développeurs » (CP n°10) est porté par des décisions tracées, pas par une équipe | — |
+
+---
+
+# Conclusion
+
+**Ce que le projet démontre.** Les trois compétences obligatoires, chacune avec une preuve distincte, rejouable et rejouée : une infrastructure locale complète déployée et vérifiée par Ansible en une commande idempotente ; des conteneurs durcis et orchestrés dans deux environnements avec une persistance prouvée plutôt que supposée ; une supervision réelle dont l'alerte s'est déclenchée puis résolue lors d'une panne provoquée. Autour : 35 tests unitaires et un test d'intégration PostgreSQL, une CI avec scan de vulnérabilités, des sauvegardes restaurables, 29 décisions d'architecture documentées.
+
+**Mes satisfactions.** La méthode — six phases finies, validées et datées, qui ont permis au projet de survivre sans dégât à un changement de poste de travail. La correction de trajectoire de la fin de projet : confronter le travail aux critères exacts du référentiel, constater qu'un déploiement documenté mais manuel ne prouvait pas la compétence d'automatisation, et fermer l'écart proprement, avant l'examen. Et une exigence tenue de bout en bout : distinguer partout ce qui a été testé de ce qui a seulement été écrit.
+
+**Mes difficultés.** Le débogage du control node Ansible (§6), le plus formateur — avec sa leçon : l'artefact documenté doit être exactement celui qui a été validé. La revue visuelle qui n'a pas pu être automatisée et reste à dérouler manuellement. Et, en continu, tenir le périmètre : dire non à tout ce qui aurait grossi le projet sans le rendre plus défendable.
+
+Le projet est gelé au commit `8ab0f70` : c'est cet état, reproductible et documenté, que je présente au jury.
+
+---
+
+# Annexe A — Chronologie détaillée du projet
+
+| Date | Événement | Commits |
+|---|---|---|
+| 16/06/2026 | Validation du MVP (7 tests ; travail pré-Git) | — |
+| 17/06/2026 | Premier commit : application MVP + workflow CI | `ad9b9df` |
+| 18/06/2026 | Phase 2 validée sur run GitHub Actions vert ; gouvernance (index, risques, protocole) | `9e0666f`, `917378b` |
+| 06/07/2026 | Phase 3 : sauvegarde/restauration, workflow Git | `a317969`, `34f785b` |
+| 07-09/07/2026 | Phase 4 : k3d + PostgreSQL/PVC (4A, vérifiée le 07), API (4B), preuve de persistance, validation | `c386c84`, `2772b50` |
+| 09-14/07/2026 | Phase 5 : métriques (5A), Prometheus (5B), Grafana (5C), alerte + panne provoquée (5D), validation | `84fb228` → `23194f0`, `9bcb271` |
+| 15-17/07/2026 | Phase 6 : candidat produit opérateur — débuté sur `main`, poursuivi sur la première branche dédiée `phase6-operator-ux` | `83469cb` → `230d07a` |
+| 07/08/2026 | Audit : branche d'expérimentation revue (jamais fusionnée, conservée comme trace), ré-implémentation propre en 6 commits sur `integration/phase6-audit` (35 tests, durcissement K8s vérifié sur cluster réel) | `fb4d77c` → `fd3dca9` |
+| 10-11/08/2026 | Ansible (CP n°2) : implémentation, corrections de la situation de recherche (§6), épinglage, honnêteté documentaire | `9d04fc4`, `0b21505`, `732d6fa`, `e808ccf` |
+| 11/08/2026 | Intégration finale par Pull Requests avec commits de merge : PR #1 (audit), PR #2 (Ansible), PR #3 (synchronisation documentaire) → candidat gelé | `489552f`, `0becdf8`, `8ab0f70` |
+| 12/08/2026 | Production des preuves du présent dossier : re-déploiement Ansible complet + idempotence + teardown, persistance re-prouvée, cycle d'alerte rejoué en direct, sauvegarde/restauration rejouées, CI du candidat vérifiée, captures d'écran | branche `jury/dossier-fil-rouge` |
+
+47 commits toutes branches, 3 commits de merge. `main` porte l'état des phases 1-6 initiales ; le candidat d'examen est `phase6-operator-ux @ 8ab0f70`.
+
+# Annexe B — Inventaire des preuves
+
+## B.1 Captures produites (réelles, versionnées sous `deliverables/assets/screenshots/`)
+
+| # | Fichier | Contenu | Utilisée |
+|---|---|---|---|
+| 1 | `01_overview.png` | Vue d'ensemble de la console | Figure 1 |
+| 2 | `02_alerts.png` | File d'alertes (états Nouvelle/Acquittée/Résolu, filtres) | Réserve oral |
+| 3 | `03_incident_command_center.png` | Command Center : contexte, runbooks, timeline, exécutions | Figure 2 |
+| 4 | `04_activity.png` | Journal d'audit global | Réserve oral |
+| 5 | `05_monitoring.png` | Page Monitoring : réel vs simulé | Figure 3 |
+| 6 | `06_prometheus_targets_up.png` | Cible Prometheus `opsforge-api (1/1 up)` | Figure 4 |
+| 7 | `07_prometheus_alert_firing.png` | `OpsForgeApiDown` en FIRING | Figure 5 |
+| 8 | `08_grafana_dashboard.png` | Dashboard « OpsForge Monitoring » alimenté | Figure 6 |
+
+## B.2 Preuves texte produites (logs bruts, versionnés sous `deliverables/evidence/`)
+
+`ansible_fresh_deploy.txt` (déploiement complet, `ok=22 changed=9`, `/health`/`/ready` → 200) · `ansible_second_run.txt` (idempotence `ok=21 changed=2`) · `ansible_teardown.txt` · `kubernetes_state.txt` (pods/services/PVC/nœud) · `pvc_persistence.txt` (marqueur + UID avant/après) · `prometheus_alert_cycle.txt` (cycle complet horodaté + payload de l'alerte) · `backup_restore.txt` (archive + restauration vérifiée) · `github_actions_run.txt` (run du candidat gelé, étape par étape).
+
+## B.3 Captures restant à faire manuellement
+
+| Capture | Raison / commande |
 |---|---|
-| `chmod` du répertoire dans le conteneur avant chaque run | Fragile : à refaire à chaque montage, et modifie les permissions perçues d'un dépôt monté |
-| Tout passer en ligne de commande, sans `ansible.cfg` | Fonctionne, mais disperse la configuration (inventaire, chemins de rôles, sortie) dans le wrapper |
-| Fixer `ANSIBLE_CONFIG` dans l'image du control node | La solution prévue par Ansible pour ce cas : le chemin explicite est honoré malgré le montage world-writable |
+| GitHub Actions — vue graphique du run `31493449973` | Session navigateur authentifiée requise ; onglet Actions du dépôt, job déplié (l'étape Trivy y apparaît en état advisory) |
+| Console — page Aide (optionnelle) | `http://localhost:8000/help` |
+| Vues responsives (mobile ~390×844) | À produire pendant la revue manuelle `docs/PHASE6_MANUAL_TEST.md` |
 
-J'ai retenu la troisième option, **doublée d'une ceinture de sécurité** : `ENV ANSIBLE_CONFIG=/work/ansible/ansible.cfg` cuit dans l'image du control node, plus un `-i inventory.ini` explicite dans `run.sh` — l'inventaire est ainsi résolu quelle que soit la manière dont la configuration est chargée. Le commentaire du `ansible/Dockerfile` documente ce choix pour un lecteur futur :
-
-```dockerfile
-    # Point Ansible at our config explicitly. The repo is bind-mounted from a
-    # world-writable location, so Ansible would otherwise ignore ansible.cfg
-    # (and thus its inventory) for safety. An explicit ANSIBLE_CONFIG is honoured.
-    ANSIBLE_CONFIG=/work/ansible/ansible.cfg
-```
-
-### Le deuxième enseignement de la même situation
-
-En corrigeant, j'ai découvert un problème plus embarrassant que le bug lui-même : mes validations initiales avaient été faites avec des commandes ajustées à la main pendant le débogage, et le wrapper `run.sh` **documenté** ne portait pas ces réglages (ni `-i inventory.ini`, ni `--add-host=host.docker.internal:host-gateway`, ni `MSYS_NO_PATHCONV=1` pour neutraliser la réécriture de chemins de Git Bash). Autrement dit : si quelqu'un — le jury, par exemple — avait exécuté le `./run.sh` documenté, il aurait reproduit l'échec initial, alors même que ma documentation affirmait que « ça marchait ».
-
-Le message du commit de correction (`0b21505`) le dit sans détour : *« run.sh did not carry the settings the successful runs actually used, so the documented `./run.sh` would have reproduced the first 'no hosts matched' failure »*. J'ai donc :
-
-1. aligné `run.sh` sur le chemin réellement validé (config explicite, inventaire explicite, résolution `host.docker.internal`, neutralisation MSYS) ;
-2. **re-testé l'intégralité du parcours en n'utilisant que `./run.sh`**, sur un cluster isolé : déploiement complet (`/health = 200`, `/ready = 200`), second run idempotent (`ok=21, changed=2`), teardown ;
-3. épinglé ensuite les versions exactes du control node validé (`ansible-core==2.17.14`, `kubernetes==36.0.3`, `kubernetes.core:6.5.0`, kubectl v1.31.5, k3d v5.9.0 — commit `732d6fa`) pour que la validation reste reproductible ;
-4. retiré de la documentation une affirmation que je ne pouvais pas prouver : le commit initial prétendait que le playbook « tourne aussi directement sur un hôte Linux/WSL » — ce chemin n'avait jamais été validé et n'aurait pas fonctionné tel quel (le kubeconfig est réécrit vers `host.docker.internal`, un nom fourni par le conteneur). Le commit `e808ccf` rétracte cette phrase et fait du control node conteneurisé **la seule méthode supportée et validée**.
-
-### Ce que j'en retiens
-
-- Un comportement de sécurité d'un outil peut n'apparaître que dans un contexte d'exécution particulier ; le diagnostic passe par la lecture de la documentation de l'outil, pas par des essais au hasard.
-- **L'artefact documenté doit être exactement celui qui a été validé.** « Ça a fonctionné chez moi avec d'autres commandes » n'est pas une validation.
-- Retirer une affirmation non prouvée de sa propre documentation est une correction de qualité au même titre qu'un correctif de code.
-
----
-
-# 7. Synthèse des validations et preuves
-
-## 7.1 Ce qui a été validé, quand, et où c'est documenté
-
-| Date | Validation | Preuve documentée |
-|---|---|---|
-| 2026-06-16 | Phase 1 (MVP) : 7 tests verts, 7 endpoints en HTTP 200, flux complet exécuté en conditions réelles via l'API (service → alerte → incident → exécution de runbook → entrée d'audit retrouvée) | `docs/MVP1_VERIFICATION.md` |
-| 2026-06-18 | Phase 2 (CI) : run GitHub Actions vert sur le dépôt `ThDyllan/opsforge` (tests, build d'image, scan Trivy dans les logs) | `docs/PHASE2_VERIFICATION.md`, `docs/CI_CD.md` |
-| 2026-07-06 | Phase 3 (sauvegarde) : archive réelle produite (19 785 octets), validée par `pg_restore --list`, restauration de vérification (6 tables) dans une base temporaire puis nettoyée, base principale jamais touchée | `docs/PHASE3_VERIFICATION.md` (archives conservées localement — `backups/` est volontairement ignoré par Git) |
-| 2026-07-07 → 09 | Phase 4 (Kubernetes) : cluster k3d, pod PostgreSQL `1/1`, PVC `Bound`, **preuve de persistance** (marqueur survivant à la recréation du pod, UID changé), API déployée et joignable (`/health`, `/dashboard` en 200) depuis Windows | `docs/PHASE4_VERIFICATION.md` |
-| 2026-07-14 | Phase 5 (supervision) : cible Prometheus `UP`, requêtes PromQL retournant des séries, dashboard Grafana provisionné (5 panneaux alimentés), **cycle d'alerte complet observé** : `inactive` → scale à 0 → `firing` → restauration → `inactive` — état validé : commit `23194f0` (validation documentée par `9bcb271`) | `docs/PHASE5_VERIFICATION.md` |
-| 2026-07-17 | Candidat phase 6 : 29 tests SQLite + 1 test PostgreSQL verts, build image, scan Trivy local (19 HIGH / 3 CRITICAL, sans correctif connu), 17 pages HTML représentatives en 200 (sur les 18 routes de la console), 53 liens internes vérifiés, parcours opérateur complet rejoué sur une instance PostgreSQL isolée (dont rejet 409 du doublon d'incident) | `docs/PHASE6_VERIFICATION.md` |
-| 2026-08-07 | Audit d'intégration : suite portée à **35 tests** (tests ajoutés : runbooks managés, seed, alerte sans service), Ruff propre, pipeline CI rejoué en clean-room, durcissement Kubernetes vérifié sur cluster réel (pods `1/1 Ready`, HTTP 200 sous rootfs lecture seule, écriture refusée), régression du verrou de service corrigée et testée | `docs/PHASE6_VERIFICATION.md` (section audit) |
-| 2026-08-10 → 11 | Automatisation Ansible : déploiement complet depuis zéro sur cluster isolé (`/health = 200`, `/ready = 200`), second run idempotent (`ok=21, changed=2`), teardown/recréation, cluster préexistant intact — re-testé intégralement via `./ansible/run.sh` après les corrections de la section 6 | `docs/ANSIBLE.md` (§ Validation performed — sans date : les dates sont portées par l'horodatage Git des commits `9d04fc4`, `0b21505`, `732d6fa`, `e808ccf`) |
-
-## 7.2 Ce qui reste à faire avant la session (et qui est déjà identifié dans le dépôt)
-
-La documentation du projet (roadmap, `docs/PHASE6_MANUAL_TEST.md`) liste explicitement ce qui reste ouvert, et je le reprends ici sans le maquiller :
-
-- dérouler la **revue manuelle** du parcours opérateur (desktop + responsive) selon la procédure écrite — procédure rendue nécessaire par un fait consigné : l'outil de revue automatisée dans le navigateur n'avait pas pu démarrer le 2026-07-17 (`docs/RISKS_AND_TECHNICAL_DEBT.md`) ;
-- produire les **captures d'écran finales** — ce sont les placeholders `[CAPTURE À PRODUIRE]` de ce dossier, consolidés en annexe B ;
-- capturer le **run GitHub Actions du commit final** (`8ab0f70`) ;
-- prononcer la **validation explicite de la phase 6**, comme pour chacune des phases précédentes.
-
-Ces éléments relèvent de la préparation de l'examen, pas du développement : le candidat technique est gelé, aucune évolution de code n'est prévue d'ici la session.
-
----
-
-# 8. Limites assumées et pistes d'évolution
-
-Toutes les limites ci-dessous sont documentées dans le dépôt (`docs/RISKS_AND_TECHNICAL_DEBT.md`, ADR, sections « limits » des guides). Ce sont des décisions de périmètre connues — pas des fonctionnalités prétendues puis absentes.
-
-| Domaine | Limite assumée | Évolution naturelle |
-|---|---|---|
-| Infrastructure | Kubernetes local k3d mono-nœud ; pas de cloud ; stockage `local-path` local au nœud | Kubernetes managé + provisioning Terraform (direction CP n°4) |
-| Livraison | Pas de registre d'images ; pas de CD distant ; import k3d manuel ou via Ansible | Registre + déploiement déclenché par la CI |
-| Application | Pas d'authentification (champs acteur déclaratifs) ; règle « un incident actif par alerte » garantie au niveau applicatif (409), pas par contrainte d'unicité partielle en base — une course reste possible en multi-workers | Authentification, contrainte PostgreSQL partielle |
-| Schéma | `metadata.create_all()` + pont additif de compatibilité ; pas d'historique de migrations ni de retour arrière | Alembic si le schéma continue d'évoluer |
-| Supervision | Pas d'Alertmanager ni de notifications ; stockage Prometheus/Grafana éphémère ; Grafana `admin/admin` local ; accès par port-forward ; métriques techniques, pas métier ; **statuts métier simulés** (Prometheus supervise OpsForge lui-même) | Alertmanager + routage, persistance, métriques métier, ingestion des alertes Prometheus dans OpsForge |
-| Sécurité | Trivy advisory (19 HIGH / 3 CRITICAL Debian sans correctif visibles, non bloquants) ; pas de TLS ; pas de gestionnaire de secrets d'entreprise | Seuil de blocage explicite (`ignore-unfixed`), gestion de secrets dédiée |
-| Sauvegardes | Locales, non chiffrées, non planifiées, sans rotation ni copie externe ; ciblent le PostgreSQL Compose | Planification, chiffrement, externalisation |
-| Tests | Majorité SQLite + un test d'intégration PostgreSQL : couverture ciblée, pas une preuve de compatibilité PostgreSQL exhaustive | Étendre les scénarios d'intégration |
-| Outillage | Écart de versions entre le kubectl du control node (v1.31.5) et le k3s du cluster (v1.35.x), au-delà de la fenêtre de compatibilité officielle — fonctionnel sur les opérations utilisées et validé tel quel (cf. 3.9) | Aligner les versions épinglées du control node |
-| Produit | Files d'attente dimensionnées pour la démonstration (pas de pagination ni temps réel) ; alerte résolue non réouvrable | Selon usage réel |
-
----
-
-# 9. Conclusion
-
-**Ce que ce projet démontre.** OpsForge couvre les trois compétences obligatoires du titre avec des preuves distinctes et rejouables : une infrastructure locale complète déployée, vérifiée et re-déployée par Ansible en une commande idempotente ; des conteneurs construits, durcis, orchestrés et mis à jour dans deux environnements, avec une persistance prouvée plutôt que supposée ; une supervision réelle dont l'alerte s'est réellement déclenchée lors d'une panne provoquée, puis résolue. Autour de ce cœur, la chaîne couvre le cycle complet en local : 35 tests unitaires et un test d'intégration PostgreSQL, intégration continue avec scan de vulnérabilités, sauvegardes restaurables, documentation et décisions versionnées.
-
-**Mes satisfactions.** D'abord la méthode : six phases finies et validées une à une, chacune avec sa preuve datée — c'est elle qui a permis au projet de survivre sans dégât à un changement de poste de travail en cours de route, et de rester expliquable de bout en bout. Ensuite la correction de trajectoire de la phase 6 : confronter le projet aux critères exacts du référentiel, constater qu'un déploiement documenté mais manuel ne prouvait pas la compétence d'automatisation, et fermer cet écart proprement — avant l'examen. Enfin l'exigence d'honnêteté : le dépôt distingue partout ce qui a été testé de ce qui a seulement été écrit, et il m'est arrivé de retirer de ma propre documentation une affirmation que je ne pouvais pas prouver.
-
-**Mes difficultés.** Le débogage du control node Ansible conteneurisé (section 6) a été la plus formatrice : un comportement de sécurité documenté d'Ansible, déclenché par un contexte de montage Windows que je n'avais pas anticipé, et derrière lui une leçon plus large sur la valeur d'une validation — l'artefact documenté doit être exactement celui qui a été testé. L'impossibilité d'automatiser la revue visuelle dans le navigateur (cf. 7.2) m'a imposé une procédure de test manuelle écrite, encore à dérouler avant la session. Et en continu, la difficulté la plus utile : tenir le périmètre — dire non à Helm, à ArgoCD, au cloud, à tout ce qui aurait grossi le projet sans le rendre plus défendable.
-
-**La suite.** Les évolutions sont identifiées et hiérarchisées (section 8) ; aucune n'est nécessaire pour démontrer les compétences visées. Le projet est gelé au commit `8ab0f70`, et c'est cet état, reproductible et documenté, que je présente au jury.
-
----
-
-# Annexe A — Chronologie du projet (issue de l'historique Git)
-
-| Date | Événement | Références |
-|---|---|---|
-| 2026-06-16 | Validation du MVP (travail pré-Git : l'application existe avant le premier commit) | `docs/MVP1_VERIFICATION.md` |
-| 2026-06-17 | Premier commit du dépôt : application MVP + workflow CI (`ad9b9df`) | racine de l'historique |
-| 2026-06-18 | Validation phase 2 sur run GitHub Actions vert | `9e0666f` |
-| 2026-06-18 | Gouvernance du projet : index documentaire, risques, protocole | `b3a80a5`, `917378b` |
-| 2026-07-06 | Phase 3 : sauvegarde/restauration + workflow Git documenté | `a317969`, `34f785b` |
-| 2026-07-07 → 09 | Phase 4 : fondation k3d/PostgreSQL (4A, vérifiée localement le 07-07) puis API (4B), validation le 09 | `c386c84`, `2772b50` |
-| 2026-07-09 → 14 | Phase 5 : métriques (5A), Prometheus (5B), Grafana (5C), règle d'alerte + panne provoquée (5D), validation | `84fb228` → `23194f0`, `9bcb271` |
-| 2026-07-15 → 17 | Phase 6 : candidat produit opérateur (console multipage, domaine durci) — débuté sur `main` (07-15), poursuivi sur la première branche dédiée du projet, `phase6-operator-ux` (07-17) | `83469cb` → `230d07a` |
-| 2026-08-07 | Audit : branche d'expérimentation revue (jamais fusionnée, conservée comme trace) puis ré-implémentation propre en 6 commits sur `integration/phase6-audit` | `8554232`…`b81cb60` / `fb4d77c`…`fd3dca9` |
-| 2026-08-10 | Ajout de l'automatisation Ansible (CP n°2) sur `feature/ansible-infra` | `9d04fc4` |
-| 2026-08-11 | Corrections Ansible (situation de recherche), épinglage, honnêteté documentaire | `0b21505`, `732d6fa`, `e808ccf` |
-| 2026-08-11 | Intégration finale par Pull Requests avec commits de merge : PR #1 (audit), PR #2 (Ansible), PR #3 (synchronisation documentaire) | `489552f`, `0becdf8`, `8ab0f70` |
-
-État final : **47 commits** toutes branches confondues, 3 commits de merge, candidat d'examen gelé sur `phase6-operator-ux @ 8ab0f70`.
-
-# Annexe B — Liste consolidée des captures d'écran du dossier
-
-Chaque capture ci-dessous correspond à un placeholder du corps du dossier (certains placeholders regroupent plusieurs captures, comme le parcours opérateur de la section 3.2). Aucune ne doit contenir de donnée personnelle ou professionnelle réelle.
-
-| # | Capture | Commande / écran à reproduire |
-|---|---|---|
-| 1 | Console — `/overview` avec données actives | `docker compose up --build -d` puis `http://localhost:8000/overview` |
-| 2 | Console — file d'alertes avec filtres et une alerte dépliée | `http://localhost:8000/alerts` |
-| 3 | Console — Incident Command Center avant résolution | ouvrir un incident en investigation depuis `/incidents` |
-| 4 | Console — checklist du runbook manuel et résultat en succès | exécuter « Diagnostiquer un échec de sauvegarde » depuis l'incident |
-| 5 | Console — timeline de l'incident (responsable, statuts, runbooks) | panneau timeline du Command Center |
-| 6 | Console — journal global Activité | `http://localhost:8000/activity` |
-| 7 | Console — page Monitoring (réel vs simulé) | `http://localhost:8000/monitoring` |
-| 8 | GitHub Actions — run vert du commit final, étapes dépliées (dont Trivy advisory en échec d'étape, job vert) | onglet Actions de `ThDyllan/opsforge`, run de `8ab0f70` |
-| 9 | Terminal — Ansible : PLAY RECAP du déploiement complet + messages `verify` (`/health -> 200`, `/ready -> 200`) | `./ansible/run.sh deploy.yml -e cluster_name=opsforge-ansible-test -e api_host_port=8090 -e kubeapi_host_port=6446` |
-| 10 | Terminal — Ansible : second run idempotent (`ok=21 changed=2` ou valeurs constatées) | relancer la même commande immédiatement |
-| 11 | Terminal — Ansible : teardown du cluster jetable | `./ansible/run.sh teardown.yml -e cluster_name=opsforge-ansible-test` |
-| 12 | Terminal — `kubectl -n opsforge get pods,svc,pvc` (pods `1/1`, PVC `Bound`) | sur le cluster déployé |
-| 13 | Terminal — preuve de persistance PostgreSQL (marqueur, suppression du pod, marqueur retrouvé) | procédure « persistence check » de `docs/KUBERNETES.md` |
-| 14 | Prometheus — page Targets, job `opsforge-api` `UP` | `kubectl -n monitoring port-forward svc/prometheus 9090:9090` → `http://localhost:9090/targets` |
-| 15 | Prometheus — `OpsForgeApiDown` en état **FIRING** après scale à 0 | `kubectl -n opsforge scale deployment/opsforge-api --replicas=0` puis `http://localhost:9090/alerts` ; **restaurer ensuite** (`--replicas=1`) |
-| 16 | Grafana — dashboard « OpsForge Monitoring », 5 panneaux alimentés | `kubectl -n monitoring port-forward svc/grafana 3000:3000` → `http://localhost:3000` |
-| 17 | Terminal — `backup.ps1` (archive créée) puis `restore.ps1` (vérification en base temporaire) | `.\scripts\backup.ps1` ; `.\scripts\restore.ps1 -BackupFile backups\<fichier>.dump` |
+La checklist opérationnelle complète (commandes exactes, ordre de rejeu pour la démonstration) est tenue dans `deliverables/EVIDENCE_PLAN.md` (document de travail, non destiné au jury).
 
 # Annexe C — Glossaire
 
 | Terme | Définition dans le contexte du projet |
 |---|---|
-| **ADR** | *Architecture Decision Record* : décision d'architecture consignée (contexte, décision, raison, conséquences) — 29 dans `docs/DECISIONS.md` |
-| **Advisory (scan)** | Scan de sécurité dont les résultats sont visibles mais ne bloquent pas le pipeline |
-| **Command Center** | Vue de travail dédiée à un incident dans la console OpsForge : contexte, responsable, transitions, runbooks compatibles, exécutions et timeline |
-| **Control node** | Machine (ici : conteneur) depuis laquelle Ansible s'exécute et pilote les cibles |
-| **CP** | Compétence professionnelle du REAC (ex. CP n°2 « Automatiser le déploiement d'une infrastructure ») |
-| **DoD** | *Definition of Done* : liste vérifiable des conditions de fin d'une phase |
-| **Idempotence** | Propriété d'une automatisation qui, rejouée, converge vers le même état sans rien recréer ni casser |
-| **k3d** | Outil qui exécute un cluster Kubernetes k3s à l'intérieur de conteneurs Docker |
-| **Liveness / readiness** | Sondes Kubernetes : « le processus vit-il ? » (redémarrage si non) / « peut-il servir du trafic ? » (retrait du Service si non) |
-| **NodePort** | Type de Service Kubernetes exposant un port du nœud vers l'extérieur (ici 30080, mappé sur `127.0.0.1:8080`) |
-| **PVC** | *PersistentVolumeClaim* : demande de stockage persistant, ici 1 Gi en StorageClass `local-path` pour PostgreSQL |
-| **REAC** | Référentiel Emploi Activités Compétences : le référentiel officiel du titre professionnel, qui définit les compétences et leurs critères de performance |
-| **Runbook** | Procédure opérationnelle : manuelle (checklist) ou automatisée (action approuvée dans le code) |
-| **Scrape** | Collecte périodique des métriques par Prometheus (ici toutes les 15 s sur `/metrics`) |
-| **Seed** | Insertion idempotente de données de démonstration au démarrage de l'application |
-| **StatefulSet** | Contrôleur Kubernetes pour les workloads à état : identité et stockage stables (ici PostgreSQL) |
-
+| **ADR** | *Architecture Decision Record* : décision consignée (contexte, décision, raison, conséquences) — 29 dans `docs/DECISIONS.md` |
+| **Advisory (scan)** | Résultats visibles mais non bloquants pour le pipeline |
+| **Command Center** | Vue de travail d'un incident : contexte, responsable, transitions, runbooks, exécutions, timeline |
+| **Control node** | Machine (ici : conteneur) depuis laquelle Ansible s'exécute |
+| **CP / REAC** | Compétence professionnelle / Référentiel Emploi Activités Compétences du titre |
+| **DoD** | *Definition of Done* : conditions vérifiables de fin d'une phase |
+| **Idempotence** | Une automatisation rejouée converge sans rien recréer ni casser |
+| **k3d** | Cluster Kubernetes k3s exécuté dans des conteneurs Docker |
+| **Liveness / readiness** | « Le processus vit-il ? » (redémarrage) / « Peut-il servir ? » (retrait du Service) |
+| **NodePort** | Service Kubernetes exposant un port du nœud (30080 → `127.0.0.1:8080`) |
+| **PVC** | *PersistentVolumeClaim* : demande de stockage persistant (1 Gi, `local-path`) |
+| **Runbook** | Procédure : checklist manuelle ou action automatisée approuvée dans le code |
+| **Scrape** | Collecte périodique des métriques par Prometheus (15 s) |
+| **StatefulSet** | Contrôleur pour workloads à état : identité et stockage stables (PostgreSQL) |
 
 

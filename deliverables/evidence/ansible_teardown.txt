@@ -1,0 +1,72 @@
+### OpsForge - Ansible teardown of the isolated test cluster
+### Command: ./ansible/run.sh teardown.yml -e cluster_name=opsforge-ansible-test
+### Executed on 2026-08-12
+
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.83kB 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.12-slim
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/8] FROM docker.io/library/python:3.12-slim@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36
+#4 resolve docker.io/library/python:3.12-slim@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36 0.0s done
+#4 DONE 0.0s
+
+#5 [6/8] RUN curl -fsSL "https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz"       | tar -xz -C /usr/local/bin --strip-components=1 docker/docker
+#5 CACHED
+
+#6 [7/8] RUN ansible-galaxy collection install kubernetes.core:6.5.0
+#6 CACHED
+
+#7 [2/8] RUN apt-get update  && apt-get install -y --no-install-recommends curl ca-certificates tar  && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [3/8] RUN pip install "ansible-core==2.17.14" "kubernetes==36.0.3"
+#8 CACHED
+
+#9 [4/8] RUN curl -fsSL -o /usr/local/bin/kubectl       "https://dl.k8s.io/release/v1.31.5/bin/linux/amd64/kubectl"  && chmod +x /usr/local/bin/kubectl
+#9 CACHED
+
+#10 [5/8] RUN curl -fsSL -o /usr/local/bin/k3d       "https://github.com/k3d-io/k3d/releases/download/v5.9.0/k3d-linux-amd64"  && chmod +x /usr/local/bin/k3d
+#10 CACHED
+
+#11 [8/8] WORKDIR /work/ansible
+#11 CACHED
+
+#12 exporting to image
+#12 exporting layers 0.0s done
+#12 exporting manifest sha256:2052ccd16949330a266e3094bcc252d7f4d9593d160f00968b21c4c37ce5894d done
+#12 exporting config sha256:cd299af2db6067b4c48ff8db879f084f05ea2a1bac35bc0822ee95f443d18c1c done
+#12 exporting attestation manifest sha256:0d82295f1a4890f4b396c4f53c48f0780cba147697f8af9cb0d57abaffb27591 0.0s done
+#12 exporting manifest list sha256:ec8576524e2a0b304d0b362300118adb02fa28f5cfd734c00d5f41a036a703ce 0.0s done
+#12 naming to docker.io/library/opsforge-ansible-control:latest
+#12 naming to docker.io/library/opsforge-ansible-control:latest done
+#12 unpacking to docker.io/library/opsforge-ansible-control:latest 0.0s done
+#12 DONE 0.2s
+
+PLAY [Tear down the OpsForge cluster] ******************************************
+
+TASK [List existing k3d clusters] **********************************************
+[WARNING]: Platform linux on host localhost is using the discovered Python
+interpreter at /usr/local/bin/python3.12, but future installation of another
+Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-
+core/2.17/reference_appendices/interpreter_discovery.html for more information.
+ok: [localhost]
+
+TASK [Delete the k3d cluster] **************************************************
+changed: [localhost]
+
+TASK [Remove the local kubeconfig file] ****************************************
+ok: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

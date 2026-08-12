@@ -1,0 +1,57 @@
+### OpsForge - Live OpsForgeApiDown alert cycle on the isolated cluster (opsforge-ansible-test)
+### Rule: up{job="opsforge-api"} == 0 for 30s | scrape/eval interval 15s
+### Executed on 2026-08-12 - API restored immediately after FIRING was observed
+
+[baseline] up = 1 ; OpsForgeApiDown = inactive (see also 06_prometheus_targets_up.png)
+
+$ kubectl -n opsforge scale deployment/opsforge-api --replicas=0
+deployment.apps/opsforge-api scaled
+
+[observation loop - alert state every ~10s]
+t+10s : up=1  OpsForgeApiDown=inactive
+t+20s : up=0  OpsForgeApiDown=inactive
+t+30s : up=0  OpsForgeApiDown=inactive
+t+40s : up=0  OpsForgeApiDown=pending
+t+50s : up=0  OpsForgeApiDown=pending
+t+60s : up=0  OpsForgeApiDown=pending
+t+70s : up=0  OpsForgeApiDown=firing
+
+>>> FIRING observed <<<
+
+[FIRING alert payload from Prometheus API]
+{
+    "status": "success",
+    "data": {
+        "alerts": [
+            {
+                "labels": {
+                    "alertname": "OpsForgeApiDown",
+                    "instance": "opsforge-api.opsforge.svc.cluster.local:8000",
+                    "job": "opsforge-api",
+                    "service": "opsforge-api",
+                    "severity": "critical"
+                },
+                "annotations": {
+                    "description": "Prometheus cannot scrape the OpsForge API metrics endpoint.",
+                    "summary": "OpsForge API is down"
+                },
+                "state": "firing",
+                "activeAt": "2026-08-12T11:38:12.702255072Z",
+                "value": "0e+00"
+            }
+        ]
+    }
+}
+
+$ kubectl -n opsforge scale deployment/opsforge-api --replicas=1  (immediate restore)
+deployment.apps/opsforge-api scaled
+Waiting for deployment "opsforge-api" rollout to finish: 0 of 1 updated replicas are available...
+deployment "opsforge-api" successfully rolled out
+
+[recovery loop]
+t+10s : up=0  OpsForgeApiDown=firing
+t+20s : up=1  OpsForgeApiDown=firing
+t+30s : up=1  OpsForgeApiDown=firing
+t+40s : up=1  OpsForgeApiDown=inactive
+
+>>> RECOVERED: up=1, alert back to inactive <<<

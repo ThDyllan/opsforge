@@ -1,0 +1,30 @@
+### OpsForge - PostgreSQL persistence proof across Pod recreation (isolated cluster opsforge-ansible-test)
+### Procedure from docs/KUBERNETES.md: insert marker -> delete pod postgres-0 -> StatefulSet recreates it -> marker survives
+### Executed on 2026-08-12
+
+$ pod UID before:
+554c3801-0b0e-42b7-8bf2-99ced94fd488
+
+$ create marker table + row:
+CREATE TABLE
+INSERT 0 1
+
+$ kubectl delete pod postgres-0 (StatefulSet will recreate it):
+pod "postgres-0" deleted from opsforge namespace
+Waiting for 1 pods to be ready...
+Waiting for 1 pods to be ready...
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+
+$ pod UID after (different UID = genuinely new Pod):
+e035ce38-526f-4b3b-9ef5-91aadb3c09f1
+
+$ marker still present after recreation:
+        marker        
+----------------------
+ dossier-v2-persisted
+(1 row)
+
+
+$ cleanup test table:
+DROP TABLE

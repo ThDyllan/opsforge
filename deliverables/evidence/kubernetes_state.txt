@@ -1,0 +1,28 @@
+### OpsForge - Kubernetes state of the isolated Ansible-deployed cluster (opsforge-ansible-test)
+### Command: kubectl --kubeconfig <test> -n opsforge get pods,svc,pvc ; -n monitoring get pods,svc
+### Executed on 2026-08-12
+
+$ kubectl -n opsforge get pods,svc,pvc -o wide
+NAME                                READY   STATUS    RESTARTS   AGE
+pod/opsforge-api-68cbc5b54b-wrdqg   1/1     Running   0          3m38s
+pod/postgres-0                      1/1     Running   0          4m49s
+
+NAME                   TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+service/opsforge-api   NodePort    10.43.103.247   <none>        8000:30080/TCP   3m27s
+service/postgres       ClusterIP   10.43.79.35     <none>        5432/TCP         3m41s
+
+NAME                                  STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+persistentvolumeclaim/postgres-data   Bound    pvc-af38c0ee-8447-4970-a779-14b305d65fb9   1Gi        RWO            local-path     <unset>                 4m50s
+
+$ kubectl -n monitoring get pods,svc
+NAME                             READY   STATUS    RESTARTS   AGE
+pod/grafana-9769c6bfd-5sj6d      1/1     Running   0          2m36s
+pod/prometheus-bcd69688b-vsvpt   1/1     Running   0          3m22s
+
+NAME                 TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+service/grafana      ClusterIP   10.43.74.144   <none>        3000/TCP   109s
+service/prometheus   ClusterIP   10.43.193.40   <none>        9090/TCP   2m44s
+
+$ kubectl get nodes
+NAME                                 STATUS   ROLES           AGE     VERSION
+k3d-opsforge-ansible-test-server-0   Ready    control-plane   6m16s   v1.35.5+k3s1
