@@ -83,7 +83,7 @@ Le REAC (Référentiel Emploi Activités Compétences — « CP » = compétence
 |---|---|
 | « Les containers sont opérationnels » | Compose : API + PostgreSQL avec healthchecks, démarrage de l'API conditionné à la santé de la base. Kubernetes : pods `1/1 Running` avec probes liveness/readiness distinctes (état constaté le 12/08/2026, §3.5) |
 | « Les containers sont connectés au réseau » | Réseau Compose interne (`db:5432`) ; Services Kubernetes ClusterIP (PostgreSQL interne uniquement) et NodePort 30080 exposé sur `127.0.0.1:8080` |
-| « Les containers sont connectés au stockage distant » | Stockage **externalisé du cycle de vie du conteneur** et porté par l'hôte — exactement le savoir-faire REAC « connecter le container au système hôte (réseau et stockage) » : volume nommé en Compose, PVC 1 Gi (`local-path`) monté par le StatefulSet en Kubernetes. La persistance est **prouvée** : une donnée survit à la destruction/recréation du pod (§3.5). *Limite énoncée : stockage local au nœud, non distribué (pas de NFS/SAN)* |
+| « Les containers sont connectés au stockage distant » | PostgreSQL est connecté à un stockage persistant **externalisé du cycle de vie du conteneur** : volume nommé en Compose, PVC 1 Gi monté par le StatefulSet en Kubernetes — la connexion du conteneur au stockage porté par le système hôte figure parmi les savoir-faire associés à cette compétence dans le REAC. La persistance est **prouvée** : une donnée survit à la destruction/recréation du pod (§3.5). *Limite assumée : dans l'environnement k3d utilisé, la StorageClass `local-path` reste locale au nœud — ce n'est pas un stockage réseau/distribué ; une StorageClass réseau (NFS/CSI) la remplacerait sans modifier le manifest (§8)* |
 | « Les containers sont mis à jour » | Cycle explicite : rebuild de l'image (tags `phase4` → `phase5` → `phase6`), `k3d image import`, rollout du Deployment ; `imagePullPolicy: Never` rend visible l'absence volontaire de registre |
 
 ### CP n°10 — Exploiter une solution de supervision
@@ -96,7 +96,7 @@ Le REAC (Référentiel Emploi Activités Compétences — « CP » = compétence
 
 ## 1.2 Compétences partiellement mises en pratique
 
-Je ne revendique pas ces compétences comme couvertes ; le projet en met en œuvre une partie, exploitable à l'entretien technique :
+Je ne revendique pas ces compétences comme couvertes ; le projet en met en œuvre une partie, exploitable lors des échanges avec le jury :
 
 | CP | Mis en pratique | Ce qui manque |
 |---|---|---|
@@ -107,7 +107,7 @@ Je ne revendique pas ces compétences comme couvertes ; le projet en met en œuv
 | CP8 — Mise en production avec une plateforme | Déploiement Kubernetes automatisé par Ansible, vérifié de bout en bout | Pas de pré-production/production distinctes, pas de CD |
 | CP9 — Statistiques de services | Indicateurs choisis et justifiés (ADR 017) | Pas de SLA formalisés |
 
-**Non couvertes :** CP4 (mise en production cloud — aucun cloud déployé) ; CP11 (anglais — évaluée par le questionnaire ; la documentation du dépôt et les messages de commit sont rédigés en anglais). Conformément aux modalités, ces compétences feront l'objet du questionnement complémentaire à l'entretien technique.
+**Non couvertes :** CP4 (mise en production cloud — aucun cloud déployé) : conformément aux modalités, elle relèvera du questionnement complémentaire de l'entretien technique. CP11 (échanger sur des réseaux professionnels, éventuellement en anglais) : elle est évaluée par une épreuve dédiée, le questionnaire professionnel en anglais — je note simplement que la documentation du dépôt et les messages de commit sont rédigés en anglais.
 
 ---
 
@@ -338,7 +338,7 @@ En couches, toutes documentées : (1) par conception — aucune exécution de co
 
 # 4. Démarche de travail et outils
 
-## 4.1 Six phases, chacune finie et validée
+## 4.1 Le découpage en phases et leur état de validation
 
 | Phase | Contenu | Validation |
 |---|---|---|
@@ -610,7 +610,7 @@ Toutes documentées dans le dépôt (`docs/RISKS_AND_TECHNICAL_DEBT.md`, ADR) �
 
 **Ce que le projet démontre.** Les trois compétences obligatoires, chacune avec une preuve distincte, rejouable et rejouée : une infrastructure locale complète déployée et vérifiée par Ansible en une commande idempotente ; des conteneurs durcis et orchestrés dans deux environnements avec une persistance prouvée plutôt que supposée ; une supervision réelle dont l'alerte s'est déclenchée puis résolue lors d'une panne provoquée. Autour : 35 tests unitaires et un test d'intégration PostgreSQL, une CI avec scan de vulnérabilités, des sauvegardes restaurables, 29 décisions d'architecture documentées.
 
-**Mes satisfactions.** La méthode — six phases finies, validées et datées, qui ont permis au projet de survivre sans dégât à un changement de poste de travail. La correction de trajectoire de la fin de projet : confronter le travail aux critères exacts du référentiel, constater qu'un déploiement documenté mais manuel ne prouvait pas la compétence d'automatisation, et fermer l'écart proprement, avant l'examen. Et une exigence tenue de bout en bout : distinguer partout ce qui a été testé de ce qui a seulement été écrit.
+**Mes satisfactions.** La méthode — des phases finies et validées une à une, les cinq premières closes et datées, la sixième au stade des dernières preuves (revue manuelle restante) — qui a permis au projet de survivre sans dégât à un changement de poste de travail. La correction de trajectoire de la fin de projet : confronter le travail aux critères exacts du référentiel, constater qu'un déploiement documenté mais manuel ne prouvait pas la compétence d'automatisation, et fermer l'écart proprement, avant l'examen. Et une exigence tenue de bout en bout : distinguer partout ce qui a été testé de ce qui a seulement été écrit.
 
 **Mes difficultés.** Le débogage du control node Ansible (§6), le plus formateur — avec sa leçon : l'artefact documenté doit être exactement celui qui a été validé. La revue visuelle qui n'a pas pu être automatisée et reste à dérouler manuellement. Et, en continu, tenir le périmètre : dire non à tout ce qui aurait grossi le projet sans le rendre plus défendable.
 
