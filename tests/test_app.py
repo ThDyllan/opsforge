@@ -795,3 +795,44 @@ def test_runbook_execution_is_available_through_history_api() -> None:
 
     assert history.status_code == 200
     assert any(item["id"] == execution["id"] for item in history.json())
+
+
+def test_alerts_page_filter_form_submission_with_empty_service_returns_200() -> None:
+    # The filter form always submits every field; "Tous" arrives as service_id=""
+    # and must mean "no service filter", not a 422 validation error.
+    with _client() as client:
+        response = client.get(
+            "/alerts",
+            params={"q": "", "status": "new", "severity": "", "service_id": ""},
+        )
+
+    assert response.status_code == 200
+    assert "Latence élevée sur le paiement" in response.text
+
+
+def test_incidents_page_filter_form_submission_with_empty_fields_returns_200() -> None:
+    with _client() as client:
+        response = client.get(
+            "/incidents",
+            params={
+                "q": "",
+                "status": "active",
+                "severity": "",
+                "service_id": "",
+                "owner": "",
+            },
+        )
+
+    assert response.status_code == 200
+    assert "Sauvegarde de production en échec" in response.text
+
+
+def test_list_pages_reject_non_numeric_service_filter() -> None:
+    # A non-empty, non-numeric service_id is an explicit client error: it must
+    # keep failing loudly (422) instead of being silently treated as "Tous".
+    with _client() as client:
+        alerts_response = client.get("/alerts", params={"service_id": "abc"})
+        incidents_response = client.get("/incidents", params={"service_id": "abc"})
+
+    assert alerts_response.status_code == 422
+    assert incidents_response.status_code == 422
