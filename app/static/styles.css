@@ -2856,6 +2856,13 @@ label small {
     transform: rotate(90deg);
   }
 
+  /* Queue tables without a dedicated mobile card layout (e.g. incidents)
+     must keep a readable width and scroll inside .table-wrap instead of
+     compressing their columns into overlapping content. */
+  .queue-table:not(.alerts-table) {
+    min-width: 640px;
+  }
+
   .alerts-table {
     border-collapse: separate;
     border-spacing: 0 12px;
