@@ -296,5 +296,17 @@
     showToast(storedToast);
   }
 
+  // Filter bars are plain GET forms: apply select changes immediately instead
+  // of requiring an extra "Filtrer" click. Text search keeps its native Enter
+  // submit, and the button remains as a visible fallback.
+  document.querySelectorAll(".filter-bar select").forEach((select) => {
+    select.addEventListener("change", () => {
+      const form = select.form;
+      if (!form) return;
+      if (typeof form.requestSubmit === "function") form.requestSubmit();
+      else form.submit();
+    });
+  });
+
   renderIcons();
 })();
