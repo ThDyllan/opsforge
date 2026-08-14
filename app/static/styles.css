@@ -2858,9 +2858,17 @@ label small {
 
   /* Queue tables without a dedicated mobile card layout (e.g. incidents)
      must keep a readable width and scroll inside .table-wrap instead of
-     compressing their columns into overlapping content. */
+     compressing their columns into overlapping content. The owner, status
+     and last-activity cells stay on one line so long badges and timestamps
+     never crowd each other. */
   .queue-table:not(.alerts-table) {
-    min-width: 640px;
+    min-width: 720px;
+  }
+
+  .queue-table:not(.alerts-table) td:nth-child(5),
+  .queue-table:not(.alerts-table) td:nth-child(6),
+  .queue-table:not(.alerts-table) td:nth-child(7) {
+    white-space: nowrap;
   }
 
   .alerts-table {
