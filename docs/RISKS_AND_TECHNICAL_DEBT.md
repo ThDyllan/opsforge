@@ -84,11 +84,11 @@ Automated runbooks are safer because they can use only approved application hand
 
 The current queues support search and filters but do not implement pagination, saved views, bulk actions, or real-time updates. They are appropriate for the small local data set and would need pagination and concurrency design for production-scale volumes.
 
-### Visual And Responsive Validation Requires User Review
+### Visual And Responsive Validation Was Completed Through User Review
 
 Automated route and generated-HTML checks cover representative pages, links, assets, headings, duplicate IDs, and template rendering.
 
-The in-app browser automation connector could not start on 2026-07-17 because required sandbox-policy metadata was unavailable. No workaround was used. Visual layout, responsive behavior, and click ergonomics must therefore be completed through `docs/PHASE6_MANUAL_TEST.md` before Phase 6 validation.
+The in-app browser automation connector could not start on 2026-07-17 because required sandbox-policy metadata was unavailable. No workaround was used. The manual review of `docs/PHASE6_MANUAL_TEST.md` was therefore performed by the user (2026-08-13 to 2026-08-19); it surfaced two real defects (filter-form 422, mobile incidents table) that were fixed and re-validated before Phase 6 was explicitly validated on 2026-08-19. This confirmed the value of keeping a human review step: the defects were invisible to the automated checks.
 
 ### Local Backups Are Not a Production Backup Strategy
 
