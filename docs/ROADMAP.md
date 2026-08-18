@@ -107,7 +107,7 @@ Status: completed and explicitly validated by the user on 2026-07-14. Phase 5A a
 
 ## Phase 6 - Operational Product and Exam Evidence
 
-Status: in progress. The initial balanced review slice was validated in CI, and the operator-product candidate is now implemented on `phase6-operator-ux`. Backend, SQLite, PostgreSQL, Docker, API-flow, audit, and structural page checks pass. Visual/responsive user review, current-branch CI evidence, final screenshots, and explicit Phase 6 validation remain outstanding.
+Status: completed and explicitly validated by the user on 2026-08-19. The manual desktop/workflow/responsive review was performed by the user; it surfaced two real defects (a 422 on the list filter forms when no service was selected, and an unreadable compressed incidents table on mobile) which were fixed, regression-tested (test suite 35 -> 38) and re-validated on the merged candidate (PRs #4 and #5, final candidate `f6e4a79`), together with a small UX polish pass (filters applied on select change, brand favicon). Screenshots and CI evidence for the final candidate were collected during the review sessions.
 
 ### Scope
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 6 is in progress and is not user-validated yet.
+Phase 6 is completed and was explicitly validated by the user on 2026-08-19 (see "Final Validation" below).
 
 The balanced technical slice was previously verified in GitHub Actions at commit `83469cb`. The larger operator-product candidate is being prepared on branch `phase6-operator-ux`; its current implementation checkpoints are:
 
@@ -150,14 +150,21 @@ The Trivy scan remains advisory (`continue-on-error: true`) but now sets
 `exit-code: "1"`, so a `HIGH`/`CRITICAL` finding is reported as a visible step
 failure without blocking the job.
 
-## Remaining Validation
+## Final Validation (2026-08-13 to 2026-08-19)
 
-- Complete the manual desktop/tablet/mobile operator workflow.
-- Capture the product, CI, Kubernetes, Prometheus, Grafana, backup/restore, and security evidence listed in `PHASE6_MANUAL_TEST.md`.
-- Confirm the final branch passes GitHub Actions.
-- Review the final diff against `main`.
-- Obtain explicit Phase 6 user validation.
+The user performed the manual desktop/workflow/responsive review of `PHASE6_MANUAL_TEST.md` (guided by `deliverables/PHASE6_MANUAL_REVIEW_RUNBOOK.md` on the jury branch), completed by an independent technical verification of the operator workflow (full cycle including negative cases through the API) and of the filter behaviour.
 
-## Current Conclusion
+The review surfaced two real defects, both fixed and re-validated:
 
-The Phase 6 candidate is technically coherent and passes its automated local checks. It is ready for human UX review, not yet ready to be described as Phase 6 complete.
+- The alerts/incidents filter forms returned HTTP 422 whenever "Tous" was selected for the service (empty `service_id` query value rejected by the `int | None` parameter). Fixed with explicit three-case parsing (empty means no filter; integer filters; non-numeric still fails loudly with 422) plus three regression tests reproducing the exact form submissions. Test suite: 35 -> 38 (PR #4).
+- The incidents queue table compressed into unreadable overlapping columns below roughly 560px, because it has no mobile card layout (unlike alerts) and had no minimum width. Fixed minimally and robustly: the table now keeps a readable 720px minimum width and scrolls inside its `.table-wrap` frame, with owner/status/last-activity cells kept on one line (PRs #4 and #5).
+
+A final UX polish pass was included in the same review cycle (PR #5): filter selects now apply on change across the five identical GET filter bars (Enter keeps its native submit for text search; the "Filtrer" button remains as fallback), and the brand anvil favicon was inlined so the implicit `/favicon.ico` request no longer logs a 404 during demonstrations.
+
+Re-validation on the merged candidate `f6e4a79` (branch `phase6-operator-ux`, merge of PRs #4 and #5): Ruff clean; 38 SQLite tests and the PostgreSQL integration test pass; the filter contract is verified (empty-service form submissions return 200, non-numeric values return an explicit 422); GitHub Actions is green on the fix branches and on both merge commits; the user confirmed in the browser that the auto-applied filters, the mobile incidents table, the absence of page-level horizontal overflow (`scrollWidth <= clientWidth` true) and the clean console are all correct.
+
+- Phase 6 was explicitly validated by the user on 2026-08-19.
+
+## Conclusion
+
+Phase 6 is complete: the operator product, its automated evidence, the manual review and the resulting fixes are all validated on the final candidate `f6e4a79`.
