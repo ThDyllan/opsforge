@@ -1,7 +1,7 @@
 # EVIDENCE_PLAN — OpsForge (document de travail interne, non destiné au jury)
 
-État de référence : candidat technique `phase6-operator-ux @ 8ab0f70` · dossier sur `jury/dossier-fil-rouge`.
-Dernière mise à jour : 12/08/2026 (session de production des preuves V2).
+État de référence : candidat technique **final** `phase6-operator-ux @ a9ec694` (chaîne : `8ab0f70` → PR #4 `3fc7707` → PR #5 `f6e4a79` → PR #6 doc-only `a9ec694`) · dossier sur `jury/dossier-fil-rouge`.
+Dernière mise à jour : 19/08/2026 (clôture Phase 6 — PASS explicite de Dyllan).
 
 ## 1. Statut global
 
@@ -22,18 +22,19 @@ Dernière mise à jour : 12/08/2026 (session de production des preuves V2).
 | 13. Persistance PVC (marqueur + UID avant/après) | ✅ log | `evidence/pvc_persistence.txt` |
 | 14. Cycle d'alerte Prometheus horodaté | ✅ log | `evidence/prometheus_alert_cycle.txt` |
 | 15. Backup + restore vérifié | ✅ log | `evidence/backup_restore.txt` |
-| 16. Run GitHub Actions du candidat gelé (8ab0f70) | ✅ texte via `gh api` | `evidence/github_actions_run.txt` |
-| 17. GitHub Actions — capture graphique du run | ⬜ MANUELLE (session authentifiée) | run `31493449973`, job déplié |
-| 18. Page Aide (optionnelle) | ⬜ MANUELLE si souhaitée | `http://localhost:8000/help` |
-| 19. Vues responsives (~390×844) | ⬜ MANUELLE — pendant la revue `docs/PHASE6_MANUAL_TEST.md` | — |
-| 20. Revue manuelle Phase 6 (desktop + responsive + parcours humain) | ⬜ À FAIRE par Dyllan avant validation explicite de la phase 6 | procédure `docs/PHASE6_MANUAL_TEST.md` |
+| 16. Run GitHub Actions du candidat final (`a9ec694`, run `32197168814`) | ✅ texte via `gh api`, régénéré le 19/08 | `evidence/github_actions_run.txt` |
+| 17. GitHub Actions — capture graphique du run | ⬜ MANUELLE à refaire sur le run final `32197168814` (celle faite pendant la revue portait sur le run du candidat `8ab0f70`) | onglet Actions, job déplié |
+| 18. Page Aide (optionnelle) | ✅ capturée par Dyllan pendant la revue (réserve orale) | fournie hors dépôt |
+| 19. Vues responsives (~390×844) | ✅ produites sur le candidat corrigé (Edge headless, env. isolé) | `assets/screenshots/09_command_center_mobile.png`, `10_incidents_mobile.png` |
+| 20. Revue manuelle Phase 6 (desktop + responsive + parcours humain) | ✅ FAITE — PASS explicite le 19/08/2026 (2 défauts réels trouvés → PR #4/#5, 38 tests, revalidation humaine) | verdict rempli dans `PHASE6_MANUAL_REVIEW_RUNBOOK.md` §6 |
 
 ## 2. Conditions de production (traçabilité)
 
 - **UI (1-5)** : environnement Compose **isolé éphémère** (`docker compose -p opsforge-shot`, API 8020 / DB 5433), seed générique + 1 alerte de démonstration créée par API. Rendu réel par Edge headless (`--headless=new --screenshot`), fenêtres 1440×1080 à 1440×1600. Environnement détruit après capture (`down -v`). Le Compose principal (8000) n'a pas été modifié.
 - **K8s/Ansible/monitoring (6-14)** : cluster **jetable** `opsforge-ansible-test` (API 8090, kubeAPI 6446) déployé par `./ansible/run.sh` ; kubeconfig de test explicite pour chaque commande (`--kubeconfig`) ; le cluster `opsforge` existant n'a jamais été touché. Cycle d'alerte : scale 0 → FIRING observé à t+70 s → restauration immédiate → retour `inactive` confirmé. Teardown complet en fin de session ; port-forwards arrêtés.
 - **Backup/restore (15)** : Compose principal, mode par défaut (restauration de vérification en base temporaire) — aucune écriture dans la base principale.
-- **CI (16)** : `gh api` sur le run du commit `8ab0f70`. Note : l'API GitHub rapporte `success` pour l'étape Trivy car `continue-on-error` aplatit l'issue ; l'état advisory n'est visible que dans l'UI web → d'où la capture manuelle n°17.
+- **CI (16)** : `gh api` sur le run `32197168814` du commit final `a9ec694` (régénéré le 19/08). Note : l'API GitHub rapporte `success` pour l'étape Trivy car `continue-on-error` aplatit l'issue ; l'état advisory n'est visible que dans l'UI web → d'où la capture manuelle n°17.
+- **Responsive (19)** : captures 09/10 prises le 19/08 sur l'environnement isolé `opsforge-review` (API 8021) rebuildé sur le candidat corrigé, Edge headless `--window-size=390,844` avec profil neuf (cache CSS busté). L'apparent débordement de ~17 px vu en headless est un artefact de viewport, réfuté sur vrai device (`scrollWidth <= clientWidth`).
 
 ## 3. Note Grafana (transparence)
 
@@ -68,6 +69,6 @@ kubectl -n opsforge scale deployment/opsforge-api --replicas=1   # TOUJOURS rest
 ## 5. TODO internes restants (hors dossier jury)
 
 - [ ] Décision `main` : fusionner l'intégration vers `main` **ou** poser un tag (ex. `jury-2026-09`) avant la session — à trancher avec Dyllan/ChatGPT (le dossier V2 ne mentionne plus ce point).
-- [ ] Revue manuelle Phase 6 (n°20) puis validation explicite de la phase 6 et mise à jour de §7 du dossier.
-- [ ] Captures manuelles n°17 (GitHub Actions UI) et n°19 (responsive) ; n°18 optionnelle.
+- [x] Revue manuelle Phase 6 (n°20) : PASS le 19/08/2026 ; §7 du dossier, runbook et docs candidat (PR #6) synchronisés.
+- [ ] Capture manuelle n°17 : GitHub Actions UI du run final `32197168814` (à refaire, la capture de revue portait sur l'ancien run).
 - [ ] Rendu des deux schémas Mermaid en images lors de la mise en page (aucun renderer disponible dans l'environnement actuel).

@@ -11,7 +11,7 @@
 | **Type de projet** | Projet fil rouge indépendant, cahier des charges conçu par le candidat |
 | **Organisme de formation** | Liora (ex DataScientest) |
 | **Session d'examen** | 7 septembre 2026 à 09h30 — Campus Omnes Cœur Défense II, Courbevoie |
-| **Dépôt Git** | `ThDyllan/opsforge` — candidat technique gelé : branche `phase6-operator-ux`, commit `8ab0f70` |
+| **Dépôt Git** | `ThDyllan/opsforge` — candidat technique gelé : branche `phase6-operator-ux`, commit `a9ec694` |
 | **Version du document** | V2 |
 
 ---
@@ -166,7 +166,7 @@ L'utilisateur est un **opérateur unique** (rôle : technicien d'exploitation). 
 
 **Évolution du périmètre — l'histoire réelle.** Le projet est parti d'un MVP volontairement réduit (application + Compose + 7 tests, cadré par un document initial fixant six phases prévisionnelles et une règle : rien n'entre dans une phase sans décision explicite). Deux extensions ont été décidées en cours de route, tracées dans le dépôt :
 
-- **La phase 6 est devenue une phase produit** : le tableau de bord unique ne permettait pas une démonstration opérateur crédible → console multipage, Command Center par incident, runbooks managés, règles de domaine durcies, campagne de tests portée de 8 à 35 tests.
+- **La phase 6 est devenue une phase produit** : le tableau de bord unique ne permettait pas une démonstration opérateur crédible → console multipage, Command Center par incident, runbooks managés, règles de domaine durcies, campagne de tests portée de 8 à 38 tests (35 à l'audit d'intégration, 38 avec les tests de non-régression issus de la revue finale).
 - **Ansible a été ajouté en fin de projet** : en confrontant le projet aux critères exacts du REAC, j'ai constaté que mon déploiement k3d, documenté mais **manuel**, ne prouvait pas la compétence obligatoire d'automatisation. J'ai fermé cet écart par un périmètre ciblé — automatiser le déploiement existant, sans rien redéfinir (ADR 029, §5.5, §6).
 
 Cette progression itérative est une caractéristique du projet : chaque phase validée fige un socle, et une relecture du référentiel a déclenché une correction de périmètre au bon moment.
@@ -195,7 +195,7 @@ flowchart LR
     end
 
     subgraph CI["Chaîne 1 — Intégration continue (GitHub Actions)"]
-        Push[push / PR] --> Pipeline[Ruff → 35 tests SQLite → 1 test PostgreSQL → build image → scan Trivy advisory]
+        Push[push / PR] --> Pipeline[Ruff → 38 tests SQLite → 1 test PostgreSQL → build image → scan Trivy advisory]
     end
 
     subgraph Infra["Chaîne 2 — Automatisation d'infrastructure (Ansible)"]
@@ -347,13 +347,13 @@ En couches, toutes documentées : (1) par conception — aucune exécution de co
 | 3 — Sauvegarde & sécurité | backup/restore, stratégie de secrets | 06/07/2026 |
 | 4 — Kubernetes | Cluster k3d, PostgreSQL + PVC, API, **preuve de persistance** | 09/07/2026 |
 | 5 — Supervision | `/metrics`, Prometheus, Grafana, **alerte réellement déclenchée** | 14/07/2026 |
-| 6 — Produit opérateur & preuves | Console multipage, domaine durci, 35 tests, durcissement K8s, puis **Ansible** (sous-étape CP n°2) | En cours de finalisation : audit d'intégration et Ansible faits ; preuves du présent dossier produites le 12/08/2026 ; reste la revue visuelle/responsive manuelle avant validation explicite |
+| 6 — Produit opérateur & preuves | Console multipage, domaine durci, durcissement K8s, **Ansible** (sous-étape CP n°2), puis revue manuelle finale : deux défauts réels détectés, corrigés et re-testés (38 tests) | validée le 19/08/2026, après la revue humaine et la revalidation des correctifs sur le candidat final |
 
 Chaque phase a un périmètre écrit, une **Definition of Done** vérifiable, un fichier de preuve daté (`docs/PHASE<i>_VERIFICATION.md`) et une validation explicite. Un protocole écrit encadre l'avant/pendant/après (relecture de l'état, départ propre, périmètre figé ; « aucune idée nouvelle n'entre silencieusement dans la phase en cours » ; preuves consignées puis validation). Les choix techniques importants sont consignés dans **29 décisions d'architecture** (ADR) — contexte, décision, raison, conséquences — qui servent aussi de préparation à l'oral.
 
 ## 4.2 Workflow Git
 
-Le workflow a évolué avec le projet : commits directs sur `main` pour les phases 1 à 5 (workflow solo simple, un commit de validation par phase), première branche dédiée pour le candidat produit de la phase 6, puis — pour l'audit final et l'ajout d'Ansible — un vrai cycle par branches et **Pull Requests avec commits de merge** (l'historique des branches est préservé). Une branche d'expérimentation a servi de terrain de revue puis n'a **jamais été fusionnée** : une branche d'intégration propre a été ré-implémentée en six commits revus, intégrant les corrections identifiées en revue (dont une vraie régression d'interface et la restauration du signal d'échec Trivy). Le détail commité par commit est en annexe A.
+Le workflow a évolué avec le projet : commits directs sur `main` pour les phases 1 à 5 (workflow solo simple, un commit de validation par phase), première branche dédiée pour le candidat produit de la phase 6, puis — pour l'audit final et l'ajout d'Ansible — un vrai cycle par branches et **Pull Requests avec commits de merge** (l'historique des branches est préservé). Une branche d'expérimentation a servi de terrain de revue puis n'a **jamais été fusionnée** : une branche d'intégration propre a été ré-implémentée en six commits revus, intégrant les corrections identifiées en revue (dont une vraie régression d'interface et la restauration du signal d'échec Trivy). Le même cycle a été appliqué jusqu'au bout : les deux défauts détectés par la revue manuelle finale ont été corrigés en branches dédiées depuis le candidat gelé, revalidés puis fusionnés (PR #4 et #5), et la clôture de la phase a été enregistrée par une dernière PR documentaire (PR #6). Le détail commité par commit est en annexe A.
 
 ## 4.3 Outils
 
@@ -369,7 +369,7 @@ OpsForge étant un projet individuel, j'ai utilisé des assistants d'IA comme ou
 
 # 5. Réalisations significatives (scripts et configurations argumentés)
 
-Chaque réalisation suit le même fil : besoin → extrait utile → choix → preuve → limite. Les extraits proviennent du dépôt au commit `8ab0f70`, condensés pour la lecture (coupures signalées par `# […]`) ; les fichiers complets sont dans Git.
+Chaque réalisation suit le même fil : besoin → extrait utile → choix → preuve → limite. Les extraits proviennent du dépôt au commit final `a9ec694`, condensés pour la lecture (coupures signalées par `# […]`) ; les fichiers complets sont dans Git.
 
 ## 5.1 Instrumentation et alerte de supervision (CP n°10)
 
@@ -457,12 +457,12 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
                exit-code: "1", severity: "HIGH,CRITICAL"}  # […]
 ```
 
-**Choix.** Ordre voulu : lint (échec rapide) → 35 tests SQLite (secondes) → test d'intégration contre un conteneur `postgres:16-alpine` démarré par le job — ce test crée une base au nom unique, rejoue le flux complet, puis la supprime : la CI ne peut pas polluer une base de démonstration. La subtilité Trivy : `exit-code: "1"` garde le signal visible quand des HIGH/CRITICAL existent, `continue-on-error: true` maintient le job vert — politique advisory explicite (ADR 013), transformable en portail bloquant par une décision documentée.
+**Choix.** Ordre voulu : lint (échec rapide) → 38 tests SQLite (secondes) → test d'intégration contre un conteneur `postgres:16-alpine` démarré par le job — ce test crée une base au nom unique, rejoue le flux complet, puis la supprime : la CI ne peut pas polluer une base de démonstration. La subtilité Trivy : `exit-code: "1"` garde le signal visible quand des HIGH/CRITICAL existent, `continue-on-error: true` maintient le job vert — politique advisory explicite (ADR 013), transformable en portail bloquant par une décision documentée.
 
-**Preuve.** Run du candidat gelé `8ab0f70` vérifié le 12/08/2026 via l'API GitHub (`deliverables/evidence/github_actions_run.txt`) :
+**Preuve.** Run du candidat final `a9ec694` vérifié le 19/08/2026 via l'API GitHub (`deliverables/evidence/github_actions_run.txt`) :
 
 ```text
-run 31493449973 - CI - branch phase6-operator-ux - sha 8ab0f70 - conclusion: success
+run 32197168814 - CI - branch phase6-operator-ux - sha a9ec694 - conclusion: success
 Lint with Ruff ................ success      Build Docker image ............. success
 Run SQLite unit tests ......... success      Run Trivy image scan (advisory)  success*
 Run PostgreSQL integration test success
@@ -470,7 +470,7 @@ Run PostgreSQL integration test success
 
 *\* l'API GitHub aplatit l'issue d'une étape `continue-on-error` ; l'interface web, elle, affiche l'état advisory de l'étape.*
 
-`[CAPTURE À PRODUIRE — GitHub Actions : vue graphique du run 31493449973 (job « Lint, test, build, and scan » déplié) — nécessite une session navigateur authentifiée]`
+`[CAPTURE À PRODUIRE — GitHub Actions : vue graphique du run 32197168814 (job « Lint, test, build, and scan » déplié) — nécessite une session navigateur authentifiée ; une capture équivalente du run du candidat intermédiaire a été réalisée pendant la revue]`
 
 **Limite.** La CI ne publie pas l'image et ne déploie rien : intégration continue, pas de CD distant.
 
@@ -574,8 +574,8 @@ Aucun hôte trouvé — alors que l'inventaire (`localhost ansible_connection=lo
 
 | Domaine | Preuve principale | Résultat |
 |---|---|---|
-| Application & tests | 35 tests SQLite + 1 test d'intégration PostgreSQL (base éphémère) | Verts en local et en CI |
-| Intégration continue | Run GitHub Actions du candidat gelé `8ab0f70` | `success` (toutes étapes) — vérifié le 12/08/2026 |
+| Application & tests | 38 tests SQLite + 1 test d'intégration PostgreSQL (base éphémère) | Verts en local et en CI |
+| Intégration continue | Run GitHub Actions du candidat final `a9ec694` | `success` (toutes étapes) — vérifié le 19/08/2026 |
 | Conteneurs & Kubernetes | Pods `1/1 Running`, PVC `Bound`, durcissement vérifié sous rootfs lecture seule | Constaté le 07/08 et re-constaté le 12/08/2026 |
 | Persistance | Donnée survivant à la destruction/recréation du pod PostgreSQL (UID différent) | Prouvée en phase 4, **re-prouvée le 12/08/2026** |
 | Supervision | Cible UP, dashboard alimenté, cycle d'alerte `inactive → firing → résolu` | Validé en phase 5, **rejoué en direct le 12/08/2026** |
@@ -584,7 +584,7 @@ Aucun hôte trouvé — alors que l'inventaire (`localhost ansible_connection=lo
 
 Les preuves du 12/08/2026 (logs bruts et captures) sont versionnées sous `deliverables/evidence/` et `deliverables/assets/screenshots/` ; l'historique détaillé phase par phase reste dans `docs/PHASE<i>_VERIFICATION.md` (chronologie en annexe A).
 
-**État de la phase 6 :** l'audit d'intégration, l'automatisation Ansible et les preuves ci-dessus sont faits ; la **revue visuelle et responsive manuelle** du parcours opérateur (procédure `docs/PHASE6_MANUAL_TEST.md`) reste à dérouler avant la validation explicite de la phase — elle sera effectuée lors de la répétition générale.
+**Clôture de la phase 6.** La revue manuelle (desktop, workflow opérateur complet, responsive) a été déroulée du 13 au 19/08/2026, guidée par un runbook dédié. Elle a détecté **deux défauts réels invisibles des 38 tests automatisés** : une erreur 422 sur les formulaires de filtres quand aucun service n'était sélectionné, et une table Incidents illisible sur mobile. Les deux ont été corrigés en branches dédiées, couverts par des tests de non-régression, revalidés humainement sur le candidat fusionné, puis la phase 6 a été **explicitement validée le 19/08/2026** (PR #4 à #6, candidat final `a9ec694`). Cette séquence illustre au passage la valeur du contrôle humain dans la démarche : la procédure de test manuelle documentée a trouvé ce que l'automatisation ne pouvait pas voir.
 
 ---
 
@@ -608,13 +608,13 @@ Toutes documentées dans le dépôt (`docs/RISKS_AND_TECHNICAL_DEBT.md`, ADR) �
 
 # Conclusion
 
-**Ce que le projet démontre.** Les trois compétences obligatoires, chacune avec une preuve distincte, rejouable et rejouée : une infrastructure locale complète déployée et vérifiée par Ansible en une commande idempotente ; des conteneurs durcis et orchestrés dans deux environnements avec une persistance prouvée plutôt que supposée ; une supervision réelle dont l'alerte s'est déclenchée puis résolue lors d'une panne provoquée. Autour : 35 tests unitaires et un test d'intégration PostgreSQL, une CI avec scan de vulnérabilités, des sauvegardes restaurables, 29 décisions d'architecture documentées.
+**Ce que le projet démontre.** Les trois compétences obligatoires, chacune avec une preuve distincte, rejouable et rejouée : une infrastructure locale complète déployée et vérifiée par Ansible en une commande idempotente ; des conteneurs durcis et orchestrés dans deux environnements avec une persistance prouvée plutôt que supposée ; une supervision réelle dont l'alerte s'est déclenchée puis résolue lors d'une panne provoquée. Autour : 38 tests unitaires et un test d'intégration PostgreSQL, une CI avec scan de vulnérabilités, des sauvegardes restaurables, 29 décisions d'architecture documentées.
 
-**Mes satisfactions.** La méthode — des phases finies et validées une à une, les cinq premières closes et datées, la sixième au stade des dernières preuves (revue manuelle restante) — qui a permis au projet de survivre sans dégât à un changement de poste de travail. La correction de trajectoire de la fin de projet : confronter le travail aux critères exacts du référentiel, constater qu'un déploiement documenté mais manuel ne prouvait pas la compétence d'automatisation, et fermer l'écart proprement, avant l'examen. Et une exigence tenue de bout en bout : distinguer partout ce qui a été testé de ce qui a seulement été écrit.
+**Mes satisfactions.** La méthode — six phases finies, validées et datées une à une — qui a permis au projet de survivre sans dégât à un changement de poste de travail. La correction de trajectoire de la fin de projet : confronter le travail aux critères exacts du référentiel, constater qu'un déploiement documenté mais manuel ne prouvait pas la compétence d'automatisation, et fermer l'écart proprement, avant l'examen. Et une exigence tenue de bout en bout : distinguer partout ce qui a été testé de ce qui a seulement été écrit.
 
-**Mes difficultés.** Le débogage du control node Ansible (§6), le plus formateur — avec sa leçon : l'artefact documenté doit être exactement celui qui a été validé. La revue visuelle qui n'a pas pu être automatisée et reste à dérouler manuellement. Et, en continu, tenir le périmètre : dire non à tout ce qui aurait grossi le projet sans le rendre plus défendable.
+**Mes difficultés.** Le débogage du control node Ansible (§6), le plus formateur — avec sa leçon : l'artefact documenté doit être exactement celui qui a été validé. La revue visuelle finale, qui n'a pas pu être automatisée : déroulée manuellement, elle a révélé deux défauts réels que les 38 tests ne voyaient pas — preuve que le contrôle humain reste une étape à part entière. Et, en continu, tenir le périmètre : dire non à tout ce qui aurait grossi le projet sans le rendre plus défendable.
 
-Le projet est gelé au commit `8ab0f70` : c'est cet état, reproductible et documenté, que je présente au jury.
+Le projet est gelé au commit `a9ec694` : c'est cet état, reproductible et documenté, que je présente au jury.
 
 ---
 
@@ -633,8 +633,10 @@ Le projet est gelé au commit `8ab0f70` : c'est cet état, reproductible et docu
 | 10-11/08/2026 | Ansible (CP n°2) : implémentation, corrections de la situation de recherche (§6), épinglage, honnêteté documentaire | `9d04fc4`, `0b21505`, `732d6fa`, `e808ccf` |
 | 11/08/2026 | Intégration finale par Pull Requests avec commits de merge : PR #1 (audit), PR #2 (Ansible), PR #3 (synchronisation documentaire) → candidat gelé | `489552f`, `0becdf8`, `8ab0f70` |
 | 12/08/2026 | Production des preuves du présent dossier : re-déploiement Ansible complet + idempotence + teardown, persistance re-prouvée, cycle d'alerte rejoué en direct, sauvegarde/restauration rejouées, CI du candidat vérifiée, captures d'écran | branche `jury/dossier-fil-rouge` |
+| 13-19/08/2026 | Revue manuelle finale (runbook dédié) : deux défauts réels détectés — erreur 422 des formulaires de filtres et table Incidents illisible en mobile — corrigés en branches dédiées avec tests de non-régression (35 → 38 tests), plus favicon ; revalidation humaine sur le candidat corrigé | PR #4 `3fc7707`, PR #5 `f6e4a79` |
+| 19/08/2026 | **Phase 6 validée explicitement** ; clôture documentaire (roadmap, vérification, risques) → candidat final | PR #6 `a9ec694` |
 
-47 commits toutes branches, 3 commits de merge. `main` porte l'état des phases 1-6 initiales ; le candidat d'examen est `phase6-operator-ux @ 8ab0f70`.
+59 commits toutes branches, 6 commits de merge. `main` porte l'état des phases 1-6 initiales ; le candidat d'examen est `phase6-operator-ux @ a9ec694`.
 
 # Annexe B — Inventaire des preuves
 
@@ -650,18 +652,19 @@ Le projet est gelé au commit `8ab0f70` : c'est cet état, reproductible et docu
 | 6 | `06_prometheus_targets_up.png` | Cible Prometheus `opsforge-api (1/1 up)` | Figure 4 |
 | 7 | `07_prometheus_alert_firing.png` | `OpsForgeApiDown` en FIRING | Figure 5 |
 | 8 | `08_grafana_dashboard.png` | Dashboard « OpsForge Monitoring » alimenté | Figure 6 |
+| 9 | `09_command_center_mobile.png` | Command Center en mobile (~390 px), après correctifs | Réserve oral |
+| 10 | `10_incidents_mobile.png` | Table Incidents en mobile, défilement dans son cadre (défaut corrigé) | Réserve oral |
 
 ## B.2 Preuves texte produites (logs bruts, versionnés sous `deliverables/evidence/`)
 
-`ansible_fresh_deploy.txt` (déploiement complet, `ok=22 changed=9`, `/health`/`/ready` → 200) · `ansible_second_run.txt` (idempotence `ok=21 changed=2`) · `ansible_teardown.txt` · `kubernetes_state.txt` (pods/services/PVC/nœud) · `pvc_persistence.txt` (marqueur + UID avant/après) · `prometheus_alert_cycle.txt` (cycle complet horodaté + payload de l'alerte) · `backup_restore.txt` (archive + restauration vérifiée) · `github_actions_run.txt` (run du candidat gelé, étape par étape).
+`ansible_fresh_deploy.txt` (déploiement complet, `ok=22 changed=9`, `/health`/`/ready` → 200) · `ansible_second_run.txt` (idempotence `ok=21 changed=2`) · `ansible_teardown.txt` · `kubernetes_state.txt` (pods/services/PVC/nœud) · `pvc_persistence.txt` (marqueur + UID avant/après) · `prometheus_alert_cycle.txt` (cycle complet horodaté + payload de l'alerte) · `backup_restore.txt` (archive + restauration vérifiée) · `github_actions_run.txt` (run du candidat final `a9ec694`, étape par étape).
 
 ## B.3 Captures restant à faire manuellement
 
 | Capture | Raison / commande |
 |---|---|
-| GitHub Actions — vue graphique du run `31493449973` | Session navigateur authentifiée requise ; onglet Actions du dépôt, job déplié (l'étape Trivy y apparaît en état advisory) |
-| Console — page Aide (optionnelle) | `http://localhost:8000/help` |
-| Vues responsives (mobile ~390×844) | À produire pendant la revue manuelle `docs/PHASE6_MANUAL_TEST.md` |
+| GitHub Actions — vue graphique du run `32197168814` (candidat final) | Session navigateur authentifiée requise ; onglet Actions du dépôt, job déplié (l'étape Trivy y apparaît en état advisory). Une capture équivalente du run du candidat intermédiaire a été faite pendant la revue ; à refaire sur le run final |
+| Console — page Aide (optionnelle) | `http://localhost:8000/help` — capturée pendant la revue, à conserver en réserve orale si utile |
 
 La checklist opérationnelle complète (commandes exactes, ordre de rejeu pour la démonstration) est tenue dans `deliverables/EVIDENCE_PLAN.md` (document de travail, non destiné au jury).
 

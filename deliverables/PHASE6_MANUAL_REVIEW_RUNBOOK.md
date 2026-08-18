@@ -1,4 +1,4 @@
-# Runbook — Revue manuelle Phase 6 (à dérouler par Dyllan)
+# Runbook — Revue manuelle Phase 6 (déroulé par Dyllan — VERDICT : PASS le 19/08/2026, voir §6)
 
 **Durée cible : 15 à 25 minutes.** Version opérationnelle de `docs/PHASE6_MANUAL_TEST.md` : ce runbook guide la dernière validation humaine (visuel, workflow, responsive) avant la validation explicite de la phase 6. Rien n'est pré-coché : le verdict final (§6) est à remplir par toi seul.
 
@@ -102,33 +102,52 @@ Les captures desktop propres existent déjà (`deliverables/assets/screenshots/0
 ## 6. Verdict (à remplir par Dyllan — rien n'est pré-validé)
 
 ```
-Date de la revue        : ____________
-Navigateur / version    : ____________
-Résolutions testées     : desktop ____ / mobile ____ / tablette ____
-Environnement utilisé   : opsforge-review (8021) / principal (8000)   [entourer]
+Date de la revue        : revue initiale le 13/08/2026 ; revalidations sur les
+                          candidats corrigés les 14/08 et 19/08/2026
+Navigateur / version    : Microsoft Edge (DevTools, device toolbar, cache désactivé)
+Résolutions testées     : desktop large / mobile ~390×844 / tablette ~768×1024
+Environnement utilisé   : principal (8000) pour la revue initiale, puis
+                          opsforge-review (8021) rebuildé sur les candidats corrigés
 
-Bloc 1 — Tour desktop           : PASS / FAIL
-Bloc 2 — Workflow opérateur     : PASS / FAIL
-Bloc 3 — Responsive             : PASS / FAIL
+Bloc 1 — Tour desktop           : PASS
+Bloc 2 — Workflow opérateur     : PASS (doublé d'une vérification technique
+                                  indépendante du cycle complet, 14/14, cas
+                                  négatifs inclus)
+Bloc 3 — Responsive             : PASS (après correctifs, revalidé sur f6e4a79)
 
-Anomalies observées (aucune / liste, avec page + taille d'écran) :
-- ____________________________________________
-- ____________________________________________
+Anomalies observées :
+- Filtres Alertes/Incidents : HTTP 422 dès que Service restait sur « Tous »
+  (soumission du formulaire avec service_id vide) — RÉEL, corrigé PR #4 avec
+  3 tests de non-régression (suite 35 → 38), revalidé humainement.
+- Table Incidents en mobile (<~560px) : colonnes compressées illisibles,
+  chevauchements — RÉEL, corrigé PR #4 (scroll dans le cadre) puis affiné
+  PR #5 (720px + nowrap), revalidé humainement.
+- Console : 404 sur /favicon.ico — corrigé PR #5 (favicon SVG inline), console
+  propre revalidée.
+- Overflow horizontal global en 390px : NON CONFIRMÉ — artefact des captures
+  headless ; scrollWidth <= clientWidth renvoie true sur vrai device.
 
-Captures conservées :
-[ ] 09_command_center_mobile.png
-[ ] 10_overview_mobile.png (opt.)
-[ ] 11_github_actions_run.png
-[ ] 12_help.png (opt.)
+Captures conservées (dans deliverables/assets/screenshots/) :
+[x] 09_command_center_mobile.png   (Command Center 390px, candidat corrigé)
+[x] 10_incidents_mobile.png        (table Incidents corrigée, 390px)
+[x] + les 8 captures de la session de preuve du 12/08 (01 → 08)
+[ ] Capture GitHub Actions UI du run du candidat final (run 32197168814) :
+    à refaire manuellement (la capture faite pendant la revue portait sur le
+    run du candidat 8ab0f70, remplacé depuis par les correctifs).
 
-Commentaires libres :
-______________________________________________
+Commentaires :
+La revue a démontré la valeur du contrôle humain : les deux défauts réels
+étaient invisibles des 35 tests automatisés et des vérifications de pages
+en GET nu. Les correctifs ont été menés en branches dédiées depuis le
+candidat gelé (PR #4, #5), revalidés (38 tests, CI verte, matrice de
+filtres 9/9, captures), puis la clôture documentaire a été enregistrée
+(PR #6). Candidat final : phase6-operator-ux @ a9ec694.
 
-VERDICT GLOBAL : PASS / FAIL
+VERDICT GLOBAL : PASS
 
-Si PASS : je prononce la validation explicite de la Phase 6      OUI / PAS ENCORE
-(Suites si OUI : mettre à jour §7 du dossier + docs/ROADMAP/PHASE6_VERIFICATION —
- à faire dans une passe dédiée, pas pendant la revue.)
+Je prononce la validation explicite de la Phase 6 : OUI — le 19/08/2026.
+(Suites réalisées : docs/ROADMAP, PHASE6_VERIFICATION, PROJECT_CONTEXT,
+ INDEX et RISKS mis à jour par la PR #6 ; dossier synchronisé sur a9ec694.)
 ```
 
 ## 7. Nettoyage
