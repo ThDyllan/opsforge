@@ -1,7 +1,7 @@
 # EVIDENCE_PLAN — OpsForge (document de travail interne, non destiné au jury)
 
 État de référence : candidat technique **final** `phase6-operator-ux @ a9ec694` (chaîne : `8ab0f70` → PR #4 `3fc7707` → PR #5 `f6e4a79` → PR #6 doc-only `a9ec694`) · dossier sur `jury/dossier-fil-rouge`.
-Dernière mise à jour : 19/08/2026 (clôture Phase 6 — PASS explicite de Dyllan).
+Dernière mise à jour : 20/08/2026 (production du livrable Word/PDF pour le jury).
 
 ## 1. Statut global
 
@@ -71,4 +71,5 @@ kubectl -n opsforge scale deployment/opsforge-api --replicas=1   # TOUJOURS rest
 - [ ] Décision `main` : fusionner l'intégration vers `main` **ou** poser un tag (ex. `jury-2026-09`) avant la session — à trancher avec Dyllan/ChatGPT (le dossier V2 ne mentionne plus ce point).
 - [x] Revue manuelle Phase 6 (n°20) : PASS le 19/08/2026 ; §7 du dossier, runbook et docs candidat (PR #6) synchronisés.
 - [ ] Capture manuelle n°17 : GitHub Actions UI du run final `32197168814` (à refaire, la capture de revue portait sur l'ancien run).
-- [ ] Rendu des deux schémas Mermaid en images lors de la mise en page (aucun renderer disponible dans l'environnement actuel).
+- [x] Rendu des deux schémas en images : réécrits en SVG puis rasterisés en PNG (`assets/diagrams/`), intégrés comme figures 2 et 3 du dossier Word.
+- [x] Mise en page finale : `Dossier_de_projet_OpsForge_Dyllan_Thouvignon.docx` + PDF (26 pages), générés puis relus page par page ; outillage conservé sous `tools/`.

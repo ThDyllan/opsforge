@@ -1,5 +1,7 @@
 # Dossier de projet — OpsForge
 
+> **Version de travail (source Markdown).** Le livrable remis au jury est `Dossier_de_projet_OpsForge_Dyllan_Thouvignon.docx` (et son PDF), qui fait foi : il reprend ce contenu avec une passe éditoriale et de mise en page (schémas rendus en image, figures sélectionnées, sommaire paginé). Ce fichier reste la base de travail et de relecture.
+
 ## Titre professionnel visé : Administrateur système DevOps (niveau 6)
 
 **Code titre : TP-01414 — RNCP 36061**
@@ -636,7 +638,7 @@ Le projet est gelé au commit `a9ec694` : c'est cet état, reproductible et docu
 | 13-19/08/2026 | Revue manuelle finale (runbook dédié) : deux défauts réels détectés — erreur 422 des formulaires de filtres et table Incidents illisible en mobile — corrigés en branches dédiées avec tests de non-régression (35 → 38 tests), plus favicon ; revalidation humaine sur le candidat corrigé | PR #4 `3fc7707`, PR #5 `f6e4a79` |
 | 19/08/2026 | **Phase 6 validée explicitement** ; clôture documentaire (roadmap, vérification, risques) → candidat final | PR #6 `a9ec694` |
 
-59 commits toutes branches, 6 commits de merge. `main` porte l'état des phases 1-6 initiales ; le candidat d'examen est `phase6-operator-ux @ a9ec694`.
+Le candidat d'examen `phase6-operator-ux @ a9ec694` totalise **45 commits**, dont 6 commits de merge. La branche `main` porte l'état des phases 1-6 initiales.
 
 # Annexe B — Inventaire des preuves
 
