@@ -102,7 +102,8 @@ Les captures desktop propres existent déjà (`deliverables/assets/screenshots/0
 ## 6. Verdict (à remplir par Dyllan — rien n'est pré-validé)
 
 ```
-Date de la revue        : revue initiale le 13/08/2026 ; revalidations sur les
+Date de la revue        : revue initiale le 12/08/2026 (les correctifs de la PR #4
+                          sont datés du 12/08 17:30) ; revalidations sur les
                           candidats corrigés les 14/08 et 19/08/2026
 Navigateur / version    : Microsoft Edge (DevTools, device toolbar, cache désactivé)
 Résolutions testées     : desktop large / mobile ~390×844 / tablette ~768×1024

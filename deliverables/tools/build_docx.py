@@ -358,7 +358,11 @@ def BUL(items, size=None):
 
 def CODE(lines, caption=None, keep_prev=True):
     if keep_prev and doc.paragraphs:
-        doc.paragraphs[-1].paragraph_format.keep_with_next = True
+        prev = doc.paragraphs[-1]
+        prev.paragraph_format.keep_with_next = True
+        # Ces paragraphes se terminent par un chemin ou une commande insecable :
+        # justifies, ils produisent des lignes anormalement etirees.
+        prev.alignment = WD_ALIGN_PARAGRAPH.LEFT
     body = lines.strip("\n").split("\n")
     ps = []
     for i, line in enumerate(body):
@@ -1103,7 +1107,8 @@ TABLE(
     ["Phase", "Contenu", "Validation"],
     [
         ["1 — MVP local", "Application + Compose + 7 tests", "16/06/2026"],
-        ["2 — CI/CD", "GitHub Actions : tests, build, scan Trivy (run vert)", "18/06/2026"],
+        ["2 — Intégration continue", "GitHub Actions : tests, build, scan Trivy (run vert)",
+         "18/06/2026"],
         ["3 — Sauvegarde et sécurité", "Sauvegarde/restauration, stratégie de secrets", "06/07/2026"],
         ["4 — Kubernetes",
          "Cluster k3d, PostgreSQL + PVC, API, **preuve de persistance**", "09/07/2026"],
@@ -1362,7 +1367,7 @@ P("**Le second enseignement — le plus important.** En corrigeant, j'ai découv
   "exécuté le `./run.sh` documenté — le jury, par exemple — aurait reproduit l'échec initial. Le "
   "commit de correction le dit sans détour : *« run.sh did not carry the settings the successful runs "
   "actually used »*. J'ai donc :",
-  space_after=4)
+  space_after=4, align=WD_ALIGN_PARAGRAPH.LEFT)
 BUL([
     "aligné `run.sh` sur le chemin réellement validé ;",
     "**re-testé l'intégralité du parcours en n'utilisant que `./run.sh`** sur un cluster isolé "
@@ -1416,12 +1421,12 @@ P("Les preuves du 12/08/2026 — logs bruts et captures — sont versionnées so
 
 H(2, "Clôture de la phase 6 : ce que la revue humaine a trouvé")
 P("La revue manuelle — parcours desktop, workflow opérateur complet, comportement responsive — a été "
-  "déroulée du 13 au 19/08/2026, guidée par un runbook dédié. Elle a détecté **deux défauts réels, "
-  "invisibles des 38 tests automatisés** : une erreur HTTP 422 sur les formulaires de filtres lorsque "
-  "aucun service n'était sélectionné, et une table Incidents illisible sur mobile. Les deux ont été "
-  "corrigés en branches dédiées, couverts par des tests de non-régression, revalidés humainement sur le "
-  "candidat fusionné, puis la phase 6 a été **explicitement validée le 19/08/2026** (PR #4 à #6, "
-  "candidat final `a9ec694`).")
+  "déroulée du 12 au 19/08/2026, guidée par un runbook dédié. Elle a détecté **deux défauts réels, "
+  "invisibles des 35 tests automatisés alors en place** : une erreur HTTP 422 sur les formulaires de "
+  "filtres lorsque aucun service n'était sélectionné, et une table Incidents illisible sur mobile. Les "
+  "deux ont été corrigés en branches dédiées, couverts par des tests de non-régression qui ont porté la "
+  "suite à **38 tests**, puis revalidés humainement sur le candidat fusionné ; la phase 6 a alors été "
+  "**explicitement validée le 19/08/2026** (PR #4 à #6, candidat final `a9ec694`).")
 CALLOUT("Cette séquence est un enseignement en soi : les deux défauts passaient sous le radar de tests "
         "qui vérifient des réponses HTTP et des structures de page, mais ne simulent ni la soumission "
         "réelle d'un formulaire ni un rendu à 390 px. **Une procédure de test manuelle documentée n'est "
@@ -1487,8 +1492,9 @@ P("**Mes satisfactions.** La méthode — six phases finies, validées et datée
   "testé de ce qui a seulement été écrit.")
 P("**Mes difficultés.** Le débogage du control node Ansible (§ 6), le plus formateur — avec sa leçon : "
   "l'artefact documenté doit être exactement celui qui a été validé. La revue visuelle finale, qui n'a "
-  "pas pu être automatisée : déroulée manuellement, elle a révélé deux défauts réels que les 38 tests "
-  "ne voyaient pas — preuve que le contrôle humain reste une étape à part entière. Et, en continu, "
+  "pas pu être automatisée : déroulée manuellement, elle a révélé deux défauts réels que les 35 tests "
+  "d'alors ne voyaient pas — preuve que le contrôle humain reste une étape à part entière. Et, en "
+  "continu, "
   "tenir le périmètre : dire non à tout ce qui aurait grossi le projet sans le rendre plus défendable.")
 P("Le projet est gelé au commit `a9ec694` : c'est cet état, reproductible et documenté, que je présente "
   "au jury.")
@@ -1534,7 +1540,7 @@ TABLE(
          "teardown, persistance re-prouvée, cycle d'alerte rejoué en direct, sauvegarde et restauration "
          "rejouées, CI du candidat vérifiée, captures d'écran",
          "branche `jury/dossier-fil-rouge`"],
-        ["13-19/08/2026",
+        ["12-19/08/2026",
          "Revue manuelle finale (runbook dédié) : deux défauts réels détectés — erreur 422 des "
          "formulaires de filtres et table Incidents illisible en mobile — corrigés en branches dédiées "
          "avec tests de non-régression (35 → 38 tests), plus le favicon ; revalidation humaine sur le "
