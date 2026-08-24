@@ -1,7 +1,7 @@
 # EVIDENCE_PLAN — OpsForge (document de travail interne, non destiné au jury)
 
 État de référence : candidat technique **final** `phase6-operator-ux @ a9ec694` (chaîne : `8ab0f70` → PR #4 `3fc7707` → PR #5 `f6e4a79` → PR #6 doc-only `a9ec694`) · dossier sur `jury/dossier-fil-rouge`.
-Dernière mise à jour : 20/08/2026 (production du livrable Word/PDF pour le jury).
+Dernière mise à jour : 21/08/2026 (passe figures : journal d'audit, file d'alertes, CI).
 
 ## 1. Statut global
 
@@ -23,7 +23,7 @@ Dernière mise à jour : 20/08/2026 (production du livrable Word/PDF pour le jur
 | 14. Cycle d'alerte Prometheus horodaté | ✅ log | `evidence/prometheus_alert_cycle.txt` |
 | 15. Backup + restore vérifié | ✅ log | `evidence/backup_restore.txt` |
 | 16. Run GitHub Actions du candidat final (`a9ec694`, run `32197168814`) | ✅ texte via `gh api`, régénéré le 19/08 | `evidence/github_actions_run.txt` |
-| 17. GitHub Actions — capture graphique du run | ⬜ MANUELLE à refaire sur le run final `32197168814` (celle faite pendant la revue portait sur le run du candidat `8ab0f70`) | onglet Actions, job déplié |
+| 17. GitHub Actions — capture graphique du run | ✅ produite le 21/08/2026 sur le **run final** `32197168814` : page publique du dépôt capturée en navigateur headless, sans session authentifiée ; annotation Trivy recoupée par l'API publique (`annotation_level: failure`, `Process completed with exit code 1.`) | `assets/screenshots/11_github_actions_run.png` (figure 11) |
 | 18. Page Aide (optionnelle) | ✅ capturée par Dyllan pendant la revue (réserve orale) | fournie hors dépôt |
 | 19. Vues responsives (~390×844) | ✅ produites sur le candidat corrigé (Edge headless, env. isolé) | `assets/screenshots/09_command_center_mobile.png`, `10_incidents_mobile.png` |
 | 20. Revue manuelle Phase 6 (desktop + responsive + parcours humain) | ✅ FAITE — PASS explicite le 19/08/2026 (2 défauts réels trouvés → PR #4/#5, 38 tests, revalidation humaine) | verdict rempli dans `PHASE6_MANUAL_REVIEW_RUNBOOK.md` §6 |
@@ -70,6 +70,6 @@ kubectl -n opsforge scale deployment/opsforge-api --replicas=1   # TOUJOURS rest
 
 - [ ] Décision `main` : fusionner l'intégration vers `main` **ou** poser un tag (ex. `jury-2026-09`) avant la session — à trancher avec Dyllan/ChatGPT (le dossier V2 ne mentionne plus ce point).
 - [x] Revue manuelle Phase 6 (n°20) : PASS le 19/08/2026 ; §7 du dossier, runbook et docs candidat (PR #6) synchronisés.
-- [ ] Capture manuelle n°17 : GitHub Actions UI du run final `32197168814` (à refaire, la capture de revue portait sur l'ancien run).
+- [x] Capture n°17 (GitHub Actions UI du run final) : faite le 21/08/2026 — le dépôt étant public, aucune session authentifiée n'a été nécessaire.
 - [x] Rendu des deux schémas en images : réécrits en SVG puis rasterisés en PNG (`assets/diagrams/`), intégrés comme figures 2 et 3 du dossier Word.
 - [x] Mise en page finale : `Dossier_de_projet_OpsForge_Dyllan_Thouvignon.docx` + PDF (26 pages), générés puis relus page par page ; outillage conservé sous `tools/`.

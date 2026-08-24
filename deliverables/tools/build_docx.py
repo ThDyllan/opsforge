@@ -878,10 +878,16 @@ BUL([
     "Il **résout** l'incident, puis résout l'alerte séparément : le cycle du signal et celui de la "
     "prise en charge sont indépendants.",
 ])
-FIG(os.path.join(SHOTS, "01_overview.png"), 14.6,
+FIG(os.path.join(SHOTS, "01_overview.png"), TEXT_W,
     "**Figure 1** — Vue d'ensemble de la console au démarrage d'une prise de poste : incidents à "
     "traiter, alertes récentes avec leur état, état réel de la plateforme (à droite, « contrôles de la "
     "plateforme elle-même ») et services de démonstration.")
+
+FIG(os.path.join(FIGS, "02_alerts_fig.png"), TEXT_W,
+    "**Figure 2** — La file d'alertes, premier écran du parcours : les trois états (`Nouvelle`, "
+    "`Acquittée`, `Résolu`), les filtres, et le lien vers l'incident déjà ouvert sur l'alerte "
+    "critique — une alerte n'ayant qu'un incident actif, le bouton « Ouvrir un incident » y est "
+    "remplacé par « Ouvrir l'incident ».")
 
 H(2, "2.4 Besoins")
 P("**Fonctionnels.** Catalogue de services ; file d'alertes (cycle `new → acknowledged → resolved`, "
@@ -947,7 +953,7 @@ H(1, "3. Spécifications techniques", break_before=True)
 
 H(2, "3.1 Architecture logique")
 FIG(os.path.join(DIAG, "schema_architecture.png"), TEXT_W,
-    "**Figure 2** — Architecture logique : l'application et sa supervision réelle (haut), puis les deux "
+    "**Figure 3** — Architecture logique : l'application et sa supervision réelle (haut), puis les deux "
     "chaînes d'outillage (bas). La CI valide le code et l'image sans rien publier ; Ansible reconstruit "
     "l'image localement et déploie l'infrastructure.")
 P("Les deux chaînes du bas sont **indépendantes** : la CI valide le code et l'image mais ne publie ni "
@@ -956,7 +962,7 @@ P("Les deux chaînes du bas sont **indépendantes** : la CI valide le code et l'
 
 H(2, "3.2 Topologie de déploiement")
 FIG(os.path.join(DIAG, "schema_topologie.png"), TEXT_W,
-    "**Figure 3** — Topologie déployée : tout tient sur un poste Windows 11 avec Docker Desktop. Le "
+    "**Figure 4** — Topologie déployée : tout tient sur un poste Windows 11 avec Docker Desktop. Le "
     "control node Ansible est un conteneur éphémère qui pilote le cluster k3d ; l'API est exposée sur "
     "`127.0.0.1:8080` via le NodePort 30080.")
 P("L'accès à la supervision se fait par `kubectl port-forward` (Prometheus 9090, Grafana 3000) — un "
@@ -983,10 +989,16 @@ P("**Structure du code :** `main.py` (démarrage, `/health`, `/ready`, `/metrics
   "`domain.py` (transitions), `runbooks.py` (liste approuvée et moteur), `models.py` / `schemas.py`, "
   "`seed.py` (scénario de démonstration idempotent), `migrations.py` (pont additif de schéma au "
   "démarrage).")
-FIG(os.path.join(SHOTS, "03_incident_command_center.png"), 11.8,
-    "**Figure 4** — Le Command Center d'un incident : contexte opérationnel, alerte source, runbooks "
+FIG(os.path.join(SHOTS, "03_incident_command_center.png"), 13.5,
+    "**Figure 5** — Le Command Center d'un incident : contexte opérationnel, alerte source, runbooks "
     "compatibles (manuel ou automatisé, niveau de risque), chronologie issue du journal d'audit et "
     "historique des exécutions.")
+
+FIG(os.path.join(FIGS, "04_activity_fig.png"), TEXT_W,
+    "**Figure 6** — Le journal d'audit : chaque entrée porte l'acteur, l'action, l'objet lié et "
+    "l'horodatage UTC. On y lit la chaîne complète d'une prise en charge — alerte créée, incident "
+    "déclaré, statut modifié, runbook exécuté — les exécutions de runbook étant auditées qu'elles "
+    "réussissent ou non.")
 
 H(2, "3.4 Conteneurs : de Compose à Kubernetes")
 BUL([
@@ -1026,8 +1038,8 @@ H(2, "3.6 Supervision : réel contre simulé")
 CALLOUT("**Le point d'honnêteté central du projet.** Prometheus supervise **OpsForge lui-même** "
         "(l'API déployée dans k3d). Les statuts métier des services du catalogue sont des données de "
         "démonstration saisies dans l'application, et la console l'affiche explicitement.")
-FIG(os.path.join(SHOTS, "05_monitoring.png"), 14.0,
-    "**Figure 5** — La page Monitoring sépare la « Supervision réelle » (health, readiness, métriques, "
+FIG(os.path.join(SHOTS, "05_monitoring.png"), 15.5,
+    "**Figure 7** — La page Monitoring sépare la « Supervision réelle » (health, readiness, métriques, "
     "Prometheus/Grafana, règle testée) des « États métier simulés » (source : saisie OpsForge), et "
     "affiche la limite : les alertes Prometheus ne sont pas ingérées dans OpsForge.")
 P("La chaîne réelle : middleware FastAPI → `/metrics` → scrape Prometheus toutes les 15 s (cible "
@@ -1044,13 +1056,13 @@ $ kubectl -n opsforge scale deployment/opsforge-api --replicas=1
 t+20s : up=1  OpsForgeApiDown=firing
 t+40s : up=1  OpsForgeApiDown=inactive    >>> retabli, alerte resolue <<<""")
 FIG(os.path.join(FIGS, "06_prometheus_targets_up_fig.png"), TEXT_W,
-    "**Figure 6** — Prometheus scrape réellement l'API : la cible `opsforge-api (1/1 up)` pointe sur "
+    "**Figure 8** — Prometheus scrape réellement l'API : la cible `opsforge-api (1/1 up)` pointe sur "
     "`/metrics` du Service Kubernetes, état `UP`.")
 FIG(os.path.join(FIGS, "07_prometheus_alert_firing_fig.png"), TEXT_W,
-    "**Figure 7** — La même instance pendant la panne provoquée : la règle `OpsForgeApiDown` est "
+    "**Figure 9** — La même instance pendant la panne provoquée : la règle `OpsForgeApiDown` est "
     "passée en `firing (1)`.")
 FIG(os.path.join(SHOTS, "08_grafana_dashboard.png"), 14.4,
-    "**Figure 8** — Le dashboard « OpsForge Monitoring » pendant la session de preuve : disponibilité "
+    "**Figure 10** — Le dashboard « OpsForge Monitoring » pendant la session de preuve : disponibilité "
     "UP, volume de requêtes (le creux correspond à la panne provoquée), 319 réponses 200 et 2 réponses "
     "503 au redémarrage, latence p95 et répartition par route.")
 P("*Limites :* pas d'Alertmanager (l'alerte est visible dans Prometheus, elle n'est pas routée) ; "
@@ -1185,7 +1197,7 @@ P("**Choix.** Le label `route` utilise le *template* FastAPI (`/api/services/{se
   "métrique applicative disparaîtrait avec l'application ; `for: 30s` est calibré sur le scrape de "
   "15 s, de sorte qu'un raté isolé ne déclenche pas l'alerte.")
 P("**Preuve.** Cible `UP`, dashboard alimenté, et cycle `inactive → pending → firing → résolu` observé "
-  "en direct (figures 5 à 8, § 3.6). **Limite.** Pas de routage de notification, faute d'Alertmanager.")
+  "en direct (figures 7 à 10, § 3.6). **Limite.** Pas de routage de notification, faute d'Alertmanager.")
 
 H(2, "5.2 Image Docker durcie (CP n° 7)")
 P("**Besoin.** Une image reproductible qui ne tourne jamais en root, dans Compose comme dans "
@@ -1262,6 +1274,13 @@ Run SQLite unit tests ......... success      Run Trivy image scan (advisory)  su
 Run PostgreSQL integration test success""")
 P("(*) L'API GitHub aplatit l'issue d'une étape `continue-on-error` ; l'interface web, elle, "
   "affiche l'état advisory de l'étape.", size=9.5, italic=True)
+
+FIG(os.path.join(FIGS, "11_github_actions_run_fig.png"), TEXT_W,
+    "**Figure 11** — La même exécution vue dans l'interface : le job est **vert** et porte pourtant "
+    "**une annotation d'erreur**. C'est toute la politique advisory — l'étape Trivy signale son "
+    "`exit code 1` (annotation `failure`, vérifiée par l'API), `continue-on-error` empêche ce signal "
+    "de bloquer la livraison, et l'API de haut niveau l'aplatit en `success`. Le titre du run identifie "
+    "le candidat final : *Merge pull request #6*.")
 P("**Limite.** La CI ne publie pas l'image et ne déploie rien : c'est de l'intégration continue, pas "
   "du déploiement continu distant.")
 
@@ -1565,31 +1584,36 @@ TABLE(
     [
         ["`diagrams/schema_architecture.png`", "Architecture logique et les deux chaînes d'outillage",
          "Figure 2"],
-        ["`diagrams/schema_topologie.png`", "Topologie de déploiement sur le poste", "Figure 3"],
+        ["`diagrams/schema_topologie.png`", "Topologie de déploiement sur le poste", "Figure 4"],
         ["`screenshots/01_overview.png`", "Vue d'ensemble de la console", "Figure 1"],
-        ["`screenshots/02_alerts.png`", "File d'alertes (états, filtres)", "Réserve orale"],
+        ["`screenshots/02_alerts.png`", "File d'alertes : les trois états, les filtres, le lien vers "
+         "l'incident ouvert", "Figure 2 (*)"],
         ["`screenshots/03_incident_command_center.png`",
-         "Command Center : contexte, runbooks, timeline, exécutions", "Figure 4"],
-        ["`screenshots/04_activity.png`", "Journal d'audit global", "Réserve orale"],
-        ["`screenshots/05_monitoring.png`", "Page Monitoring : réel contre simulé", "Figure 5"],
+         "Command Center : contexte, runbooks, timeline, exécutions", "Figure 5"],
+        ["`screenshots/04_activity.png`", "Journal d'audit : acteur, action, objet lié, horodatage", "Figure 6 (*)"],
+        ["`screenshots/05_monitoring.png`", "Page Monitoring : réel contre simulé", "Figure 7"],
         ["`screenshots/06_prometheus_targets_up.png`", "Cible Prometheus `opsforge-api (1/1 up)`",
-         "Figure 6 (*)"],
-        ["`screenshots/07_prometheus_alert_firing.png`", "`OpsForgeApiDown` en FIRING", "Figure 7 (*)"],
+         "Figure 8 (*)"],
+        ["`screenshots/07_prometheus_alert_firing.png`", "`OpsForgeApiDown` en FIRING", "Figure 9 (*)"],
         ["`screenshots/08_grafana_dashboard.png`", "Dashboard « OpsForge Monitoring » alimenté",
-         "Figure 8"],
+         "Figure 10"],
         ["`screenshots/09_command_center_mobile.png`", "Command Center en mobile (~390 px)",
          "Réserve orale"],
         ["`screenshots/10_incidents_mobile.png`",
          "Table Incidents en mobile après correction (défaut trouvé en revue manuelle)",
          "Réserve orale"],
+        ["`screenshots/11_github_actions_run.png`",
+         "Interface GitHub Actions : job du run `32197168814` (candidat final) avec son annotation",
+         "Figure 11 (*)"],
     ],
-    widths=[6.3, 7.3, 3.0],
-    font=9.0,
+    widths=[6.5, 7.2, 2.9],
+    font=8.8,
 )
 
-P("(*) Les figures 6 et 7 sont recadrées sur la zone utile de la capture ; les fichiers ci-dessus sont "
-  "les captures complètes, non retouchées. Les versions recadrées utilisées dans le document sont "
-  "versionnées sous `deliverables/assets/figures/`.", size=9.2, italic=True)
+P("(*) Figures recadrées sur la zone utile ; les fichiers listés sont les captures complètes, non "
+  "retouchées, et les versions recadrées sont versionnées sous `deliverables/assets/figures/`. La "
+  "capture GitHub Actions provient de la page publique du dépôt, sans session authentifiée — le bouton "
+  "« Sign in to view logs » qui y figure en atteste.", size=9.2, italic=True)
 
 H(2, "B.2 Journaux d'exécution bruts (versionnés sous deliverables/evidence/)")
 TABLE(
@@ -1606,7 +1630,7 @@ TABLE(
         ["`github_actions_run.txt`", "Run CI du candidat final `a9ec694`, étape par étape"],
     ],
     widths=[5.2, 11.4],
-    font=9.0,
+    font=8.8,
 )
 P("Les environnements de production de ces preuves sont tracés : les captures d'interface ont été "
   "prises sur un environnement Docker Compose isolé et éphémère, et les preuves Kubernetes, Ansible et "
