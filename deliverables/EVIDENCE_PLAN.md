@@ -1,7 +1,7 @@
 # EVIDENCE_PLAN — OpsForge (document de travail interne, non destiné au jury)
 
 État de référence : candidat technique **final** `phase6-operator-ux @ a9ec694` (chaîne : `8ab0f70` → PR #4 `3fc7707` → PR #5 `f6e4a79` → PR #6 doc-only `a9ec694`) · dossier sur `jury/dossier-fil-rouge`.
-Dernière mise à jour : 21/08/2026 (passe figures : journal d'audit, file d'alertes, CI).
+Dernière mise à jour : 21/08/2026 (passe figures + annexe C « Reproduire les preuves »).
 
 ## 1. Statut global
 
@@ -25,7 +25,7 @@ Dernière mise à jour : 21/08/2026 (passe figures : journal d'audit, file d'ale
 | 16. Run GitHub Actions du candidat final (`a9ec694`, run `32197168814`) | ✅ texte via `gh api`, régénéré le 19/08 | `evidence/github_actions_run.txt` |
 | 17. GitHub Actions — capture graphique du run | ✅ produite le 21/08/2026 sur le **run final** `32197168814` : page publique du dépôt capturée en navigateur headless, sans session authentifiée ; annotation Trivy recoupée par l'API publique (`annotation_level: failure`, `Process completed with exit code 1.`) | `assets/screenshots/11_github_actions_run.png` (figure 11) |
 | 18. Page Aide (optionnelle) | ✅ capturée par Dyllan pendant la revue (réserve orale) | fournie hors dépôt |
-| 19. Vues responsives (~390×844) | ✅ produites sur le candidat corrigé (Edge headless, env. isolé) | `assets/screenshots/09_command_center_mobile.png`, `10_incidents_mobile.png` |
+| 19. Vues responsives (~390×844) | ✅ produites sur le candidat corrigé (Edge headless, env. isolé) ; la capture de l'**état défectueux** prise pendant la revue est versionnée et sert de « avant » (figures 12/13) | `assets/screenshots/09_command_center_mobile.png`, `10_incidents_mobile.png`, `12_incidents_mobile_avant.png` |
 | 20. Revue manuelle Phase 6 (desktop + responsive + parcours humain) | ✅ FAITE — PASS explicite le 19/08/2026 (2 défauts réels trouvés → PR #4/#5, 38 tests, revalidation humaine) | verdict rempli dans `PHASE6_MANUAL_REVIEW_RUNBOOK.md` §6 |
 
 ## 2. Conditions de production (traçabilité)

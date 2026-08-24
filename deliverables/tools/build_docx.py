@@ -989,7 +989,7 @@ P("**Structure du code :** `main.py` (démarrage, `/health`, `/ready`, `/metrics
   "`domain.py` (transitions), `runbooks.py` (liste approuvée et moteur), `models.py` / `schemas.py`, "
   "`seed.py` (scénario de démonstration idempotent), `migrations.py` (pont additif de schéma au "
   "démarrage).")
-FIG(os.path.join(SHOTS, "03_incident_command_center.png"), 13.5,
+FIG(os.path.join(SHOTS, "03_incident_command_center.png"), 15.0,
     "**Figure 5** — Le Command Center d'un incident : contexte opérationnel, alerte source, runbooks "
     "compatibles (manuel ou automatisé, niveau de risque), chronologie issue du journal d'audit et "
     "historique des exécutions.")
@@ -1061,7 +1061,7 @@ FIG(os.path.join(FIGS, "06_prometheus_targets_up_fig.png"), TEXT_W,
 FIG(os.path.join(FIGS, "07_prometheus_alert_firing_fig.png"), TEXT_W,
     "**Figure 9** — La même instance pendant la panne provoquée : la règle `OpsForgeApiDown` est "
     "passée en `firing (1)`.")
-FIG(os.path.join(SHOTS, "08_grafana_dashboard.png"), 14.4,
+FIG(os.path.join(SHOTS, "08_grafana_dashboard.png"), TEXT_W,
     "**Figure 10** — Le dashboard « OpsForge Monitoring » pendant la session de preuve : disponibilité "
     "UP, volume de requêtes (le creux correspond à la panne provoquée), 319 réponses 200 et 2 réponses "
     "503 au redémarrage, latence p95 et répartition par route.")
@@ -1438,7 +1438,7 @@ P("Les preuves du 12/08/2026 — logs bruts et captures — sont versionnées so
   "`deliverables/evidence/` et `deliverables/assets/` ; l'historique détaillé phase par phase reste "
   "dans `docs/PHASE<i>_VERIFICATION.md` (chronologie en annexe A).")
 
-H(2, "Clôture de la phase 6 : ce que la revue humaine a trouvé")
+H(2, "Clôture de la phase 6 : ce que la revue humaine a trouvé", break_before=True)
 P("La revue manuelle — parcours desktop, workflow opérateur complet, comportement responsive — a été "
   "déroulée du 12 au 19/08/2026, guidée par un runbook dédié. Elle a détecté **deux défauts réels, "
   "invisibles des 35 tests automatisés alors en place** : une erreur HTTP 422 sur les formulaires de "
@@ -1446,6 +1446,12 @@ P("La revue manuelle — parcours desktop, workflow opérateur complet, comporte
   "deux ont été corrigés en branches dédiées, couverts par des tests de non-régression qui ont porté la "
   "suite à **38 tests**, puis revalidés humainement sur le candidat fusionné ; la phase 6 a alors été "
   "**explicitement validée le 19/08/2026** (PR #4 à #6, candidat final `a9ec694`).")
+FIG2(os.path.join(FIGS, "12_incidents_mobile_avant_fig.png"),
+     "**Figure 12** — Avant : à 390 px, les en-têtes de la table Incidents se chevauchent et le titre "
+     "de l'incident est tronqué à quelques caractères.",
+     os.path.join(FIGS, "10_incidents_mobile_fig.png"),
+     "**Figure 13** — Après correction : colonnes lisibles, la table défilant dans son propre cadre.",
+     7.7)
 CALLOUT("Cette séquence est un enseignement en soi : les deux défauts passaient sous le radar de tests "
         "qui vérifient des réponses HTTP et des structures de page, mais ne simulent ni la soumission "
         "réelle d'un formulaire ni un rendu à 390 px. **Une procédure de test manuelle documentée n'est "
@@ -1600,8 +1606,10 @@ TABLE(
         ["`screenshots/09_command_center_mobile.png`", "Command Center en mobile (~390 px)",
          "Réserve orale"],
         ["`screenshots/10_incidents_mobile.png`",
-         "Table Incidents en mobile après correction (défaut trouvé en revue manuelle)",
-         "Réserve orale"],
+         "Table Incidents en mobile après correction", "Figure 13 (*)"],
+        ["`screenshots/12_incidents_mobile_avant.png`",
+         "Table Incidents en mobile à l'état défectueux, constaté pendant la revue",
+         "Figure 12 (*)"],
         ["`screenshots/11_github_actions_run.png`",
          "Interface GitHub Actions : job du run `32197168814` (candidat final) avec son annotation",
          "Figure 11 (*)"],
@@ -1636,7 +1644,50 @@ P("Les environnements de production de ces preuves sont tracés : les captures d
   "prises sur un environnement Docker Compose isolé et éphémère, et les preuves Kubernetes, Ansible et "
   "supervision sur un cluster k3d jetable, distinct du cluster de travail.")
 
-H(1, "Annexe C — Glossaire", break_before=True)
+H(1, "Annexe C — Reproduire les preuves", break_before=True)
+P("Chaque preuve de ce dossier est rejouable. Les commandes ci-dessous sont celles qui ont produit les "
+  "journaux versionnés sous `deliverables/evidence/`. Prérequis : le dépôt cloné et Docker Desktop.")
+
+H(2, "C.1 Application et tests")
+CODE("""docker compose up --build -d          # console : http://localhost:8000/overview
+curl.exe http://localhost:8000/health     # {"status": "ok", ...}
+curl.exe http://localhost:8000/ready      # {"status": "ready", ...} - SELECT 1 sur PostgreSQL
+docker compose exec api pytest                                # 38 tests SQLite
+docker compose exec api pytest tests/postgres_integration.py  # integration PostgreSQL""")
+
+H(2, "C.2 Déploiement de l'infrastructure par Ansible (CP n° 2)")
+P("À lancer **sur un cluster jetable**, pour ne pas agir sur un cluster existant :")
+CODE("""# deploiement complet auto-verifie (ok=22 changed=9) ; rejoue -> idempotence (ok=21 changed=2)
+./ansible/run.sh deploy.yml -e cluster_name=opsforge-ansible-test \\
+  -e api_host_port=8090 -e kubeapi_host_port=6446
+./ansible/run.sh teardown.yml -e cluster_name=opsforge-ansible-test    # suppression du cluster""")
+P("*Attention :* `./run.sh` sans paramètre vise le cluster `opsforge` et agirait sur un cluster "
+  "existant. Le control node conteneurisé est la seule méthode validée (§ 6).")
+
+H(2, "C.3 Persistance du stockage (CP n° 7)")
+CODE(r"""kubectl -n opsforge exec postgres-0 -- psql -U opsforge -d opsforge \
+  -c "CREATE TABLE persistence_check(m text); INSERT INTO persistence_check VALUES('preuve');"
+kubectl -n opsforge delete pod postgres-0
+kubectl -n opsforge rollout status statefulset/postgres --timeout=180s
+kubectl -n opsforge exec postgres-0 -- psql -U opsforge -d opsforge \
+  -tAc "SELECT m FROM persistence_check;"    # marqueur retrouve = persistance prouvee""")
+
+H(2, "C.4 Supervision et déclenchement réel de l'alerte (CP n° 10)")
+CODE("""kubectl -n monitoring port-forward svc/prometheus 9090:9090   # /targets et /alerts
+kubectl -n monitoring port-forward svc/grafana    3000:3000   # dashboard
+kubectl -n opsforge scale deployment/opsforge-api --replicas=0   # panne provoquee : up == 0
+#   OpsForgeApiDown : inactive -> pending -> firing (au bout de 30 s)
+kubectl -n opsforge scale deployment/opsforge-api --replicas=1   # A RESTAURER systematiquement""")
+
+H(2, "C.5 Sauvegarde et restauration")
+CODE(r""".\scripts\backup.ps1
+.\scripts\restore.ps1 -BackupFile .\backups\opsforge_backup_AAAAMMJJ_HHMMSS.dump""")
+P("Sans le drapeau `-MainDatabase`, la restauration se fait dans une base temporaire de vérification : "
+  "la base principale n'est jamais touchée (§ 5.6). Enfin, le dépôt étant public, le run d'intégration "
+  "continue du candidat final se consulte sans compte à l'adresse "
+  "`github.com/ThDyllan/opsforge/actions/runs/32197168814` (figure 11).")
+
+H(1, "Annexe D — Glossaire", break_before=True)
 TABLE(
     ["Terme", "Définition dans le contexte du projet"],
     [
