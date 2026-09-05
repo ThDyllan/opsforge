@@ -14,12 +14,13 @@ Ils sont conservés pour que les schémas et la mise en page restent reproductib
 | `gen_diagrams.py` | Génère les deux schémas (`assets/diagrams/*.svg`), à rasteriser ensuite en PNG |
 | `make_figures.py` | Recadre les captures sur leur zone utile (`assets/figures/`) : file d'alertes, journal d'audit, cibles Prometheus, alerte FIRING, run GitHub Actions |
 | `build_docx.py` | Construit le `.docx` : styles, page de garde, champ de sommaire, tableaux, figures, blocs de code |
+| `build_pptx.py` | Construit le support de soutenance `.pptx` avec ses notes orateur |
 | `finalize.ps1` | Ouvre le `.docx` dans Word, compacte les styles du sommaire, met à jour les champs, repagine, enregistre et exporte le PDF |
 
 ## Prérequis
 
 ```bash
-python -m pip install python-docx pillow
+python -m pip install python-docx python-pptx pillow
 ```
 
 Microsoft Word est requis pour `finalize.ps1` (mise à jour du sommaire et export PDF).
