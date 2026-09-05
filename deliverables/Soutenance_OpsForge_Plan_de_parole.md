@@ -1,7 +1,7 @@
 # Plan de parole — soutenance OpsForge
 
 **Lundi 7 septembre 2026, 09h30** · Campus Omnes Cœur Défense II, Courbevoie
-Support : `Soutenance_OpsForge_Dyllan_Thouvignon.pptx` — 18 slides de présentation + 6 slides de secours.
+Support : `Soutenance_OpsForge_Dyllan_Thouvignon.pptx` — 18 slides de présentation + 7 slides de secours.
 
 > Les antisèches détaillées sont dans les **notes orateur** de chaque slide.
 > En présentation, `Alt+F5` ouvre le mode Présentateur : les notes s'affichent sur ton écran, pas sur celui du jury.
@@ -65,7 +65,7 @@ Ne saute aucun de ces six points, même sous la pression du temps.
 
 ---
 
-## Les cinq choses à maîtriser avant lundi
+## Les six choses à maîtriser avant lundi
 
 ### 1. L'histoire d'Ansible, sans notes (slide 10)
 
@@ -122,7 +122,37 @@ l'affiche. C'est le point qui va asseoir ta crédibilité pour tout le reste de 
 **35 tests**. Les 3 tests ajoutés en non-régression l'ont portée à 38. Ne dis jamais « 38 tests ne
 voyaient pas les défauts ».
 
-### 5. La question sur l'IA
+### 5. L'articulation avec ton dossier professionnel
+
+Le jury a **les deux dossiers**. Il verra que ton DP montre de l'automatisation PowerShell, du
+développement d'API et de la supervision réelle — et il peut demander pourquoi tu n'as pas présenté
+ça comme projet. Réponse en trois temps :
+
+1. Ce sont des **interventions** et un module applicatif, pas un projet cadré couvrant les trois
+   compétences obligatoires.
+2. Surtout : **aucune de ces missions ne porte sur les containers**. La compétence « Gérer des
+   containers » est obligatoire, et rien dans ton expérience professionnelle ne la démontre.
+3. Il te fallait donc un projet qui tienne les trois d'un bloc, avec des preuves rejouables.
+
+**La slide de secours n° 20** cartographie exactement ça — sors-la si la question vient.
+
+Deux corollaires utiles :
+
+- **CP 2 et CP 7 reposent essentiellement sur OpsForge.** Ne survole ni la slide Ansible, ni la
+  slide containers : sans elles, ces compétences ne sont couvertes nulle part.
+- **Le critère « échanges avec les développeurs » (CP 10), lui, est couvert par ton DP** : supervision
+  multi-clients en équipe, module développé dans un dépôt partagé. Après avoir dit que tu ne le
+  revendiques pas sur OpsForge, renvoie au DP. Ne laisse pas croire que tu n'as jamais travaillé en
+  équipe.
+
+**Et un fil rouge qui relie tes deux dossiers**, à placer si l'occasion se présente : dans ton DP, un
+client signale une panne Internet réelle alors que la supervision est « au vert » — la cause était une
+licence de filtrage expirée, hors du champ du contrôle. Dans OpsForge, la CI est verte et les tests
+passent — et une revue manuelle trouve deux défauts réels. **Même leçon, deux contextes : un voyant
+vert ne dit pas que le service rend le service.** C'est ce qui donne de la cohérence à toute ta
+candidature.
+
+### 6. La question sur l'IA
 
 Elle viendra peut-être. Réponds calmement, sans gêne :
 

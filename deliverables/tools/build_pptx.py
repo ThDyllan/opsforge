@@ -216,10 +216,12 @@ s = S()
 y = title(s, "Le cadre", "Un projet fil rouge indépendant, assumé comme tel")
 b1 = card(s, ML, y + 0.05, 3.9, 2.2, "MON PARCOURS", [
     "BTS SIO option SLAM,", "puis formation DevOps", "en alternance.", "",
-    "Activité orientée", "support technique."], TEAL)
+    "Support et exploitation,", "puis systèmes, supervision", "et développement."], TEAL)
 card(s, ML + 4.15, y + 0.05, 3.9, 2.2, "POURQUOI CE PROJET", [
-    "Elle ne m'a pas fourni un", "projet DevOps couvrant les",
-    "attendus certificatifs.", "", "J'ai donc conçu OpsForge,", "de juin à août 2026."], AMB, AMB_BG, AMB_BD)
+    "Mes missions touchent à", "plusieurs de ces domaines,",
+    "mais aucune ne réunit les", "trois compétences du titre —",
+    "aucune ne porte sur les", "containers.", "",
+    "D'où OpsForge, juin-août 2026."], AMB, AMB_BG, AMB_BD)
 card(s, ML + 8.30, y + 0.05, 3.9, 2.2, "CE QUE ÇA IMPLIQUE", [
     "Cahier des charges conçu", "par moi, à partir du référentiel.", "",
     "Aucune donnée ni", "infrastructure professionnelle."], TEAL_D, TINT, TINT_B)
@@ -233,13 +235,32 @@ Ne pas le sauter : le jury attend un cadrage.
 
 À dire :
 - Parcours dev à l'origine (BTS SIO SLAM), puis DevOps en alternance.
-- Mon activité en entreprise est restée orientée support : elle ne m'a pas donné un projet DevOps
-  assez complet pour couvrir les attendus. J'ai donc construit le mien.
-- Point important à énoncer clairement : ce n'est PAS un projet de mon entreprise. Aucune donnée,
-  aucune infrastructure professionnelle. J'ai écrit le cahier des charges moi-même à partir du
-  référentiel — ce que les modalités autorisent explicitement pour un projet hors entreprise.
+- Mon activité a évolué : support et exploitation, puis systèmes et supervision, puis développement
+  et intégration d'API. C'est ce que détaille mon dossier professionnel.
+- Mais aucune de ces missions ne réunit à elle seule les trois compétences obligatoires du titre.
+  J'ai donc construit un projet qui les réunit.
+- Ce n'est PAS un projet de mon entreprise : aucune donnée, aucune infrastructure professionnelle.
+  J'ai écrit le cahier des charges moi-même à partir du référentiel — ce que les modalités
+  autorisent explicitement pour un projet hors entreprise.
 
-Ne pas s'excuser. C'est un choix, pas un défaut. Enchaîner vite.
+LA QUESTION QUI VIENDRA (le jury a mon dossier professionnel sous les yeux) :
+« Votre DP montre de l'automatisation PowerShell, du développement d'API, de la supervision.
+Pourquoi ne pas avoir présenté ça comme projet ? »
+
+Réponse, en trois temps :
+1. Ce sont des interventions et un module applicatif, pas un projet avec un cahier des charges
+   couvrant les trois compétences obligatoires.
+2. Surtout : aucune de ces missions ne porte sur les containers. La compétence « Gérer des
+   containers » est obligatoire, et rien dans mon expérience professionnelle ne la démontre.
+3. Il me fallait donc un projet qui tienne les trois d'un bloc, avec des preuves rejouables.
+   C'est exactement ce qu'est OpsForge.
+
+Ne pas se rabaisser : mon expérience professionnelle est réelle et le DP la porte. Ce projet la
+complète, il ne la remplace pas.
+
+Autre question possible : « OpsForge en juin-août, et votre module applicatif sur la même période ? »
+Oui — OpsForge a été mené en dehors du temps de travail, en phases courtes finies une à une.
+C'est écrit dans le dossier.
 """)
 
 # =====================================================================  3
@@ -593,11 +614,22 @@ qu'un raté isolé ne déclenche pas.
 À DIRE SPONTANÉMENT (encadré de droite) : Prometheus supervise OpsForge, pas les services métier
 du catalogue. Ces états-là sont simulés, et la console le dit. Ne jamais laisser croire l'inverse.
 
-LE PIÈGE : le critère « les échanges avec les développeurs sont réguliers ». Réponse préparée :
-« Projet individuel, je tiens les deux rôles — je ne peux pas revendiquer ce critère au sens strict.
-Ce que je peux montrer, c'est que la boucle supervision → développement existe et qu'elle est tracée
-dans mes décisions d'architecture : c'est la supervision qui m'a fait ajouter /ready, qui m'a fait
-passer les labels de route en template. En équipe, ces constats seraient le contenu des échanges. »
+LE PIÈGE : le critère « les échanges avec les développeurs sont réguliers ». Réponse préparée,
+EN DEUX TEMPS depuis que le jury a mon dossier professionnel :
+1. « Sur OpsForge, projet individuel, je tiens les deux rôles : je ne revendique pas ce critère au
+   sens strict. La boucle supervision → développement existe et elle est tracée dans mes décisions
+   d'architecture — c'est la supervision qui m'a fait ajouter /ready, passer les labels de route en
+   template. »
+2. « En revanche, mon dossier professionnel le couvre en contexte réel : supervision multi-clients,
+   travail en équipe, et un module développé dans un dépôt partagé avec ses conventions. »
+C'est le bon endroit pour renvoyer au DP : ne pas laisser croire que je n'ai jamais travaillé en équipe.
+
+LE FIL ROUGE À PLACER SI L'OCCASION SE PRÉSENTE — il relie mes deux dossiers :
+dans mon dossier professionnel, un client signale une panne Internet réelle alors que la supervision
+est « au vert » ; la cause était une licence de filtrage expirée, invisible du contrôle en place.
+Ici, sur OpsForge, la CI est verte et les tests passent — et une revue manuelle trouve deux défauts
+réels. Même leçon, deux contextes : un voyant vert ne dit pas que le service rend le service.
+C'est ce qui m'a fait écrire une procédure de test manuelle et m'y tenir.
 """)
 
 # ===================================================================== 13
@@ -716,7 +748,18 @@ Rappel de ce qui relève d'ailleurs :
   par le projet — elle fera l'objet du questionnement de l'entretien technique, et je sais en parler
   (Kubernetes managé, Terraform, ce que je ferais).
 - « Échanger sur des réseaux professionnels en anglais » : évaluée par le questionnaire professionnel.
-  Je note simplement que la documentation du dépôt et mes messages de commit sont en anglais.
+  La documentation du dépôt et mes messages de commit sont en anglais ; et mon dossier professionnel
+  mentionne des échanges techniques en anglais avec des référents clients.
+
+À AVOIR EN TÊTE : c'est OpsForge qui porte la compétence « Gérer des containers ». Rien dans mon
+expérience professionnelle ne la démontre — aucun des six exemples de mon dossier professionnel ne
+porte sur des containers. Ne pas survoler la slide CP 7 : sans elle, cette compétence obligatoire
+n'est couverte nulle part.
+
+De même pour CP 2 : mon dossier professionnel montre de l'automatisation PowerShell, mais c'est du
+provisionnement de comptes et de dossiers, pas du déploiement d'infrastructure. Le playbook Ansible
+est ma seule preuve de « automatiser le déploiement d'une infrastructure ». C'est pour ça que la
+slide Ansible est la pièce maîtresse.
 """)
 
 # ===================================================================== 16
@@ -853,6 +896,45 @@ box(s, ML, 3.35, CW, 0.8, "Slides de secours", 40, WHITE, HEAD, bold=True, align
 box(s, ML, 4.3, CW, 0.5, "Questions probables, chiffres, détails techniques",
     17, RGBColor(0x94, 0xA3, 0xB8), BODY, align=PP_ALIGN.CENTER)
 notes(s, "Séparateur. Ne pas projeter pendant l'exposé — n'y aller que si une question l'appelle.")
+
+s = S()
+y = title(s, "Annexe", "Mon dossier professionnel et OpsForge se répondent")
+rect(s, ML, y, CW, 0.42, TEAL, None, rounded=False)
+box(s, ML + 0.25, y + 0.09, 3.0, 0.3, "COMPÉTENCE OBLIGATOIRE", 12.5, WHITE, HEAD, bold=True)
+box(s, ML + 3.5, y + 0.09, 4.3, 0.3, "DANS MON EXPÉRIENCE PROFESSIONNELLE", 12.5, WHITE, HEAD, bold=True)
+box(s, ML + 8.1, y + 0.09, 4.0, 0.3, "DANS OPSFORGE", 12.5, WHITE, HEAD, bold=True)
+_rows = [("CP n° 2\nAutomatiser le déploiement\nd'une infrastructure",
+          "Automatisation PowerShell de\nprovisionnement (comptes, dossiers,\ndroits) — pas du déploiement\nd'infrastructure",
+          "Playbook Ansible : l'infrastructure\ncomplète en une commande\nidempotente et auto-vérifiée"),
+         ("CP n° 7\nGérer des containers",
+          "Aucun exemple : rien dans mon\nparcours professionnel ne porte\nsur des containers",
+          "Image durcie, Compose puis\nKubernetes, persistance du\nstockage prouvée"),
+         ("CP n° 10\nExploiter une solution\nde supervision",
+          "Supervision multi-clients réelle,\nen équipe — et un incident où le\nvert de la console cachait une\npanne bien réelle",
+          "Chaîne Prometheus/Grafana et\nune alerte réellement déclenchée\npuis résolue")]
+_yy = y + 0.42
+for _i, (_a, _b, _c) in enumerate(_rows):
+    rect(s, ML, _yy, CW, 1.20, LIGHT if _i % 2 else WHITE, None, rounded=False)
+    box(s, ML + 0.25, _yy + 0.14, 3.1, 1.0, _a, 12.5, INK, BODY, bold=True, spacing=0.95)
+    box(s, ML + 3.5, _yy + 0.14, 4.4, 1.0, _b, 12.5, MUTE, BODY, spacing=0.95)
+    box(s, ML + 8.1, _yy + 0.14, 4.1, 1.0, _c, 12.5, TEAL_D, BODY, spacing=0.95)
+    _yy += 1.20
+box(s, ML, _yy + 0.30, CW, 0.5,
+    "Les deux documents ne se répètent pas : ils se complètent. Le projet apporte ce que "
+    "l'expérience ne pouvait pas démontrer.", 15, TEAL_D, BODY, bold=True, align=PP_ALIGN.CENTER)
+notes(s, """
+À sortir si le jury demande pourquoi je n'ai pas présenté un projet d'entreprise, ou si l'entretien
+technique creuse la frontière entre mes deux dossiers.
+
+Le message : ces deux dossiers ne racontent pas la même chose et ne se contredisent pas.
+- Mon expérience professionnelle porte la supervision réelle, le travail en équipe, l'automatisation
+  d'administration et le développement applicatif.
+- Elle ne porte PAS les containers, et son automatisation n'est pas du déploiement d'infrastructure.
+- OpsForge apporte exactement ces deux pièces manquantes, avec des preuves rejouables.
+
+Ne pas opposer les deux. Ne pas non plus dévaloriser l'expérience professionnelle : elle est réelle,
+documentée, et c'est elle qui m'a donné le sujet — la gestion d'incidents vient de mon quotidien.
+""")
 
 qa1 = [("« Pourquoi pas de cloud ? »",
         "Budget zéro cloud assumé, et le référentiel n'exige pas le cloud pour les trois compétences "
