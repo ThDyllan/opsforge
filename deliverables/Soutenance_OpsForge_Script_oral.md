@@ -460,19 +460,53 @@ Je vous remercie. Je suis à votre disposition pour vos questions. »
 
 ---
 
-# La démonstration : ma recommandation
+# ⚠️ Ce que cette simulation a révélé sur le minutage
 
-**Ne fais pas de démonstration live dans les 30 minutes.** Trois raisons :
+Écrit intégralement, ce script fait **environ 2 300 mots réellement prononcés**.
+
+| Débit | Durée |
+|---|---|
+| Lecture rapide (160 mots/min) | 14 min |
+| Débit de présentation courant (145) | 16 min |
+| Débit posé (130) | 18 min |
+| Débit posé **avec les pauses, les silences et les moments où tu pointes l'écran** | 21 à 25 min |
+
+**Tu risques donc de finir bien avant 30 minutes.** Finir à 27 est normal ; finir à 18 donnerait
+l'impression d'un projet mince — ce qu'il n'est pas.
+
+**La première chose à faire aujourd'hui : un passage chronométré, à voix haute, debout.** C'est le
+seul moyen de connaître ton débit réel. Puis :
+
+- si tu es **entre 25 et 29 minutes** → ne change rien ;
+- si tu es **en dessous de 24 minutes** → intègre la démonstration ci-dessous *dans* la présentation,
+  après la slide 7. Elle vaut 3 minutes de contenu réel, et c'est le meilleur usage possible du temps
+  qui te reste ;
+- si tu es **encore court** → ralentis, et développe la slide 10 (structure des rôles Ansible, la
+  condition qui rend la création du cluster idempotente) et la slide 16 (le raisonnement du
+  diagnostic, hypothèse par hypothèse). Ce sont les deux endroits où de la profondeur est légitime.
+
+Ne comble jamais en ajoutant des slides. Comble en respirant et en développant ce qui est déjà là.
+
+---
+
+# La démonstration
+
+**Ce que je déconseille formellement : dérouler la chaîne complète en direct** (créer le cluster,
+lancer Ansible, attendre les pods). Trois raisons :
 
 1. Le référentiel ne la demande pas — il demande une présentation « à l'aide d'un support de type
    diaporama ». Tes captures sont des preuves recevables.
 2. Le déploiement complet prend plusieurs minutes (cluster k3d, images, attente des pods). Impossible
    à caser sans casser ton minutage.
 3. Une démo qui échoue devant un jury coûte infiniment plus que ce qu'une démo réussie rapporte.
-   Et tu n'as pas le temps de la répéter d'ici demain.
 
-**En revanche, prépare-la comme filet de sécurité.** Si le jury demande « vous pouvez nous le
-montrer ? », tu dois pouvoir dire oui en trois secondes.
+**Mais la console, elle, ne présente aucun de ces risques** : c'est un onglet de navigateur déjà
+ouvert sur une application qui tourne déjà. Rien à lancer, rien à attendre, rien qui puisse échouer
+autrement qu'un clic.
+
+Donc, selon ton chronomètre : soit tu l'intègres après la slide 7 comme un temps prévu, soit tu la
+gardes en réserve si le jury demande « vous pouvez nous le montrer ? ». Dans les deux cas, elle se
+prépare de la même façon.
 
 ### Avant d'entrer dans la salle
 
@@ -486,7 +520,7 @@ docker compose up -d
 Vérifie `http://localhost:8000/overview` dans un onglet **déjà ouvert**, et laisse-le en arrière-plan.
 Pas besoin du cluster k3d : la console suffit largement.
 
-### Si on te le demande — 90 secondes, pas plus
+### Le déroulé — 3 minutes montre en main, pas plus
 
 *[Alt-Tab vers le navigateur.]*
 
